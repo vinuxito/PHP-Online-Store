@@ -1,0 +1,854 @@
+/* ==========================================================================
+   Quantix Storefront Showroom — The Luxury E-Commerce Engine
+   Apple & Luxury Boutique Glassmorphism Design System
+   ========================================================================== */
+
+:root {
+  --qx-bg: #090d16;
+  --qx-surface: #0f172a;
+  --qx-surface-glass: rgba(15, 23, 42, 0.85);
+  --qx-card: #131d33;
+  --qx-card-hover: #182440;
+  --qx-border: rgba(255, 255, 255, 0.08);
+  --qx-border-hover: rgba(56, 189, 248, 0.4);
+  --qx-text: #f8fafc;
+  --qx-text-muted: #94a3b8;
+  --qx-text-dim: #64748b;
+  --qx-accent: #38bdf8;
+  --qx-accent-gradient: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+  --qx-gold: #fbbf24;
+  --qx-emerald: #10b981;
+  --qx-rose: #f43f5e;
+  --qx-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --qx-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  --qx-shadow-glow: 0 0 25px rgba(56, 189, 248, 0.25);
+  --qx-radius-sm: 8px;
+  --qx-radius-md: 14px;
+  --qx-radius-lg: 20px;
+  --qx-radius-xl: 28px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--qx-bg);
+  color: var(--qx-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   1. Luxury Navigation Bar
+   -------------------------------------------------------------------------- */
+.qx-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--qx-surface-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--qx-border);
+  padding: 14px 28px;
+  transition: all 0.2s ease;
+}
+
+.qx-nav-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.qx-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.qx-brand-logo {
+  height: 38px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.qx-brand-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.qx-brand-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--qx-accent);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.qx-nav-search {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+
+.qx-search-input {
+  width: 100%;
+  padding: 10px 18px 10px 42px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--qx-border);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 13.5px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.qx-search-input:focus {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--qx-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.qx-search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--qx-text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.qx-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qx-cart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 18px;
+  background: var(--qx-accent-gradient);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-cart-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+}
+
+.qx-cart-badge {
+  background: #ffffff;
+  color: #1e3a8a;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Hero Showcase Banner
+   -------------------------------------------------------------------------- */
+.qx-hero {
+  padding: 40px 28px 24px;
+  text-align: center;
+  background: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.15), transparent 70%);
+}
+
+.qx-hero-title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.qx-hero-subtitle {
+  font-size: 15px;
+  color: var(--qx-text-muted);
+  max-width: 600px;
+  margin: 0 auto 24px;
+}
+
+/* Filter Pills Bar */
+.qx-categories-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.qx-cat-pill {
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--qx-border);
+  color: var(--qx-text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qx-cat-pill:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.qx-cat-pill.active {
+  background: var(--qx-accent);
+  color: #090d16;
+  font-weight: 700;
+  border-color: var(--qx-accent);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   3. Luxury Product Grid & Showroom Cards
+   -------------------------------------------------------------------------- */
+.qx-main-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 24px 28px 60px;
+  flex: 1;
+  width: 100%;
+}
+
+.qx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.qx-card {
+  background: var(--qx-card);
+  border: 1px solid var(--qx-border);
+  border-radius: var(--qx-radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--qx-shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.qx-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--qx-border-hover);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), var(--qx-shadow-glow);
+}
+
+/* Card Visual Canvas Stage */
+.qx-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #0b1120;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.qx-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.qx-card:hover .qx-card-img {
+  transform: scale(1.04);
+}
+
+/* Quick Zoom Pill */
+.qx-card-zoom-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.qx-card:hover .qx-card-zoom-badge {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hover-Scrub Filmstrip Track */
+.qx-card-scrub-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  z-index: 5;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.qx-scrub-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qx-scrub-dot:hover,
+.qx-scrub-dot.active {
+  background: var(--qx-accent);
+  transform: scale(1.4);
+  box-shadow: 0 0 6px var(--qx-accent);
+}
+
+/* Card Content Details */
+.qx-card-body {
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.qx-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.qx-card-category {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--qx-accent);
+  letter-spacing: 0.5px;
+}
+
+.qx-card-sku {
+  font-size: 11px;
+  color: var(--qx-text-dim);
+  font-family: monospace;
+}
+
+.qx-card-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.4;
+  margin-bottom: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 40px;
+}
+
+.qx-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--qx-border);
+}
+
+.qx-card-price-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.qx-card-price {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.qx-card-tax {
+  font-size: 10.5px;
+  color: var(--qx-text-muted);
+}
+
+.qx-btn-add-cart {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--qx-accent);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--qx-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-add-cart:hover {
+  background: var(--qx-accent);
+  color: #090d16;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   4. Slide-Over Glass Shopping Cart Drawer
+   -------------------------------------------------------------------------- */
+.qx-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 19990;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.qx-drawer-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qx-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 460px;
+  background: var(--qx-surface);
+  border-left: 1px solid var(--qx-border);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.8);
+  z-index: 19999;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.qx-drawer.active {
+  transform: translateX(0);
+}
+
+.qx-drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--qx-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qx-drawer-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--qx-text-muted);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.qx-drawer-close:hover {
+  color: #ffffff;
+}
+
+.qx-cart-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qx-cart-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--qx-text-muted);
+}
+
+.qx-cart-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  background: var(--qx-card);
+  border: 1px solid var(--qx-border);
+  border-radius: var(--qx-radius-md);
+  align-items: center;
+}
+
+.qx-cart-item-img {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--qx-radius-sm);
+  object-fit: cover;
+  background: #090d16;
+}
+
+.qx-cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.qx-cart-item-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.qx-cart-item-price {
+  font-size: 13px;
+  color: var(--qx-accent);
+  font-weight: 700;
+}
+
+.qx-cart-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--qx-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.qx-step-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.qx-cart-footer {
+  padding: 20px 24px;
+  border-top: 1px solid var(--qx-border);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.qx-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--qx-text-muted);
+  margin-bottom: 8px;
+}
+
+.qx-summary-row.total {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--qx-border);
+}
+
+.qx-btn-checkout {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--qx-accent-gradient);
+  border: none;
+  border-radius: var(--qx-radius-md);
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s ease;
+}
+
+.qx-btn-checkout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   5. Checkout & CFDI 4.0 Auto-Invoicing Modal / Drawer
+   -------------------------------------------------------------------------- */
+.qx-checkout-drawer {
+  max-width: 560px;
+}
+
+.qx-form-group {
+  margin-bottom: 14px;
+}
+
+.qx-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--qx-text-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.qx-form-input,
+.qx-form-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--qx-border);
+  border-radius: var(--qx-radius-sm);
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.qx-form-input:focus,
+.qx-form-select:focus {
+  border-color: var(--qx-accent);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.qx-cfdi-card {
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--qx-radius-md);
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.qx-cfdi-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   6. Obsidian Lightbox 4K Engine
+   -------------------------------------------------------------------------- */
+.qx-lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  z-index: 29999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+
+.qx-lightbox-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qx-lightbox-canvas {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+
+.qx-lightbox-canvas.grabbing {
+  cursor: grabbing;
+}
+
+.qx-lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+
+.qx-lightbox-toolbar {
+  position: absolute;
+  bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--qx-border);
+  padding: 8px 16px;
+  border-radius: 999px;
+  z-index: 30005;
+}
+
+.qx-lightbox-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+}
+
+.qx-lightbox-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--qx-accent);
+}
+
+.qx-lightbox-close {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--qx-border);
+  color: #ffffff;
+  font-size: 26px;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30005;
+}
+
+/* Toast */
+.qx-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--qx-surface);
+  border: 1px solid var(--qx-border);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 40000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.qx-toast.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   7. Mobile & Responsive Layout
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .qx-navbar {
+    padding: 12px 16px;
+  }
+  .qx-nav-container {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .qx-nav-search {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+  }
+  .qx-hero {
+    padding: 24px 16px 16px;
+  }
+  .qx-hero-title {
+    font-size: 26px;
+  }
+  .qx-main-container {
+    padding: 16px 16px 40px;
+  }
+  .qx-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .qx-card-body {
+    padding: 12px;
+  }
+  .qx-card-title {
+    font-size: 12.5px;
+    min-height: 34px;
+  }
+  .qx-card-price {
+    font-size: 14.5px;
+  }
+  .qx-drawer {
+    max-width: 100%;
+  }
+}
