@@ -46,6 +46,13 @@ try {
     $stmtMedia->execute([$tenant->emisorId]);
     $allMedia = $stmtMedia->fetchAll();
 
+    $resolveCdn = function($path) {
+        if (empty($path)) return 'https://media.evinux.net/no-image.svg';
+        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) return $path;
+        $clean = preg_replace('#^/?(cfdadmin/)?uploads/productos/#i', '', $path);
+        return 'https://media.evinux.net/' . ltrim($clean, '/');
+    };
+
     $mediaByProduct = [];
     foreach ($allMedia as $m) {
         $pId = $m['ProductoID'];
@@ -55,14 +62,14 @@ try {
         if ($m['TipoArchivo'] === 'DOCUMENTO') {
             $mediaByProduct[$pId]['docs'][] = [
                 'id' => $m['ArchivoID'],
-                'url' => '/cfdadmin/' . $m['RutaRelativa'],
+                'url' => $resolveCdn($m['RutaRelativa']),
                 'title' => $m['Descripcion'] ?: 'Ficha Técnica'
             ];
         } else {
             $mediaByProduct[$pId]['fotos'][] = [
                 'id' => $m['ArchivoID'],
-                'url' => '/cfdadmin/' . $m['RutaRelativa'],
-                'thumb' => !empty($m['RutaMiniatura']) ? '/cfdadmin/' . $m['RutaMiniatura'] : '/cfdadmin/' . $m['RutaRelativa'],
+                'url' => $resolveCdn($m['RutaRelativa']),
+                'thumb' => !empty($m['RutaMiniatura']) ? $resolveCdn($m['RutaMiniatura']) : $resolveCdn($m['RutaRelativa']),
                 'isCover' => ($m['EsPrincipal'] === 'SI')
             ];
         }
@@ -83,11 +90,11 @@ try {
         $docs = $prodMedia['docs'];
 
         // Fallback cover if no photos
-        $cover = !empty($p['CoverMiniatura']) ? '/cfdadmin/' . $p['CoverMiniatura'] : (!empty($p['CoverRuta']) ? '/cfdadmin/' . $p['CoverRuta'] : '/cfdadmin/images/no-image.svg');
+        $cover = !empty($p['CoverMiniatura']) ? $resolveCdn($p['CoverMiniatura']) : (!empty($p['CoverRuta']) ? $resolveCdn($p['CoverRuta']) : 'https://media.evinux.net/no-image.svg');
         if (empty($fotos) && !empty($p['CoverRuta'])) {
             $fotos[] = [
                 'id' => $p['CoverArchivoID'] ?? 'cover',
-                'url' => '/cfdadmin/' . $p['CoverRuta'],
+                'url' => $resolveCdn($p['CoverRuta']),
                 'thumb' => $cover,
                 'isCover' => true
             ];
@@ -95,8 +102,8 @@ try {
         if (empty($fotos)) {
             $fotos[] = [
                 'id' => 'placeholder',
-                'url' => '/cfdadmin/images/no-image.svg',
-                'thumb' => '/cfdadmin/images/no-image.svg',
+                'url' => 'https://media.evinux.net/no-image.svg',
+                'thumb' => 'https://media.evinux.net/no-image.svg',
                 'isCover' => true
             ];
         }
