@@ -17,6 +17,8 @@ class StorefrontTenant {
     public $phone = '';
     public $address = '';
     public $description = 'Alta Perfumería & Fragancias Exclusivas';
+    public $quantixFrontStore = 'NO';
+    public $isStoreActive = false;
 
     public static function resolve() {
         $tenant = new self();
@@ -100,6 +102,16 @@ class StorefrontTenant {
             } else {
                 $tenant->logo = '';
             }
+
+            // Check QUANTIXFRONTSTORE in emisoresde
+            $tenant->quantixFrontStore = 'NO';
+            $stmtDe = $db->prepare("SELECT Valor FROM emisoresde WHERE EmisorID = ? AND Variable = 'QUANTIXFRONTSTORE' LIMIT 1");
+            $stmtDe->execute([$tenant->emisorId]);
+            $rowDe = $stmtDe->fetch();
+            if ($rowDe && strtoupper(trim($rowDe['Valor'])) === 'SI') {
+                $tenant->quantixFrontStore = 'SI';
+            }
+            $tenant->isStoreActive = ($tenant->quantixFrontStore === 'SI');
         }
 
         return $tenant;

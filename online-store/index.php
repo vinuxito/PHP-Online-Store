@@ -19,6 +19,32 @@ $tenant = StorefrontTenant::resolve();
 </head>
 <body>
 
+<?php if (!$tenant->isStoreActive): ?>
+  <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
+    <div style="background:var(--qx-surface); border:1px solid var(--qx-border); border-radius:var(--qx-radius-xl); padding:48px 36px; max-width:540px; width:100%; box-shadow:var(--qx-shadow-card);">
+      <div style="font-size:42px; margin-bottom:16px;">✨</div>
+      <h1 style="font-size:24px; font-weight:800; color:#ffffff; margin-bottom:8px;"><?php echo htmlspecialchars($tenant->brandName); ?></h1>
+      <div style="display:inline-block; background:rgba(244, 63, 94, 0.12); color:#f43f5e; border:1px solid rgba(244, 63, 94, 0.3); font-size:11px; font-weight:700; text-transform:uppercase; padding:3px 10px; border-radius:999px; margin-bottom:20px; letter-spacing:0.5px;">
+        🔒 Servicio Storefront No Activo
+      </div>
+      <p style="font-size:14px; color:var(--qx-text-muted); line-height:1.6; margin-bottom:24px;">
+        Esta boutique en línea oficial se encuentra actualmente en preparación o requiere la activación del servicio <strong>Quantix Storefront</strong> en el Catálogo de Datos Extra (<code>QUANTIXFRONTSTORE = SI</code>).
+      </p>
+      <?php if (!empty($tenant->email) || !empty($tenant->phone)): ?>
+        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--qx-border); border-radius:var(--qx-radius-md); padding:16px; font-size:13px; color:var(--qx-text-muted); margin-bottom:24px; text-align:left;">
+          <?php if (!empty($tenant->email)): ?><div>✉️ <strong>Contacto:</strong> <?php echo htmlspecialchars($tenant->email); ?></div><?php endif; ?>
+          <?php if (!empty($tenant->phone)): ?><div style="margin-top:4px;">📞 <strong>Teléfono:</strong> <?php echo htmlspecialchars($tenant->phone); ?></div><?php endif; ?>
+        </div>
+      <?php endif; ?>
+      <a href="https://evinux.net/cfdadmin/" style="display:inline-flex; align-items:center; gap:8px; padding:10px 20px; background:rgba(255,255,255,0.06); border:1px solid var(--qx-border); color:#ffffff; font-size:13px; font-weight:700; border-radius:var(--qx-radius-md); text-decoration:none; transition:all 0.2s ease;">
+        ← Volver al Panel Evinux
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+<?php exit; endif; ?>
+
   <!-- Navigation Bar -->
   <header class="qx-navbar">
     <div class="qx-nav-container">

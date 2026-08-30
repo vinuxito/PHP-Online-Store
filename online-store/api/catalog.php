@@ -8,6 +8,16 @@ header('Content-Type: application/json; charset=utf-8');
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
 
 $tenant = StorefrontTenant::resolve();
+
+if (!$tenant->isStoreActive) {
+    http_response_code(403);
+    echo json_encode([
+        'Status' => 'ServiceInactive',
+        'Error'  => 'El servicio Quantix Storefront no está activo para este emisor (Requiere QUANTIXFRONTSTORE = SI).'
+    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $db = get_store_db();
 
 try {

@@ -22,6 +22,15 @@ if (!$data || empty($data['items']) || !is_array($data['items']) || count($data[
 $db = get_store_db();
 $tenant = StorefrontTenant::resolve();
 
+if (!$tenant->isStoreActive) {
+    http_response_code(403);
+    echo json_encode([
+        'Status' => 'ServiceInactive',
+        'Error'  => 'El servicio de tienda en línea no se encuentra activo para este emisor (Requiere QUANTIXFRONTSTORE = SI).'
+    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $customerName = trim($data['customerName'] ?? 'Cliente General');
 $customerEmail = trim($data['customerEmail'] ?? '');
 $customerPhone = trim($data['customerPhone'] ?? '');
