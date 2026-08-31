@@ -429,7 +429,7 @@
       const self = this;
       const card = $('<div class="qx-card"></div>');
       const photos = p.photos && p.photos.length ? p.photos : [{ thumb: p.cover, url: p.cover }];
-      const initialPhoto = photos[0].thumb || photos[0].url;
+      const initialPhoto = photos[0].url || photos[0].thumb || p.cover;
 
       // Media Stage
       const cardImg = $(`<img class="qx-card-img" src="${self.esc(initialPhoto)}" alt="${self.esc(p.name)}">`);
@@ -453,7 +453,7 @@
             scrubBar.find('.qx-scrub-dot').removeClass('active');
             $(this).addClass('active');
             const imgEl = media.find('.qx-card-img');
-            imgEl.attr('src', photo.thumb || photo.url);
+            imgEl.attr('src', photo.url || photo.thumb);
             self.autoFitImage(imgEl[0]);
           });
           scrubBar.append(dot);
@@ -760,7 +760,7 @@
       const filmstrip = $('#qx_pmodal_filmstrip').empty();
       if (photos.length > 1) {
         photos.forEach((photo, idx) => {
-          const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" src="${self.esc(photo.thumb || photo.url)}" alt="">`);
+          const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" src="${self.esc(photo.url || photo.thumb)}" alt="">`);
           thumbImg.on('click', function() {
             filmstrip.find('.qx-pmodal-thumb').removeClass('active');
             $(this).addClass('active');

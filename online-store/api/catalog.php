@@ -69,7 +69,7 @@ try {
             $mediaByProduct[$pId]['fotos'][] = [
                 'id' => $m['ArchivoID'],
                 'url' => $resolveCdn($m['RutaRelativa']),
-                'thumb' => !empty($m['RutaMiniatura']) ? $resolveCdn($m['RutaMiniatura']) : $resolveCdn($m['RutaRelativa']),
+                'thumb' => $resolveCdn($m['RutaRelativa']),
                 'isCover' => ($m['EsPrincipal'] === 'SI')
             ];
         }
@@ -89,13 +89,13 @@ try {
         $fotos = $prodMedia['fotos'];
         $docs = $prodMedia['docs'];
 
-        // Fallback cover if no photos
-        $cover = !empty($p['CoverMiniatura']) ? $resolveCdn($p['CoverMiniatura']) : (!empty($p['CoverRuta']) ? $resolveCdn($p['CoverRuta']) : 'https://media.evinux.net/no-image.svg');
+        // Fallback cover using full uncropped image
+        $cover = !empty($p['CoverRuta']) ? $resolveCdn($p['CoverRuta']) : (!empty($p['CoverMiniatura']) ? $resolveCdn($p['CoverMiniatura']) : 'https://media.evinux.net/no-image.svg');
         if (empty($fotos) && !empty($p['CoverRuta'])) {
             $fotos[] = [
                 'id' => $p['CoverArchivoID'] ?? 'cover',
                 'url' => $resolveCdn($p['CoverRuta']),
-                'thumb' => $cover,
+                'thumb' => $resolveCdn($p['CoverRuta']),
                 'isCover' => true
             ];
         }
