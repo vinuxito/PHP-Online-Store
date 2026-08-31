@@ -95,14 +95,23 @@ $tenant = StorefrontTenant::resolve();
       <button class="qx-3d-nav-arrow next" id="qx_3d_next" aria-label="Siguiente">›</button>
       <div class="qx-3d-dots" id="qx_3d_dots"></div>
     </div>
-
-    <!-- Category Filter Pills -->
-    <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
+    <!-- Category Filter Chips & View Switcher Bar -->
+    <div class="qx-catalog-controls">
+      <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
+      <div class="qx-view-switcher" id="qx_view_switcher">
+        <button type="button" class="qx-view-btn active" data-view="2col" id="qx_view_2col" title="Vista Cuadrícula 2 Columnas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+        </button>
+        <button type="button" class="qx-view-btn" data-view="1col" id="qx_view_1col" title="Vista Cinema 1 Columna">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>
+        </button>
+      </div>
+    </div>
   </section>
 
   <!-- Main Product Showroom Grid -->
   <main class="qx-main-container">
-    <div class="qx-grid" id="qx_product_grid"></div>
+    <div class="qx-grid view-2col" id="qx_product_grid"></div>
   </main>
 
   <!-- Slide-Over Shopping Cart Drawer -->
@@ -128,14 +137,16 @@ $tenant = StorefrontTenant::resolve();
         <span id="qx_cart_iva">$ 0.00</span>
       </div>
       <div class="qx-summary-row total">
-        <span>Total a Pagar (MXN)</span>
+        <span>Total a Pagar</span>
         <span id="qx_cart_total">$ 0.00</span>
       </div>
-      <button type="button" class="qx-btn-checkout" id="qx_btn_proceed_checkout">Proceder al Pago &rarr;</button>
+      <button type="button" class="qx-btn-checkout" id="qx_btn_proceed_checkout">
+        <span>⚡ Proceder al Pago</span>
+      </button>
     </div>
   </aside>
 
-  <!-- Checkout & CFDI 4.0 Invoicing Drawer -->
+  <!-- Slide-Over Checkout Drawer -->
   <div class="qx-drawer-backdrop" id="qx_checkout_backdrop"></div>
   <aside class="qx-drawer qx-checkout-drawer" id="qx_checkout_drawer">
     <div class="qx-drawer-header">
@@ -185,6 +196,32 @@ $tenant = StorefrontTenant::resolve();
         </div>
       </div>
 
+      <!-- SPEI Voucher with 1-Click Copy (Module 3) -->
+      <div class="qx-spei-voucher" id="qx_spei_voucher">
+        <div class="qx-spei-title">
+          <span>🏦</span>
+          <span>Instrucciones de Transferencia SPEI</span>
+        </div>
+        <div class="qx-spei-row">
+          <span class="qx-spei-label">Banco Receptor:</span>
+          <span class="qx-spei-val" id="qx_spei_bank"><?php echo htmlspecialchars($tenant->bankName ?? 'BBVA Bancomer'); ?></span>
+        </div>
+        <div class="qx-spei-row">
+          <span class="qx-spei-label">Beneficiario:</span>
+          <span class="qx-spei-val" id="qx_spei_beneficiary"><?php echo htmlspecialchars($tenant->brandName); ?></span>
+        </div>
+        <div class="qx-spei-row">
+          <span class="qx-spei-label">CLABE Interbancaria:</span>
+          <div class="qx-spei-clabe-box">
+            <input type="text" readonly id="qx_spei_clabe_val" value="<?php echo htmlspecialchars($tenant->bankClabe ?? '012180001234567890'); ?>" class="qx-clabe-text">
+            <button type="button" class="qx-btn-copy-clabe" id="qx_btn_copy_clabe" title="Copiar CLABE">Copiar</button>
+          </div>
+        </div>
+        <div style="font-size:11.5px; color:var(--qx-text-muted); margin-top:8px;">
+          ⚡ Tu pedido se procesará de inmediato al registrarse la transferencia interbancaria.
+        </div>
+      </div>
+
       <!-- CFDI 4.0 Native Invoicing Gate -->
       <div class="qx-cfdi-card">
         <label class="qx-cfdi-toggle">
@@ -198,78 +235,71 @@ $tenant = StorefrontTenant::resolve();
             <label class="qx-form-label">RFC del Receptor *</label>
             <input type="text" class="qx-form-input" id="qx_cfdi_rfc" placeholder="Ej: XAXX010101000" maxlength="13" style="text-transform:uppercase;">
           </div>
+
           <div class="qx-form-group">
             <label class="qx-form-label">Razón Social / Nombre Fiscal *</label>
             <input type="text" class="qx-form-input" id="qx_cfdi_razon" placeholder="Como aparece en la Constancia CSF">
           </div>
+
           <div class="qx-form-group">
             <label class="qx-form-label">Código Postal Fiscal *</label>
             <input type="text" class="qx-form-input" id="qx_cfdi_cp" placeholder="Ej: 01000" maxlength="5">
           </div>
+
           <div class="qx-form-group">
             <label class="qx-form-label">Régimen Fiscal</label>
-            <select class="qx-form-select" id="qx_cfdi_regimen">
-              <option value="601">601 — General de Ley Personas Morales</option>
-              <option value="612">612 — Personas Físicas con Actividades Empresariales</option>
-              <option value="626">626 — Régimen Simplificado de Confianza (RESICO)</option>
-              <option value="605">605 — Sueldos y Salarios e Ingresos Asimilados</option>
-              <option value="616" selected>616 — Sin obligaciones fiscales</option>
+            <select class="qx-form-input" id="qx_cfdi_regimen">
+              <option value="601">601 - General de Ley Personas Morales</option>
+              <option value="612">612 - Personas Físicas con Actividades Empresariales</option>
+              <option value="626" selected>626 - Régimen Simplificado de Confianza (RESICO)</option>
+              <option value="605">605 - Sueldos y Salarios</option>
+              <option value="616">616 - Sin obligaciones fiscales</option>
             </select>
           </div>
+
           <div class="qx-form-group">
             <label class="qx-form-label">Uso de CFDI</label>
-            <select class="qx-form-select" id="qx_cfdi_uso">
-              <option value="G01">G01 — Adquisición de mercancías</option>
-              <option value="G03" selected>G03 — Gastos en general</option>
-              <option value="S01">S01 — Sin efectos fiscales</option>
-              <option value="CP01">CP01 — Pagos</option>
+            <select class="qx-form-input" id="qx_cfdi_uso">
+              <option value="G03" selected>G03 - Gastos en general</option>
+              <option value="G01">G01 - Adquisición de mercancías</option>
+              <option value="S01">S01 - Sin efectos fiscales</option>
+              <option value="CP01">CP01 - Pagos</option>
             </select>
           </div>
         </div>
       </div>
 
-      <!-- SPEI Payment Voucher Container -->
-      <div id="qx_spei_voucher" style="display:none; margin-bottom:16px;">
-        <div class="qx-spei-voucher-card">
-          <div style="font-size:11px; font-weight:800; color:var(--qx-accent); text-transform:uppercase;">⚡ Ficha de Transferencia SPEI</div>
-          <div style="font-size:12px; color:#cbd5e1;">Realiza tu transferencia interbancaria a la siguiente cuenta:</div>
-          <div class="qx-clabe-copy-group">
-            <input type="text" id="qx_spei_clabe_val" value="012180001234567890" readonly>
-            <button type="button" class="qx-btn-copy" id="qx_btn_copy_clabe">📋 Copiar CLABE</button>
-          </div>
-          <div style="font-size:11px; color:var(--qx-text-muted);">Banco: <strong>BBVA México</strong> · Titular: <strong><?php echo htmlspecialchars($tenant->brandName); ?></strong></div>
-        </div>
-      </div>
-
-      <div style="margin-top:auto; padding-top:16px; display:flex; flex-direction:column; gap:10px;">
-        <button type="submit" class="qx-btn-checkout" id="qx_btn_place_order">Confirmar y Pagar Orden &rarr;</button>
-        <button type="button" class="qx-btn-pmodal-wa" id="qx_btn_checkout_wa" style="display:none;">
-          <span>💬</span>
-          <span>Pedir & Confirmar por WhatsApp VIP</span>
-        </button>
-      </div>
+      <button type="submit" class="qx-btn-place-order" id="qx_btn_place_order">
+        <span>Confirmar y Pagar Orden</span>
+      </button>
     </form>
   </aside>
 
-  <!-- Executive Product Detail Modal (Atelier Showcase) -->
+  <!-- Executive Product Detail Modal (Atelier Showcase & Mobile Bottom-Sheet) -->
   <div class="qx-product-modal-backdrop" id="qx_product_modal_backdrop"></div>
   <div class="qx-product-modal" id="qx_product_modal" role="dialog" aria-modal="true" aria-labelledby="qx_pmodal_title">
-    <!-- Mobile Grabber Indicator & Top Navigation Bar -->
+    <!-- Top Grabber Indicator with Drag-to-Dismiss -->
     <div class="qx-pmodal-grabber" id="qx_pmodal_grabber" title="Toca o desliza hacia abajo para cerrar"></div>
-    <div class="qx-pmodal-mobile-header">
-      <button type="button" class="qx-btn-pmodal-back" id="qx_pmodal_btn_back" aria-label="Volver al catálogo">
-        <span>←</span> <span>Volver a la Tienda</span>
+    
+    <!-- Floating Minimalist Header -->
+    <div class="qx-pmodal-float-header">
+      <button type="button" class="qx-pmodal-close-circle" id="qx_pmodal_close" aria-label="Cerrar ficha">&times;</button>
+      <button type="button" class="qx-pmodal-share-btn" id="qx_pmodal_share" aria-label="Compartir producto">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
       </button>
-      <button type="button" class="qx-pmodal-close" id="qx_pmodal_close" aria-label="Cerrar modal">&times;</button>
     </div>
     
     <div class="qx-pmodal-layout">
-      <!-- Left Column: Gallery -->
+      <!-- Left Column: Gallery with Touch-Swipeable Track & Dots -->
       <div class="qx-pmodal-gallery">
-        <div class="qx-pmodal-stage">
-          <img id="qx_pmodal_main_img" src="" alt="Vista previa del producto">
-          <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Destacado</span>
+        <div class="qx-pmodal-stage" id="qx_pmodal_stage">
+          <div class="qx-pmodal-swipe-track" id="qx_pmodal_swipe_track">
+            <img id="qx_pmodal_main_img" src="" alt="Vista previa del producto">
+          </div>
+          <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Edición Destacada</span>
         </div>
+        <!-- Swipe Pagination Dots -->
+        <div class="qx-pmodal-dots" id="qx_pmodal_dots"></div>
         <div class="qx-pmodal-filmstrip" id="qx_pmodal_filmstrip"></div>
       </div>
 
@@ -336,7 +366,7 @@ $tenant = StorefrontTenant::resolve();
           <div id="qx_pmodal_docs" class="qx-pmodal-docs-list"></div>
         </div>
 
-        <!-- Quantity & Direct Purchase -->
+        <!-- Desktop Action Buttons -->
         <div class="qx-pmodal-actions-box">
           <div class="qx-pmodal-qty-row">
             <span style="font-size:13px; font-weight:700; color:var(--qx-text-muted);">Cantidad:</span>
@@ -370,6 +400,24 @@ $tenant = StorefrontTenant::resolve();
             <span>Cerrar Ficha & Seguir Explorando</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Sticky Thumb-Zone Buy Bar (Mobile) -->
+    <div class="qx-pmodal-bottom-bar" id="qx_pmodal_bottom_bar">
+      <div class="qx-pmodal-bar-price">
+        <div class="qx-pmodal-bar-num" id="qx_pmodal_bar_price">$ 0.00</div>
+        <div class="qx-pmodal-bar-sub">IVA 16% Incluido</div>
+      </div>
+      <div class="qx-pmodal-bar-actions">
+        <div class="pmodal-stepper compact">
+          <button type="button" class="qx-step-btn" id="qx_pmodal_bar_dec">-</button>
+          <span id="qx_pmodal_bar_qty" style="font-size:13px; font-weight:800; min-width:20px; text-align:center;">1</span>
+          <button type="button" class="qx-step-btn" id="qx_pmodal_bar_inc">+</button>
+        </div>
+        <button type="button" class="qx-btn-bar-buy" id="qx_pmodal_bar_buy">
+          <span>⚡ Comprar</span>
+        </button>
       </div>
     </div>
   </div>
@@ -514,6 +562,29 @@ $tenant = StorefrontTenant::resolve();
     </a>
   <?php endif; ?>
 
-  <script src="js/storefront_app.js?v=20260830_02"></script>
+  <!-- Floating Glass Bottom Navigation Dock (Mobile Only) -->
+  <nav class="qx-mobile-dock" id="qx_mobile_dock">
+    <button type="button" class="qx-dock-item active" id="qx_dock_home" aria-label="Inicio">
+      <span class="qx-dock-icon">🏠</span>
+      <span class="qx-dock-label">Inicio</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_search" aria-label="Buscar">
+      <span class="qx-dock-icon">🔍</span>
+      <span class="qx-dock-label">Buscar</span>
+    </button>
+    <button type="button" class="qx-dock-item highlight" id="qx_dock_concierge" aria-label="Concierge Quiz">
+      <span class="qx-dock-icon">✨</span>
+      <span class="qx-dock-label">Concierge</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_cart" aria-label="Bolsa de Compras">
+      <span class="qx-dock-icon-wrap">
+        <span class="qx-dock-icon">🛍️</span>
+        <span class="qx-dock-badge" id="qx_dock_cart_badge">0</span>
+      </span>
+      <span class="qx-dock-label">Bolsa</span>
+    </button>
+  </nav>
+
+  <script src="js/storefront_app.js?v=20260831_01"></script>
 </body>
 </html>

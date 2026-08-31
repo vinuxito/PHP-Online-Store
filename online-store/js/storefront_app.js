@@ -49,6 +49,34 @@
       this.bindGlobalEvents();
       this.loadCatalog();
       this.renderCartUI();
+      
+      const savedView = localStorage.getItem('qx_catalog_view') || '2col';
+      this.setCatalogView(savedView);
+    }
+
+    playHaptic(type = 'light') {
+      try {
+        if ('vibrate' in navigator) {
+          if (type === 'light') {
+            navigator.vibrate(10);
+          } else if (type === 'medium') {
+            navigator.vibrate(18);
+          } else if (type === 'success') {
+            navigator.vibrate([15, 40, 20]);
+          } else if (type === 'heavy') {
+            navigator.vibrate(35);
+          }
+        }
+      } catch (e) {}
+    }
+
+    setCatalogView(view) {
+      $('#qx_view_switcher .qx-view-btn').removeClass('active');
+      $(`#qx_view_${view}`).addClass('active');
+      $('#qx_product_grid').removeClass('view-2col view-1col').addClass(`view-${view}`);
+      try {
+        localStorage.setItem('qx_catalog_view', view);
+      } catch (e) {}
     }
 
     loadCart() {
@@ -121,6 +149,36 @@
         }
       });
 
+      // View Switcher (2-Column Grid vs 1-Column Cinema)
+      $('#qx_view_2col').on('click', function() {
+        self.playHaptic('light');
+        self.setCatalogView('2col');
+      });
+      $('#qx_view_1col').on('click', function() {
+        self.playHaptic('light');
+        self.setCatalogView('1col');
+      });
+
+      // Floating Glass Bottom Navigation Dock
+      $('#qx_dock_home').on('click', function() {
+        self.playHaptic('light');
+        $('.qx-dock-item').removeClass('active');
+        $(this).addClass('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      $('#qx_dock_search').on('click', function() {
+        self.playHaptic('medium');
+        self.openSpotlight();
+      });
+      $('#qx_dock_concierge').on('click', function() {
+        self.playHaptic('medium');
+        self.openQuiz();
+      });
+      $('#qx_dock_cart').on('click', function() {
+        self.playHaptic('medium');
+        self.openCart();
+      });
+
       // Cart Drawer Toggle
       $('#qx_cart_btn').on('click', () => self.openCart());
       $('#qx_cart_close, #qx_cart_backdrop').on('click', () => self.closeCart());
@@ -146,6 +204,7 @@
         const modalEl = $(this)[0];
         // If swiped down > 50px while scrolled near the top of modal
         if (modalEl && modalEl.scrollTop <= 10 && (pmodalTouchEndY - pmodalTouchStartY) > 50) {
+          self.playHaptic('light');
           self.closeProductModal();
         }
       });
@@ -170,17 +229,34 @@
         }
       });
 
+      // Desktop Stepper
       $('#qx_pmodal_qty_dec').on('click', function() {
+        self.playHaptic('light');
         self.pmodalQty = Math.max(1, (self.pmodalQty || 1) - 1);
-        $('#qx_pmodal_qty_val').text(self.pmodalQty);
+        $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text(self.pmodalQty);
       });
 
       $('#qx_pmodal_qty_inc').on('click', function() {
+        self.playHaptic('light');
         self.pmodalQty = (self.pmodalQty || 1) + 1;
-        $('#qx_pmodal_qty_val').text(self.pmodalQty);
+        $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text(self.pmodalQty);
+      });
+
+      // Sticky Bottom Bar Stepper
+      $('#qx_pmodal_bar_dec').on('click', function() {
+        self.playHaptic('light');
+        self.pmodalQty = Math.max(1, (self.pmodalQty || 1) - 1);
+        $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text(self.pmodalQty);
+      });
+
+      $('#qx_pmodal_bar_inc').on('click', function() {
+        self.playHaptic('light');
+        self.pmodalQty = (self.pmodalQty || 1) + 1;
+        $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text(self.pmodalQty);
       });
 
       $('#qx_pmodal_btn_add').on('click', function() {
+        self.playHaptic('success');
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
@@ -189,13 +265,32 @@
         }
       });
 
-      $('#qx_pmodal_btn_buy').on('click', function() {
+      $('#qx_pmodal_btn_buy, #qx_pmodal_bar_buy').on('click', function() {
+        self.playHaptic('success');
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
           self.closeProductModal(false);
           self.addToCart(prod, qty);
           self.openCheckout();
+        }
+      });
+
+      // Share Button
+      $('#qx_pmodal_share').on('click', function(e) {
+        e.stopPropagation();
+        self.playHaptic('medium');
+        if (self.activeProductModal) {
+          if (navigator.share) {
+            navigator.share({
+              title: self.activeProductModal.name,
+              text: `Descubre ${self.activeProductModal.name} en ${self.tenant ? self.tenant.brandName : 'la boutique online'}`,
+              url: window.location.href
+            }).catch(() => {});
+          } else {
+            navigator.clipboard.writeText(window.location.href);
+            self.showToast('🔗 ¡Enlace del producto copiado al portapapeles!');
+          }
         }
       });
 
@@ -282,14 +377,15 @@
       const bar = $('#qx_categories_bar');
       bar.empty();
 
-      bar.append(`<button type="button" class="qx-cat-pill active" data-cat="ALL">✦ Todos (${this.products.length})</button>`);
+      bar.append(`<button type="button" class="qx-category-chip qx-cat-pill active" data-cat="ALL">✦ Todos (${this.products.length})</button>`);
       categories.forEach(cat => {
         const count = this.products.filter(p => p.category === cat).length;
-        bar.append(`<button type="button" class="qx-cat-pill" data-cat="${self.esc(cat)}">${self.esc(cat)} (${count})</button>`);
+        bar.append(`<button type="button" class="qx-category-chip qx-cat-pill" data-cat="${self.esc(cat)}">${self.esc(cat)} (${count})</button>`);
       });
 
-      bar.find('.qx-cat-pill').on('click', function() {
-        bar.find('.qx-cat-pill').removeClass('active');
+      bar.find('.qx-category-chip, .qx-cat-pill').on('click', function() {
+        self.playHaptic('light');
+        bar.find('.qx-category-chip, .qx-cat-pill').removeClass('active');
         $(this).addClass('active');
         self.activeCategory = $(this).data('cat');
         self.applyFilters();
@@ -449,10 +545,9 @@
     renderCartUI() {
       const self = this;
       const list = $('#qx_cart_list');
-      const badge = $('#qx_cart_badge');
       const totalCount = this.cart.items.reduce((sum, i) => sum + i.qty, 0);
 
-      badge.text(totalCount);
+      $('#qx_cart_badge, #qx_dock_cart_badge').text(totalCount);
 
       if (this.cart.items.length === 0) {
         list.html(`
@@ -494,8 +589,8 @@
           </div>
         `);
 
-        row.find('.btn-dec').on('click', () => self.updateCartItemQty(item.id, -1));
-        row.find('.btn-inc').on('click', () => self.updateCartItemQty(item.id, 1));
+        row.find('.btn-dec').on('click', () => { self.playHaptic('light'); self.updateCartItemQty(item.id, -1); });
+        row.find('.btn-inc').on('click', () => { self.playHaptic('light'); self.updateCartItemQty(item.id, 1); });
         list.append(row);
       });
 
@@ -507,6 +602,7 @@
     }
 
     openCart() {
+      $('#qx_mobile_dock').addClass('hidden');
       $('#qx_cart_backdrop').addClass('active');
       $('#qx_cart_drawer').addClass('active');
     }
@@ -514,9 +610,13 @@
     closeCart() {
       $('#qx_cart_backdrop').removeClass('active');
       $('#qx_cart_drawer').removeClass('active');
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
     }
 
     openCheckout() {
+      $('#qx_mobile_dock').addClass('hidden');
       $('#qx_checkout_backdrop').addClass('active');
       $('#qx_checkout_drawer').addClass('active');
       this.renderCheckoutSummary();
@@ -528,6 +628,9 @@
     closeCheckout() {
       $('#qx_checkout_backdrop').removeClass('active');
       $('#qx_checkout_drawer').removeClass('active');
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
     }
 
     isModalOrDrawerOpen() {
@@ -595,12 +698,46 @@
       // Scroll modal container to top
       $('#qx_product_modal').scrollTop(0);
 
+      // Hide mobile dock
+      $('#qx_mobile_dock').addClass('hidden');
+
       // Push history state so mobile swipe-back gesture closes modal without leaving the website
       this.pushModalHistory('product');
 
       const self = this;
       const photos = product.photos && product.photos.length ? product.photos : [{ thumb: product.cover, url: product.cover }];
       const initialPhoto = photos[0].url || photos[0].thumb || product.cover;
+
+      // Populate Touch-Swipeable Track & Dots (Step 1)
+      const swipeTrack = $('#qx_pmodal_swipe_track').empty();
+      const dotsContainer = $('#qx_pmodal_dots').empty();
+
+      photos.forEach((photo, idx) => {
+        const slide = $(`<div class="qx-pmodal-swipe-slide" data-idx="${idx}"><img src="${self.esc(photo.url || photo.thumb)}" alt="${self.esc(product.name)}"></div>`);
+        swipeTrack.append(slide);
+
+        const dot = $(`<div class="qx-pmodal-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>`);
+        dot.on('click', function() {
+          self.playHaptic('light');
+          const targetSlide = swipeTrack.find(`.qx-pmodal-swipe-slide[data-idx="${idx}"]`)[0];
+          if (targetSlide) {
+            targetSlide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        });
+        dotsContainer.append(dot);
+      });
+
+      if (photos.length > 1) {
+        dotsContainer.show();
+        swipeTrack.off('scroll.pmodal').on('scroll.pmodal', function() {
+          const scrollLeft = this.scrollLeft;
+          const slideWidth = this.clientWidth || 1;
+          const currentIdx = Math.round(scrollLeft / slideWidth);
+          dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(currentIdx).addClass('active');
+        });
+      } else {
+        dotsContainer.hide();
+      }
 
       // Gallery main image & badge
       $('#qx_pmodal_main_img').attr('src', initialPhoto).attr('alt', product.name);
@@ -610,7 +747,7 @@
         $('#qx_pmodal_badge').hide();
       }
 
-      // Filmstrip thumbnails
+      // Filmstrip thumbnails (desktop)
       const filmstrip = $('#qx_pmodal_filmstrip').empty();
       if (photos.length > 1) {
         photos.forEach((photo, idx) => {
@@ -634,7 +771,7 @@
       $('#qx_pmodal_title').text(product.name);
 
       // Price & Stock
-      $('#qx_pmodal_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
+      $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
       if (product.stock > 0) {
         $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
       } else {
@@ -661,7 +798,7 @@
       }
 
       // Quantity reset
-      $('#qx_pmodal_qty_val').text('1');
+      $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text('1');
 
       // WhatsApp concierge button
       if (self.tenant && self.tenant.showWhatsapp && self.tenant.whatsappPhone) {
@@ -686,6 +823,9 @@
       $('#qx_product_modal_backdrop').removeClass('active');
       $('#qx_product_modal').removeClass('active');
       this.activeProductModal = null;
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
       if (syncHistory) {
         this.popModalHistory();
       }
@@ -1070,6 +1210,7 @@
     }
 
     openSpotlight() {
+      $('#qx_mobile_dock').addClass('hidden');
       $('#qx_spotlight_backdrop').addClass('active');
       $('#qx_spotlight_modal').addClass('active');
       $('#qx_spotlight_input').val('').focus();
@@ -1080,6 +1221,9 @@
     closeSpotlight() {
       $('#qx_spotlight_backdrop').removeClass('active');
       $('#qx_spotlight_modal').removeClass('active');
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
     }
 
     renderSpotlightResults(query) {
@@ -1325,6 +1469,7 @@
       this.activeStory = story;
       this.activeSlideIdx = slideIdx;
       this.renderStorySlide();
+      $('#qx_mobile_dock').addClass('hidden');
       $('#qx_story_viewer').fadeIn(200);
       this.startStoryTimer();
     }
@@ -1336,6 +1481,9 @@
         this.storyTimer = null;
       }
       this.activeStory = null;
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
     }
 
     renderStorySlide() {
@@ -1416,6 +1564,7 @@
       this.quizAnswers = {};
       this.quizStep = 1;
       this.showQuizStep(1);
+      $('#qx_mobile_dock').addClass('hidden');
       $('#qx_quiz_backdrop').addClass('active');
       $('#qx_quiz_modal').addClass('active');
     }
@@ -1423,6 +1572,9 @@
     closeQuiz() {
       $('#qx_quiz_backdrop').removeClass('active');
       $('#qx_quiz_modal').removeClass('active');
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
     }
 
     showQuizStep(step) {

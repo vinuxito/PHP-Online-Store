@@ -27,9 +27,17 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - 3-question guided shopping wizard (Ocasión, Estilo, Gama).
    - Dynamic catalog match scorer displaying the top 3 tailored recommendations with match percentage badges.
 
+6. **Mobile Ultra-Luxe UX Architecture**
+   - **Native Bottom-Sheet & Swipe Gallery:** Touch-swipeable image carousel with pagination dots (`● ○ ○ ○`) and minimalist floating dismiss controls.
+   - **Sticky Thumb-Zone Buy Bar:** Docked bottom purchasing bar with live price, tax status, stepper, and 1-tap direct checkout trigger.
+   - **Floating Glass Bottom Navigation Dock:** Glassmorphic mobile dock (`#qx_mobile_dock`) for instant access to Home, Search (⌘K), Concierge Quiz, and Bag.
+   - **Catalog View Switcher:** 2-Column Luxury Masonry vs 1-Column Cinema mode toggle with `localStorage` persistence.
+   - **Web Haptics & Gesture Interception:** Silent vibration feedback (`navigator.vibrate`) and mobile back-gesture (`popstate`) trapping to prevent accidental app exits.
+
 ## Verification & Testing
 
 Automated Playwright test suite:
 ```bash
 node /lamp/www/cfdadmin/tests/e2e/vx-quantix-storefront-e2e.mjs
+node /lamp/www/cfdadmin/tests/e2e/vx-storefront-maitre-d-e2e.mjs
 ```
