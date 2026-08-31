@@ -5458,5 +5458,751 @@ body {
   color: #ef4444;
 }
 
+/* ==========================================================================
+   Feature 6: The Sensory Loyalty Vault & Olfactory Refill Club Luxury Styles
+   ========================================================================== */
 
+/* Header VIP Vault Nav Button */
+.qx-vault-nav-btn {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.18) 0%, rgba(168, 85, 247, 0.12) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
+.qx-vault-nav-btn:hover {
+  transform: translateY(-2px);
+  border-color: #fbbf24;
+  box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3);
+  color: #ffffff;
+}
+
+.qx-vault-tier-badge {
+  background: rgba(251, 191, 36, 0.25);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Product Modal: Refill Auto-Replenishment Card */
+.qx-refill-subscription-card {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: var(--qx-radius-md);
+  padding: 16px;
+  margin-top: 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.qx-refill-subscription-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #c084fc, #fbbf24, #38bdf8);
+}
+
+.qx-refill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.qx-refill-badge-vip {
+  font-size: 11px;
+  font-weight: 800;
+  color: #c084fc;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.qx-refill-savings-pill {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.qx-refill-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qx-refill-radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-refill-radio-label:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.qx-refill-radio-label.active {
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.2);
+}
+
+.qx-refill-radio-label input[type="radio"] {
+  display: none;
+}
+
+.qx-refill-radio-custom {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  margin-top: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.qx-refill-radio-label.active .qx-refill-radio-custom {
+  border-color: #c084fc;
+}
+
+.qx-refill-radio-label.active .qx-refill-radio-custom::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c084fc;
+}
+
+.qx-refill-opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qx-refill-opt-text strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.qx-refill-opt-sub {
+  font-size: 11px;
+  color: var(--qx-text-muted);
+}
+
+.qx-refill-freq-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qx-refill-freq-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c084fc;
+}
+
+.qx-refill-freq-pills {
+  display: flex;
+  gap: 8px;
+}
+
+.qx-freq-pill {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--qx-text-muted);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.qx-freq-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.qx-freq-pill.active {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+}
+
+/* Sensory Loyalty Vault Modal */
+.qx-vault-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 97000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-vault-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qx-vault-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  width: 95%;
+  max-width: 820px;
+  max-height: 90vh;
+  background: radial-gradient(circle at top, rgba(30, 41, 59, 0.98) 0%, rgba(10, 16, 28, 0.99) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 24px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 50px rgba(251, 191, 36, 0.15);
+  z-index: 97001;
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-vault-modal.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.qx-vault-booklet-header {
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(180deg, rgba(251, 191, 36, 0.08) 0%, transparent 100%);
+}
+
+.qx-vault-emblem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-vault-emblem-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+}
+
+.qx-vault-sup {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.qx-vault-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0;
+}
+
+.qx-vault-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qx-vault-tag {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.qx-vault-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.qx-vault-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Vault ID Bar */
+.qx-vault-id-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  padding: 16px 28px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-vault-id-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qx-vault-id-lbl {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--qx-text-dim);
+  text-transform: uppercase;
+}
+
+.qx-vault-id-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.qx-vault-id-val.code {
+  font-family: monospace;
+  letter-spacing: 1px;
+  color: #38bdf8;
+}
+
+.qx-vault-id-val.gold {
+  color: #fbbf24;
+}
+
+.qx-vault-id-val.cyan {
+  color: #38bdf8;
+}
+
+/* Vault Tier Progress Card */
+.qx-vault-tier-card {
+  margin: 16px 28px 0 28px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.qx-vault-tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.qx-vault-tier-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qx-tier-icon {
+  font-size: 22px;
+}
+
+.qx-tier-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.qx-tier-sub {
+  font-size: 11.5px;
+  color: var(--qx-text-muted);
+}
+
+.qx-vault-tier-metric {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.qx-vault-progress-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.qx-vault-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24 0%, #c084fc 100%);
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+
+.qx-vault-perks-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qx-perk-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--qx-text-dim);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.qx-perk-badge.active {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+/* Vault Navigation Tabs */
+.qx-vault-tabs-nav {
+  display: flex;
+  gap: 8px;
+  padding: 14px 28px 0 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-vtab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--qx-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-vtab-btn:hover {
+  color: #fff;
+}
+
+.qx-vtab-btn.active {
+  color: #fbbf24;
+  border-bottom-color: #fbbf24;
+}
+
+/* Vault Tab Panels */
+.qx-vault-tab-panel {
+  padding: 20px 28px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 480px;
+}
+
+/* Subscriptions & Depletion Meter */
+.qx-vault-subscriptions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qx-vault-sub-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.qx-vault-sub-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qx-vault-sub-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.qx-vault-sub-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.qx-vault-sub-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.qx-vault-sub-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--qx-text-muted);
+}
+
+.qx-vault-sub-badge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+/* Depletion Meter */
+.qx-vault-depletion-meter {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qx-depletion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qx-depletion-track {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.qx-depletion-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #38bdf8 100%);
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+
+.qx-depletion-fill.critical {
+  background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+}
+
+.qx-depletion-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--qx-text-muted);
+}
+
+.qx-vault-sub-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.qx-btn-vault-refill-now {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-vault-refill-now:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
+}
+
+.qx-btn-vault-wa {
+  background: #25D366;
+  border: none;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-vault-wa:hover {
+  background: #1eb854;
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* Rewards Grid */
+.qx-vault-rewards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.qx-reward-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.qx-reward-card:hover {
+  border-color: rgba(251, 191, 36, 0.4);
+  transform: translateY(-2px);
+}
+
+.qx-reward-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qx-reward-icon {
+  font-size: 24px;
+}
+
+.qx-reward-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.qx-reward-desc {
+  font-size: 12px;
+  color: var(--qx-text-muted);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.qx-reward-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.qx-reward-cost {
+  font-size: 13px;
+  font-weight: 900;
+  color: #fbbf24;
+  font-family: monospace;
+}
+
+.qx-btn-redeem-reward {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-redeem-reward:hover:not(:disabled) {
+  background: #fbbf24;
+  color: #030712;
+}
+
+.qx-btn-redeem-reward:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Cart Item Refill Badges */
+.qx-cart-item-refill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.qx-cart-free-atomizer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}

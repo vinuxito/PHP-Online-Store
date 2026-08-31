@@ -69,6 +69,11 @@ $tenant = StorefrontTenant::resolve();
       </div>
 
       <div class="qx-nav-actions">
+        <button type="button" class="qx-vault-nav-btn" id="qx_btn_nav_vault" title="Bóveda de Fidelidad & Club de Recargas VIP">
+          <span class="qx-vault-sparkle">👑</span>
+          <span>Bóveda VIP</span>
+          <span class="qx-vault-tier-badge" id="qx_nav_vault_tier">VIP</span>
+        </button>
         <button type="button" class="qx-passport-nav-btn" id="qx_btn_nav_passport" title="Pasaporte Digital de Cata & Blind-Buy Shield">
           <span class="qx-passport-sparkle">🛡️</span>
           <span>Pasaporte</span>
@@ -176,6 +181,10 @@ $tenant = StorefrontTenant::resolve();
       <div class="qx-summary-row discount" id="qx_cart_discount_row" style="display:none;">
         <span style="color:#fbbf24; font-weight:700;">🛡️ Bono Decant Passport</span>
         <span id="qx_cart_discount_amount" style="color:#fbbf24; font-weight:700;">- $ 0.00</span>
+      </div>
+      <div class="qx-summary-row discount refill" id="qx_cart_refill_discount_row" style="display:none;">
+        <span style="color:#c084fc; font-weight:700;">🔄 Descuento Club Recargas (-12%)</span>
+        <span id="qx_cart_refill_discount_amount" style="color:#c084fc; font-weight:700;">- $ 0.00</span>
       </div>
       <div class="qx-summary-row">
         <span>IVA Trasladado (16%)</span>
@@ -403,6 +412,42 @@ $tenant = StorefrontTenant::resolve();
             <div class="qx-shield-card-desc">Prueba el Decant de 5ml sin riesgo. Si te enamora, el 100% de su valor se abona automáticamente a tu botella completa de 100ml.</div>
           </div>
           <div class="qx-shield-card-badge">Cero Riesgo</div>
+        </div>
+
+        <!-- Olfactory Refill Club: Auto-Replenishment Card -->
+        <div class="qx-refill-subscription-card" id="qx_refill_subscription_card">
+          <div class="qx-refill-card-header">
+            <div class="qx-refill-badge-vip">🔄 CLUB DE RECARGAS VIP</div>
+            <div class="qx-refill-savings-pill">Ahorra 12% + Regalo</div>
+          </div>
+          <div class="qx-refill-card-content">
+            <div class="qx-refill-options-grid">
+              <label class="qx-refill-radio-label active" id="qx_refill_opt_once_lbl">
+                <input type="radio" name="qx_purchase_mode" value="once" checked id="qx_refill_opt_once">
+                <span class="qx-refill-radio-custom"></span>
+                <div class="qx-refill-opt-text">
+                  <strong>Compra Única</strong>
+                  <span class="qx-refill-opt-sub">Adquisición regular de una sola vez</span>
+                </div>
+              </label>
+              <label class="qx-refill-radio-label" id="qx_refill_opt_sub_lbl">
+                <input type="radio" name="qx_purchase_mode" value="subscription" id="qx_refill_opt_sub">
+                <span class="qx-refill-radio-custom"></span>
+                <div class="qx-refill-opt-text">
+                  <strong>Auto-Recarga Programada (12% OFF)</strong>
+                  <span class="qx-refill-opt-sub">🎁 Incluye Atomizador de Bolsillo 5ml GRATIS en cada recarga</span>
+                </div>
+              </label>
+            </div>
+            <div class="qx-refill-freq-row" id="qx_refill_freq_row" style="display:none;">
+              <span class="qx-refill-freq-label">Frecuencia de Recarga:</span>
+              <div class="qx-refill-freq-pills">
+                <button type="button" class="qx-freq-pill active" data-months="3">Cada 3 Meses ⚡</button>
+                <button type="button" class="qx-freq-pill" data-months="6">Cada 6 Meses</button>
+                <button type="button" class="qx-freq-pill" data-months="12">Cada 12 Meses</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Adaptive Spec Matrix & Performance Indicators -->
@@ -950,6 +995,82 @@ $tenant = StorefrontTenant::resolve();
     <div class="qx-passport-entries-wrap" id="qx_passport_entries_container"></div>
   </div>
 
+  <!-- Sensory Loyalty Vault & Olfactory Refill Club Modal (Feature 6) -->
+  <div class="qx-vault-backdrop" id="qx_vault_backdrop"></div>
+  <div class="qx-vault-modal" id="qx_vault_modal" role="dialog" aria-modal="true" aria-labelledby="qx_vault_title">
+    <div class="qx-vault-booklet-header">
+      <div class="qx-vault-emblem">
+        <span class="qx-vault-emblem-icon">👑</span>
+        <div>
+          <div class="qx-vault-sup">BÓVEDA DE FIDELIDAD & CLUB DE RECARGAS</div>
+          <h2 class="qx-vault-title" id="qx_vault_title">Sensory Loyalty Vault VIP</h2>
+        </div>
+      </div>
+      <div class="qx-vault-header-right">
+        <div class="qx-vault-tag" id="qx_vault_tier_tag">Connoisseur</div>
+        <button type="button" class="qx-vault-close" id="qx_vault_close" aria-label="Cerrar Bóveda">&times;</button>
+      </div>
+    </div>
+
+    <!-- Member Identity Bar -->
+    <div class="qx-vault-id-bar">
+      <div class="qx-vault-id-col">
+        <span class="qx-vault-id-lbl">MIEMBRO TITULAR</span>
+        <span class="qx-vault-id-val" id="qx_vault_client_name">Alexander von Humboldt</span>
+      </div>
+      <div class="qx-vault-id-col">
+        <span class="qx-vault-id-lbl">CÓDIGO DE BÓVEDA</span>
+        <span class="qx-vault-id-val code" id="qx_vault_access_code">VAULT-2026-VIP</span>
+      </div>
+      <div class="qx-vault-id-col">
+        <span class="qx-vault-id-lbl">PUNTOS DE LEALTAD</span>
+        <span class="qx-vault-id-val gold" id="qx_vault_points_val">250 PTS</span>
+      </div>
+      <div class="qx-vault-id-col">
+        <span class="qx-vault-id-lbl">INICIALES GRABADO LÁSER</span>
+        <span class="qx-vault-id-val cyan" id="qx_vault_initials_val">AVH</span>
+      </div>
+    </div>
+
+    <!-- Tier Progression Strip -->
+    <div class="qx-vault-tier-card">
+      <div class="qx-vault-tier-header">
+        <div class="qx-vault-tier-current">
+          <span class="qx-tier-icon">🥈</span>
+          <div>
+            <div class="qx-tier-title" id="qx_vault_curr_tier">Nivel Actual: Connoisseur</div>
+            <div class="qx-tier-sub" id="qx_vault_next_tier_desc">Faltan 2 frascos para ascender a <strong>Master Perfumer</strong></div>
+          </div>
+        </div>
+        <div class="qx-vault-tier-metric" id="qx_vault_bottle_count">4 / 6 Frascos</div>
+      </div>
+      <div class="qx-vault-progress-track">
+        <div class="qx-vault-progress-fill" id="qx_vault_progress_fill" style="width: 66%;"></div>
+      </div>
+      <div class="qx-vault-perks-row">
+        <span class="qx-perk-badge active">🥉 Aficionado (Drops Anticipados)</span>
+        <span class="qx-perk-badge active">🥈 Connoisseur (10% Cashback + Catas Privadas)</span>
+        <span class="qx-perk-badge">🥇 Master Perfumer (Grabado Oro 24K + Concierge 24/7)</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs inside Vault: Suscripciones vs Recompensas -->
+    <div class="qx-vault-tabs-nav">
+      <button type="button" class="qx-vtab-btn active" id="qx_vtab_subs">🔄 Mis Recargas & Desgaste en Vivo</button>
+      <button type="button" class="qx-vtab-btn" id="qx_vtab_rewards">🎁 Catálogo de Recompensas VIP</button>
+    </div>
+
+    <!-- Tab 1: Subscriptions & Depletion Meter -->
+    <div class="qx-vault-tab-panel active" id="qx_vault_panel_subs">
+      <div class="qx-vault-subscriptions-wrap" id="qx_vault_subscriptions_container"></div>
+    </div>
+
+    <!-- Tab 2: Rewards Catalog -->
+    <div class="qx-vault-tab-panel" id="qx_vault_panel_rewards" style="display:none;">
+      <div class="qx-vault-rewards-grid" id="qx_vault_rewards_container"></div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="qx-toast" id="qx_toast"></div>
 
@@ -975,9 +1096,9 @@ $tenant = StorefrontTenant::resolve();
       <span class="qx-dock-icon">🏠</span>
       <span class="qx-dock-label">Inicio</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_search" aria-label="Buscar">
-      <span class="qx-dock-icon">🔍</span>
-      <span class="qx-dock-label">Buscar</span>
+    <button type="button" class="qx-dock-item" id="qx_dock_vault" aria-label="Bóveda VIP">
+      <span class="qx-dock-icon">👑</span>
+      <span class="qx-dock-label">Bóveda</span>
     </button>
     <button type="button" class="qx-dock-item" id="qx_dock_passport" aria-label="Pasaporte de Cata">
       <span class="qx-dock-icon">🛡️</span>

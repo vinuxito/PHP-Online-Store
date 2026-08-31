@@ -577,9 +577,327 @@
     }
   }
 
+  class LoyaltyVaultEngine {
+    constructor(storefront) {
+      this.storefront = storefront;
+      this.memberData = null;
+      this.subscriptions = [];
+      this.rewards = [];
+      this.accessCode = 'VAULT-2026-VIP';
+      this.selectedPurchaseMode = 'once';
+      this.selectedFrequencyMonths = 3;
+    }
+
+    async init() {
+      await this.loadVaultData();
+      this.bindEvents();
+    }
+
+    async loadVaultData(code) {
+      if (code) this.accessCode = code;
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/loyalty.php?tenant=${tenantId}&action=vault_status&code=${encodeURIComponent(this.accessCode)}`);
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.memberData = data.Member;
+          this.subscriptions = data.Subscriptions || [];
+          this.rewards = data.Rewards || [];
+          this.renderHeaderBadges();
+        }
+      } catch (err) {
+        console.warn('LoyaltyVaultEngine load error:', err);
+      }
+    }
+
+    renderHeaderBadges() {
+      if (this.memberData) {
+        $('#qx_nav_vault_tier').text(this.memberData.tier || 'VIP');
+      }
+    }
+
+    bindEvents() {
+      const self = this;
+
+      $('#qx_btn_nav_vault, #qx_dock_vault').on('click', function(e) {
+        e.preventDefault();
+        self.openVaultModal();
+      });
+
+      $('#qx_vault_close, #qx_vault_backdrop').on('click', function(e) {
+        e.preventDefault();
+        self.closeVaultModal();
+      });
+
+      // Tabs navigation
+      $('#qx_vtab_subs').on('click', function() {
+        $('.qx-vtab-btn').removeClass('active');
+        $(this).addClass('active');
+        $('#qx_vault_panel_subs').show();
+        $('#qx_vault_panel_rewards').hide();
+      });
+
+      $('#qx_vtab_rewards').on('click', function() {
+        $('.qx-vtab-btn').removeClass('active');
+        $(this).addClass('active');
+        $('#qx_vault_panel_rewards').show();
+        $('#qx_vault_panel_subs').hide();
+      });
+
+      // Purchase mode radios in product modal
+      $(document).on('change', 'input[name="qx_purchase_mode"]', function() {
+        const val = $(this).val();
+        self.selectedPurchaseMode = val;
+        $('.qx-refill-radio-label').removeClass('active');
+        if (val === 'subscription') {
+          $('#qx_refill_opt_sub_lbl').addClass('active');
+          $('#qx_refill_freq_row').slideDown(200);
+          $('#qx_pmodal_btn_add span').text(`🔄 Suscribirse (Cada ${self.selectedFrequencyMonths} Meses - 12% OFF)`);
+        } else {
+          $('#qx_refill_opt_once_lbl').addClass('active');
+          $('#qx_refill_freq_row').slideUp(200);
+          $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
+        }
+      });
+
+      // Frequency pills
+      $(document).on('click', '.qx-freq-pill', function(e) {
+        e.preventDefault();
+        $('.qx-freq-pill').removeClass('active');
+        $(this).addClass('active');
+        self.selectedFrequencyMonths = parseInt($(this).data('months'), 10) || 3;
+        if (self.selectedPurchaseMode === 'subscription') {
+          $('#qx_pmodal_btn_add span').text(`🔄 Suscribirse (Cada ${self.selectedFrequencyMonths} Meses - 12% OFF)`);
+        }
+      });
+    }
+
+    openVaultModal() {
+      if (!this.memberData) {
+        this.loadVaultData();
+      }
+      this.renderVaultUI();
+      $('#qx_vault_backdrop').addClass('active');
+      $('#qx_vault_modal').addClass('active');
+      $('#qx_mobile_dock').addClass('hidden');
+    }
+
+    closeVaultModal() {
+      $('#qx_vault_backdrop').removeClass('active');
+      $('#qx_vault_modal').removeClass('active');
+      if (!this.storefront.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
+    }
+
+    renderVaultUI() {
+      if (!this.memberData) return;
+
+      const m = this.memberData;
+      $('#qx_vault_client_name').text(m.clientName);
+      $('#qx_vault_access_code').text(m.code);
+      $('#qx_vault_points_val').text(`${m.pointsBalance} PTS`);
+      $('#qx_vault_initials_val').text(m.laserInitials || 'AVH');
+      $('#qx_vault_tier_tag').text(m.tier);
+
+      // Progression
+      const p = m.progression || {};
+      $('#qx_vault_curr_tier').text(`Nivel Actual: ${p.currentTier || m.tier}`);
+      const remaining = (p.targetCount || 6) - (p.currentCount || 4);
+      if (remaining > 0) {
+        $('#qx_vault_next_tier_desc').html(`Faltan ${remaining} frascos para ascender a <strong>${p.nextTier || 'Master Perfumer'}</strong>`);
+      } else {
+        $('#qx_vault_next_tier_desc').html(`¡Has alcanzado el rango supremo de <strong>${p.currentTier}</strong>!`);
+      }
+      $('#qx_vault_bottle_count').text(`${p.currentCount || 4} / ${p.targetCount || 6} Frascos`);
+      $('#qx_vault_progress_fill').css('width', `${p.progressPct || 66}%`);
+
+      // Render Subscriptions & Depletion Meter
+      this.renderSubscriptionsList();
+
+      // Render Rewards Grid
+      this.renderRewardsList();
+    }
+
+    renderSubscriptionsList() {
+      const container = $('#qx_vault_subscriptions_container').empty();
+      const self = this;
+
+      if (!this.subscriptions || this.subscriptions.length === 0) {
+        container.append(`
+          <div style="text-align:center; padding:30px; color:var(--qx-text-muted);">
+            <div style="font-size:36px; margin-bottom:10px;">🔄</div>
+            <div style="font-weight:700;">No tienes suscripciones de recarga activas</div>
+            <div style="font-size:12px; margin-top:4px;">Activa la opción de "Auto-Recarga Programada" al comprar tu siguiente fragancia para ahorrar 12% y recibir regalos de cortesía.</div>
+          </div>
+        `);
+        return;
+      }
+
+      this.subscriptions.forEach(sub => {
+        const dep = sub.depletion || {};
+        const isCritical = dep.urgency === 'CRITICAL';
+        const fillClass = isCritical ? 'critical' : '';
+        const photoUrl = sub.photo || 'images/logo.png';
+
+        const card = $(`
+          <div class="qx-vault-sub-card" data-sub-id="${sub.subscriptionId}">
+            <div class="qx-vault-sub-top">
+              <img class="qx-vault-sub-img" src="${self.storefront.esc(photoUrl)}" alt="${self.storefront.esc(sub.productName)}">
+              <div class="qx-vault-sub-info">
+                <div class="qx-vault-sub-title">${self.storefront.esc(sub.productName)}</div>
+                <div class="qx-vault-sub-meta">
+                  <span class="qx-vault-sub-badge">🔄 Cada ${sub.frequencyMonths} Meses (12% OFF)</span>
+                  <span>🎁 Atomizador 5ml Incluido</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Smart Depletion Meter -->
+            <div class="qx-vault-depletion-meter">
+              <div class="qx-depletion-header">
+                <span style="color:#fff;">⏳ Desgaste Molecular Estimado:</span>
+                <span style="color:${isCritical ? '#ef4444' : '#10b981'}; font-weight:800;">
+                  ${dep.pctRemaining}% (${dep.remainingSprays} sprays restantes)
+                </span>
+              </div>
+              <div class="qx-depletion-track">
+                <div class="qx-depletion-fill ${fillClass}" style="width: ${dep.pctRemaining}%;"></div>
+              </div>
+              <div class="qx-depletion-stats">
+                <span>Días transcurridos: ${dep.daysElapsed} días</span>
+                <span>Próxima Recarga: ~${dep.daysRemaining} días (${sub.nextRefillDate})</span>
+              </div>
+            </div>
+
+            <div class="qx-vault-sub-actions">
+              <button type="button" class="qx-btn-vault-refill-now" data-sub-id="${sub.subscriptionId}">
+                <span>⚡ Reordenar Recarga Ahora (12% VIP)</span>
+              </button>
+              <button type="button" class="qx-btn-vault-wa" data-sub-id="${sub.subscriptionId}">
+                <span>💬 Concierge VIP WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        `);
+
+        // Actions
+        card.find('.qx-btn-vault-refill-now').on('click', function() {
+          self.reorderRefill(sub);
+        });
+
+        card.find('.qx-btn-vault-wa').on('click', function() {
+          self.openWhatsAppConcierge(sub.subscriptionId);
+        });
+
+        container.append(card);
+      });
+    }
+
+    renderRewardsList() {
+      const container = $('#qx_vault_rewards_container').empty();
+      const self = this;
+
+      if (!this.rewards || this.rewards.length === 0) {
+        container.append(`
+          <div style="text-align:center; padding:30px; color:var(--qx-text-muted); grid-column:1/-1;">
+            <div>No hay recompensas disponibles en este momento.</div>
+          </div>
+        `);
+        return;
+      }
+
+      this.rewards.forEach(rew => {
+        const canAfford = (self.memberData?.pointsBalance || 0) >= rew.pointsCost;
+        const card = $(`
+          <div class="qx-reward-card">
+            <div class="qx-reward-top">
+              <span class="qx-reward-icon">${rew.badgeIcon || '🎁'}</span>
+              <div class="qx-reward-title">${self.storefront.esc(rew.title)}</div>
+            </div>
+            <div class="qx-reward-desc">${self.storefront.esc(rew.description)}</div>
+            <div class="qx-reward-footer">
+              <span class="qx-reward-cost">${rew.pointsCost} PTS</span>
+              <button type="button" class="qx-btn-redeem-reward" ${canAfford ? '' : 'disabled'} data-reward-id="${rew.rewardId}">
+                ${canAfford ? 'Canjear' : 'Puntos Insuficientes'}
+              </button>
+            </div>
+          </div>
+        `);
+
+        card.find('.qx-btn-redeem-reward').on('click', function() {
+          self.redeemReward(rew);
+        });
+
+        container.append(card);
+      });
+    }
+
+    async redeemReward(reward) {
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const formData = new URLSearchParams();
+        formData.append('tenant', tenantId);
+        formData.append('action', 'redeem_reward');
+        formData.append('memberCode', this.accessCode);
+        formData.append('rewardId', reward.rewardId);
+
+        const res = await fetch('api/loyalty.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString()
+        });
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.storefront.showToast(`🎉 ${data.Message} (Código: ${data.RewardVoucherCode})`);
+          this.storefront.playAudioSynth('pop');
+          await this.loadVaultData();
+          this.renderVaultUI();
+        } else {
+          this.storefront.showToast(`⚠️ ${data.Error || 'Error al canjear recompensa'}`);
+        }
+      } catch (err) {
+        console.error('redeemReward error:', err);
+      }
+    }
+
+    reorderRefill(sub) {
+      const product = this.storefront.products.find(p => p.id === sub.productId) || {
+        id: sub.productId,
+        name: sub.productName,
+        priceWithTax: 1800,
+        cover: sub.photo
+      };
+
+      this.storefront.addToCart(product, 1, null, 'full', {
+        isSubscription: true,
+        frequencyMonths: sub.frequencyMonths,
+        discountPct: 12
+      });
+
+      this.closeVaultModal();
+      this.storefront.openCart();
+      this.storefront.showToast('🔄 Recarga programada agregada a tu bolsa con 12% OFF');
+    }
+
+    async openWhatsAppConcierge(subId) {
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/loyalty.php?tenant=${tenantId}&action=generate_wa_refill_link&subscriptionId=${subId}`);
+        const data = await res.json();
+        if (data.Status === 'OK' && data.WhatsAppUrl) {
+          window.open(data.WhatsAppUrl, '_blank');
+        }
+      } catch (err) {
+        console.error('openWhatsAppConcierge error:', err);
+      }
+    }
+  }
+
   window.WeatherEngine = WeatherEngine;
   window.ScentRadarEngine = ScentRadarEngine;
   window.DecantPassportEngine = DecantPassportEngine;
+  window.LoyaltyVaultEngine = LoyaltyVaultEngine;
 
   class QuantixStorefront {
     constructor() {
@@ -587,6 +905,7 @@
       this.weatherEngine = new WeatherEngine();
       this.radarEngine = new ScentRadarEngine();
       this.passportEngine = new DecantPassportEngine(this);
+      this.loyalty = new LoyaltyVaultEngine(this);
       this.appliedVoucher = null;
       this.tenant = null;
       this.products = [];
@@ -639,6 +958,7 @@
       this.loadCatalog();
       this.renderCartUI();
       this.passportEngine.loadPassport();
+      this.loyalty.init();
       
       const savedView = localStorage.getItem('qx_catalog_view') || '2col';
       this.setCatalogView(savedView);
@@ -923,8 +1243,14 @@
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
           const format = self.activeProductFormat || 'full';
+          const isSub = format === 'full' && self.loyalty?.selectedPurchaseMode === 'subscription';
+          const subOptions = isSub ? {
+            isSubscription: true,
+            frequencyMonths: self.loyalty.selectedFrequencyMonths || 3,
+            discountPct: 12
+          } : {};
           self.closeProductModal(false);
-          self.addToCart(prod, qty, $('#qx_pmodal_main_img'), format);
+          self.addToCart(prod, qty, $('#qx_pmodal_main_img'), format, subOptions);
         }
       });
 
@@ -934,8 +1260,14 @@
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
           const format = self.activeProductFormat || 'full';
+          const isSub = format === 'full' && self.loyalty?.selectedPurchaseMode === 'subscription';
+          const subOptions = isSub ? {
+            isSubscription: true,
+            frequencyMonths: self.loyalty.selectedFrequencyMonths || 3,
+            discountPct: 12
+          } : {};
           self.closeProductModal(false);
-          self.addToCart(prod, qty, null, format);
+          self.addToCart(prod, qty, null, format, subOptions);
           self.openCheckout();
         }
       });
@@ -1246,7 +1578,7 @@
       return card;
     }
 
-    addToCart(productOrId, qty = 1, originEl = null, format = 'full') {
+    addToCart(productOrId, qty = 1, originEl = null, format = 'full', options = {}) {
       let product = productOrId;
       if (typeof productOrId === 'string' || typeof productOrId === 'number') {
         product = this.products.find(p => p.id == productOrId);
@@ -1254,9 +1586,24 @@
       if (!product) return;
 
       const isDecant = format === 'decant';
-      const itemId = isDecant ? `${product.id}__decant` : product.id;
-      const itemName = isDecant ? `${product.name} (Decant 5ml)` : product.name;
-      const itemPriceWithTax = isDecant ? (product.decantPrice || Math.round(product.priceWithTax * 0.18)) : product.priceWithTax;
+      const isSubscription = options.isSubscription || false;
+      const freqMonths = options.frequencyMonths || 3;
+      const discountPct = options.discountPct || 12;
+
+      let itemId = product.id;
+      let itemName = product.name;
+      let itemPriceWithTax = product.priceWithTax;
+
+      if (isDecant) {
+        itemId = `${product.id}__decant`;
+        itemName = `${product.name} (Decant 5ml)`;
+        itemPriceWithTax = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+      } else if (isSubscription) {
+        itemId = `${product.id}__sub_${freqMonths}m`;
+        itemName = `${product.name} (Auto-Recarga Cada ${freqMonths} Meses)`;
+        itemPriceWithTax = Math.round(product.priceWithTax * (1 - discountPct / 100));
+      }
+
       const vatRate = product.vatRate || 16;
       const unitPrice = itemPriceWithTax / (1 + vatRate / 100);
 
@@ -1268,16 +1615,40 @@
           id: itemId,
           baseId: product.id,
           code: product.code,
-          sku: isDecant ? (product.sku ? `${product.sku}-DEC5` : 'DEC-5ML') : product.sku,
+          sku: isDecant ? (product.sku ? `${product.sku}-DEC5` : 'DEC-5ML') : (isSubscription ? `${product.sku}-SUB${freqMonths}M` : product.sku),
           name: itemName,
           thumb: product.cover,
           unitPrice: unitPrice,
           vatRate: vatRate,
           priceWithTax: itemPriceWithTax,
           isDecant: isDecant,
+          isSubscription: isSubscription,
+          frequencyMonths: freqMonths,
+          discountPct: discountPct,
           qty: qty
         });
       }
+
+      // If subscription, append free gift travel atomizer
+      if (isSubscription) {
+        const giftId = `gift_atomizer_${product.id}`;
+        if (!this.cart.items.some(i => i.id === giftId)) {
+          this.cart.items.push({
+            id: giftId,
+            baseId: product.id,
+            code: 'GIFT-ATOMIZER',
+            sku: 'GIFT-TRAV-5ML',
+            name: '🎁 Atomizador de Bolsillo 5ml de Cortesía',
+            thumb: product.cover,
+            unitPrice: 0,
+            vatRate: 16,
+            priceWithTax: 0,
+            isGift: true,
+            qty: 1
+          });
+        }
+      }
+
       this.saveCart();
       this.showToast(`✔ ${itemName} agregado a la bolsa`);
       if (originEl && originEl.length) {
@@ -1339,12 +1710,14 @@
 
         const decantBadge = (item.isDecant && !item.isDuoPack) ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:rgba(236,72,153,0.18); color:#f472b6; border:1px solid rgba(236,72,153,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Decant 5ml</span>` : '';
         const duoBadge = item.isDuoPack ? (item.isDecant ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Dueto Decants (15% OFF)</span>` : `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🎁 Duo Pack (15% OFF)</span>`) : '';
+        const subBadge = item.isSubscription ? `<span class="qx-cart-item-refill-badge">🔄 Auto-Recarga (12% OFF)</span>` : '';
+        const giftBadge = item.isGift ? `<span class="qx-cart-free-atomizer-badge">🎁 CORTESÍA $0.00</span>` : '';
 
         const row = $(`
           <div class="qx-cart-item">
             <img class="qx-cart-item-img" src="${self.esc(item.thumb)}" alt="">
             <div class="qx-cart-item-info">
-              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge}</div>
+              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge} ${subBadge} ${giftBadge}</div>
               <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
             </div>
             <div class="qx-cart-stepper">
@@ -1469,6 +1842,7 @@
 
     isModalOrDrawerOpen() {
       return $('#qx_product_modal').hasClass('active') ||
+             $('#qx_vault_modal').hasClass('active') ||
              $('#qx_passport_modal').hasClass('active') ||
              $('#qx_radar_compare_modal').hasClass('active') ||
              $('#qx_layering_modal').hasClass('active') ||
@@ -1666,6 +2040,19 @@
       } else {
         $('#qx_format_selector').hide();
       }
+
+      // Reset Refill Subscription Selector
+      if (this.loyalty) {
+        this.loyalty.selectedPurchaseMode = 'once';
+        this.loyalty.selectedFrequencyMonths = 3;
+      }
+      $('#qx_refill_opt_once').prop('checked', true);
+      $('#qx_refill_opt_once_lbl').addClass('active');
+      $('#qx_refill_opt_sub_lbl').removeClass('active');
+      $('#qx_refill_freq_row').hide();
+      $('.qx-freq-pill').removeClass('active').eq(0).addClass('active');
+      $('#qx_refill_subscription_card').show();
+
       $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
       $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
 
@@ -1724,13 +2111,15 @@
         $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(decPrice)}`);
         $('#qx_pmodal_btn_add span').text('🧪 Agregar Decant (5ml)');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Decant Ahora');
+        $('#qx_refill_subscription_card').slideUp(200);
         if (navigator.vibrate) navigator.vibrate([15]);
       } else {
         $('#qx_format_full').addClass('active');
         $('#qx_format_decant').removeClass('active');
         $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(product.priceWithTax)}`);
-        $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
+        $('#qx_pmodal_btn_add span').text(this.loyalty?.selectedPurchaseMode === 'subscription' ? `🔄 Suscribirse (Cada ${this.loyalty?.selectedFrequencyMonths || 3} Meses - 12% OFF)` : '🛍️ Agregar al Carrito');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
+        $('#qx_refill_subscription_card').slideDown(200);
         if (navigator.vibrate) navigator.vibrate([15]);
       }
     }
