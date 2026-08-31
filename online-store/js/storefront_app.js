@@ -133,7 +133,42 @@
       $('#qx_checkout_close, #qx_checkout_backdrop').on('click', () => self.closeCheckout());
 
       // Product Modal Events
-      $('#qx_pmodal_close, #qx_product_modal_backdrop').on('click', () => self.closeProductModal());
+      $('#qx_pmodal_close, #qx_product_modal_backdrop, #qx_pmodal_btn_back, #qx_pmodal_btn_dismiss, #qx_pmodal_grabber').on('click', () => self.closeProductModal());
+
+      // Touch / Swipe-Down to Dismiss on Mobile
+      let pmodalTouchStartY = 0;
+      let pmodalTouchEndY = 0;
+      $('#qx_product_modal').on('touchstart', function(e) {
+        pmodalTouchStartY = e.originalEvent.touches[0].clientY;
+      });
+      $('#qx_product_modal').on('touchend', function(e) {
+        pmodalTouchEndY = e.originalEvent.changedTouches[0].clientY;
+        const modalEl = $(this)[0];
+        // If swiped down > 50px while scrolled near the top of modal
+        if (modalEl && modalEl.scrollTop <= 10 && (pmodalTouchEndY - pmodalTouchStartY) > 50) {
+          self.closeProductModal();
+        }
+      });
+
+      // Intercept mobile back-gesture / popstate so swipe-back closes modal without leaving the site
+      $(window).on('popstate', function() {
+        self.activeHistoryModal = null;
+        if ($('#qx_product_modal').hasClass('active')) {
+          self.closeProductModal(false);
+        } else if ($('#qx_lightbox_overlay').hasClass('active')) {
+          self.closeLightbox(false);
+        } else if ($('#qx_spotlight_modal').hasClass('active')) {
+          self.closeSpotlight(false);
+        } else if ($('#qx_quiz_modal').hasClass('active')) {
+          self.closeQuiz(false);
+        } else if ($('#qx_story_viewer').is(':visible')) {
+          self.closeStory(false);
+        } else if ($('#qx_checkout_drawer').hasClass('active')) {
+          self.closeCheckout(false);
+        } else if ($('#qx_cart_drawer').hasClass('active')) {
+          self.closeCart(false);
+        }
+      });
 
       $('#qx_pmodal_qty_dec').on('click', function() {
         self.pmodalQty = Math.max(1, (self.pmodalQty || 1) - 1);
@@ -147,15 +182,19 @@
 
       $('#qx_pmodal_btn_add').on('click', function() {
         if (self.activeProductModal) {
-          self.addToCart(self.activeProductModal, self.pmodalQty || 1, $('#qx_pmodal_main_img'));
-          self.closeProductModal();
+          const prod = self.activeProductModal;
+          const qty = self.pmodalQty || 1;
+          self.closeProductModal(false);
+          self.addToCart(prod, qty, $('#qx_pmodal_main_img'));
         }
       });
 
       $('#qx_pmodal_btn_buy').on('click', function() {
         if (self.activeProductModal) {
-          self.addToCart(self.activeProductModal, self.pmodalQty || 1);
-          self.closeProductModal();
+          const prod = self.activeProductModal;
+          const qty = self.pmodalQty || 1;
+          self.closeProductModal(false);
+          self.addToCart(prod, qty);
           self.openCheckout();
         }
       });
@@ -491,16 +530,73 @@
       $('#qx_checkout_drawer').removeClass('active');
     }
 
+    isModalOrDrawerOpen() {
+      return $('#qx_product_modal').hasClass('active') ||
+             $('#qx_spotlight_modal').hasClass('active') ||
+             $('#qx_quiz_modal').hasClass('active') ||
+             $('#qx_story_viewer').is(':visible') ||
+             $('#qx_lightbox_overlay').hasClass('active') ||
+             $('#qx_cart_drawer').hasClass('active') ||
+             $('#qx_checkout_drawer').hasClass('active');
+    }
+
+    pushModalHistory(name) {
+      if (!this.activeHistoryModal) {
+        this.activeHistoryModal = name;
+        try {
+          window.history.pushState({ qxModal: name }, '');
+        } catch (e) {}
+      }
+    }
+
+    popModalHistory() {
+      if (this.activeHistoryModal) {
+        this.activeHistoryModal = null;
+        try {
+          window.history.back();
+        } catch (e) {}
+      }
+    }
+
     closeAllDrawers() {
       this.closeCart();
       this.closeCheckout();
       this.closeProductModal();
     }
 
+    closeAllModalsAndDrawers(syncHistory = true) {
+      $('#qx_cart_backdrop, #qx_cart_drawer').removeClass('active');
+      $('#qx_checkout_backdrop, #qx_checkout_drawer').removeClass('active');
+      $('#qx_product_modal_backdrop, #qx_product_modal').removeClass('active');
+      $('#qx_spotlight_backdrop, #qx_spotlight_modal').removeClass('active');
+      $('#qx_quiz_backdrop, #qx_quiz_modal').removeClass('active');
+      $('#qx_story_viewer').hide();
+      if (this.storyTimer) {
+        clearInterval(this.storyTimer);
+        this.storyTimer = null;
+      }
+      $('#qx_lightbox_overlay').removeClass('active');
+      this.activeProductModal = null;
+      this.activeStory = null;
+
+      if (syncHistory && this.activeHistoryModal) {
+        this.activeHistoryModal = null;
+        try { window.history.back(); } catch (e) {}
+      } else {
+        this.activeHistoryModal = null;
+      }
+    }
+
     openProductModal(product) {
       if (!product) return;
       this.activeProductModal = product;
       this.pmodalQty = 1;
+
+      // Scroll modal container to top
+      $('#qx_product_modal').scrollTop(0);
+
+      // Push history state so mobile swipe-back gesture closes modal without leaving the website
+      this.pushModalHistory('product');
 
       const self = this;
       const photos = product.photos && product.photos.length ? product.photos : [{ thumb: product.cover, url: product.cover }];
@@ -586,10 +682,13 @@
       $('#qx_product_modal').addClass('active');
     }
 
-    closeProductModal() {
+    closeProductModal(syncHistory = true) {
       $('#qx_product_modal_backdrop').removeClass('active');
       $('#qx_product_modal').removeClass('active');
       this.activeProductModal = null;
+      if (syncHistory) {
+        this.popModalHistory();
+      }
     }
 
     renderCheckoutSummary() {

@@ -254,7 +254,14 @@ $tenant = StorefrontTenant::resolve();
   <!-- Executive Product Detail Modal (Atelier Showcase) -->
   <div class="qx-product-modal-backdrop" id="qx_product_modal_backdrop"></div>
   <div class="qx-product-modal" id="qx_product_modal" role="dialog" aria-modal="true" aria-labelledby="qx_pmodal_title">
-    <button type="button" class="qx-pmodal-close" id="qx_pmodal_close" aria-label="Cerrar modal">&times;</button>
+    <!-- Mobile Grabber Indicator & Top Navigation Bar -->
+    <div class="qx-pmodal-grabber" id="qx_pmodal_grabber" title="Toca o desliza hacia abajo para cerrar"></div>
+    <div class="qx-pmodal-mobile-header">
+      <button type="button" class="qx-btn-pmodal-back" id="qx_pmodal_btn_back" aria-label="Volver al catálogo">
+        <span>←</span> <span>Volver a la Tienda</span>
+      </button>
+      <button type="button" class="qx-pmodal-close" id="qx_pmodal_close" aria-label="Cerrar modal">&times;</button>
+    </div>
     
     <div class="qx-pmodal-layout">
       <!-- Left Column: Gallery -->
@@ -356,6 +363,12 @@ $tenant = StorefrontTenant::resolve();
             <span>💬</span>
             <span>Consultar por WhatsApp con Concierge VIP</span>
           </a>
+
+          <!-- Bottom Dismiss Action Button -->
+          <button type="button" class="qx-btn-pmodal-dismiss" id="qx_pmodal_btn_dismiss">
+            <span>✕</span>
+            <span>Cerrar Ficha & Seguir Explorando</span>
+          </button>
         </div>
       </div>
     </div>
