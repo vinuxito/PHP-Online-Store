@@ -381,6 +381,83 @@ $tenant = StorefrontTenant::resolve();
           <div class="qx-pmodal-desc" id="qx_pmodal_desc" style="margin-top:6px;">Descripción detallada...</div>
         </div>
 
+        <!-- Radar Olfativo Hexagonal & Perfilador Climático en Vivo -->
+        <div class="qx-pmodal-section" id="qx_pmodal_radar_section">
+          <div class="qx-radar-header-row">
+            <div>
+              <h3 class="qx-pmodal-sec-title">📊 Radar de Estela & Rendimiento Olfativo</h3>
+              <p class="qx-radar-subtitle">Física de proyección molecular y longevidad en piel</p>
+            </div>
+            <button type="button" class="qx-btn-radar-compare" id="btn_open_radar_compare">
+              <span>⚔️ Comparar</span>
+            </button>
+          </div>
+
+          <!-- Radar SVG Container -->
+          <div class="qx-radar-stage" id="qx_radar_stage">
+            <svg id="qx_pmodal_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+            <div class="qx-radar-tooltip" id="qx_radar_tooltip" style="display:none;"></div>
+          </div>
+
+          <!-- 6 Tactical Metric Chips -->
+          <div class="qx-radar-chips-grid" id="qx_radar_chips_grid">
+            <div class="qx-radar-chip" data-axis="0">
+              <span class="qx-chip-icon">🚀</span>
+              <span class="qx-chip-label">Proyección</span>
+              <span class="qx-chip-val" id="qx_chip_proyeccion">8/10</span>
+            </div>
+            <div class="qx-radar-chip" data-axis="1">
+              <span class="qx-chip-icon">🌊</span>
+              <span class="qx-chip-label">Espectro</span>
+              <span class="qx-chip-val" id="qx_chip_espectro">Fresco</span>
+            </div>
+            <div class="qx-radar-chip" data-axis="2">
+              <span class="qx-chip-icon">👑</span>
+              <span class="qx-chip-label">Elogios</span>
+              <span class="qx-chip-val" id="qx_chip_elogios">94%</span>
+            </div>
+            <div class="qx-radar-chip" data-axis="3">
+              <span class="qx-chip-icon">⏳</span>
+              <span class="qx-chip-label">Longevidad</span>
+              <span class="qx-chip-val" id="qx_chip_longevidad">8.5h</span>
+            </div>
+            <div class="qx-radar-chip" data-axis="4">
+              <span class="qx-chip-icon">☀️</span>
+              <span class="qx-chip-label">Versatilidad</span>
+              <span class="qx-chip-val" id="qx_chip_versatilidad">90%</span>
+            </div>
+            <div class="qx-radar-chip" data-axis="5">
+              <span class="qx-chip-icon">🌡️</span>
+              <span class="qx-chip-label">Rango Térmico</span>
+              <span class="qx-chip-val" id="qx_chip_temperatura">18-38°C</span>
+            </div>
+          </div>
+
+          <!-- Live Weather Match Card -->
+          <div class="qx-weather-match-card" id="qx_weather_match_card">
+            <div class="qx-weather-card-header">
+              <div class="qx-weather-city-badge">
+                <span id="qx_weather_city_icon">☀️</span>
+                <span id="qx_weather_city_name">Guadalajara</span>
+                <span class="qx-weather-temp-badge" id="qx_weather_city_temp">28°C</span>
+              </div>
+              <button type="button" class="qx-btn-change-city" id="btn_change_weather_city">📍 Cambiar Ciudad</button>
+            </div>
+            <div class="qx-weather-match-body">
+              <div class="qx-weather-score-row">
+                <span class="qx-weather-score-label">Eficacia Climática Hoy:</span>
+                <span class="qx-weather-score-val" id="qx_weather_match_score">96%</span>
+              </div>
+              <div class="qx-weather-progress-track">
+                <div class="qx-weather-progress-fill" id="qx_weather_match_fill" style="width: 96%;"></div>
+              </div>
+              <p class="qx-weather-advice-text" id="qx_weather_advice_text">
+                🔥 <strong>Rendimiento Ideal Hoy:</strong> Las notas frescas proyectarán de forma óptima con la temperatura actual de tu ciudad.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- 3 Universal Satin Metric Bars -->
         <div class="qx-pmodal-section">
           <h3 class="qx-pmodal-sec-title">Métricas de Rendimiento</h3>
@@ -643,6 +720,45 @@ $tenant = StorefrontTenant::resolve();
         <div class="qx-companions-scroll" id="qx_layering_companions_list">
           <!-- Dynamically populated -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Comparador de Radares 1-vs-1 (Feature 3) -->
+  <div class="qx-radar-compare-backdrop" id="qx_radar_compare_backdrop"></div>
+  <div class="qx-radar-compare-modal" id="qx_radar_compare_modal" role="dialog" aria-modal="true" aria-labelledby="qx_compare_title">
+    <div class="qx-compare-modal-header">
+      <div class="qx-compare-modal-title" id="qx_compare_title">
+        <span>⚔️ Comparador de Estela & Rendimiento Olfativo</span>
+      </div>
+      <button type="button" class="qx-btn-compare-close" id="qx_compare_close">✕</button>
+    </div>
+    <div class="qx-compare-modal-body">
+      <div class="qx-compare-selectors-row">
+        <div class="qx-compare-pill base">
+          <span class="dot base"></span>
+          <span id="qx_compare_base_name">Perfume A</span>
+        </div>
+        <span class="qx-compare-vs">VS</span>
+        <div class="qx-compare-select-wrapper">
+          <select id="qx_compare_rival_select" class="qx-compare-select">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <div class="qx-compare-stage" id="qx_compare_stage">
+        <svg id="qx_compare_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+      </div>
+
+      <div class="qx-compare-delta-matrix" id="qx_compare_delta_matrix">
+        <!-- Dynamic Head-to-Head differences -->
+      </div>
+
+      <div class="qx-compare-actions">
+        <button type="button" class="qx-btn-buy-duo-compare" id="btn_buy_duo_from_compare">
+          <span>🎁 Comprar Ambos en Duo Pack (15% OFF)</span>
+        </button>
       </div>
     </div>
   </div>

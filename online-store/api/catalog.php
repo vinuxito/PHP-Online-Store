@@ -28,7 +28,8 @@ try {
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
                pa.RutaMiniatura as CoverMiniatura,
-               ps.FamiliaOlfativa, ps.AcordesPrincipales, ps.TieneDecant, ps.PrecioDecant, ps.AuraColor, ps.AuraParticulas
+               ps.FamiliaOlfativa, ps.AcordesPrincipales, ps.TieneDecant, ps.PrecioDecant, ps.AuraColor, ps.AuraParticulas,
+               ps.RadarProyeccion, ps.RadarLongevidad, ps.RadarElogios, ps.RadarVersatilidad, ps.RadarDulzorFrescura, ps.RadarTempMin, ps.RadarTempMax
         FROM productos p
         LEFT JOIN productos_archivos pa ON p.ProductoID = pa.ProductoID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1
         LEFT JOIN productos_sensorial ps ON p.ProductoID = ps.ProductoID AND p.EmisorID = ps.EmisorID
@@ -134,6 +135,16 @@ try {
         $family = $p['FamiliaOlfativa'] ?? '';
         $accords = json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: [];
 
+        $radar = [
+            'proyeccion'     => (int)($p['RadarProyeccion'] ?: 7),
+            'longevidad'     => (float)($p['RadarLongevidad'] ?: 8.0),
+            'elogios'        => (int)($p['RadarElogios'] ?: 85),
+            'versatilidad'   => (int)($p['RadarVersatilidad'] ?: 75),
+            'dulzorFrescura' => (int)($p['RadarDulzorFrescura'] ?? 0),
+            'tempMin'        => (int)($p['RadarTempMin'] ?: 15),
+            'tempMax'        => (int)($p['RadarTempMax'] ?: 30)
+        ];
+
         $products[] = [
             'id'           => $p['ProductoID'],
             'code'         => $p['noIdentificacion'] ?? '',
@@ -159,7 +170,8 @@ try {
             'auraParticles'=> $auraParticles,
             'autoIsolate'  => $autoIsolate,
             'family'       => $family,
-            'accords'      => $accords
+            'accords'      => $accords,
+            'radar'        => $radar
         ];
     }
 

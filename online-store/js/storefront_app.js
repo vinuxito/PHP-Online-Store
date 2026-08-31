@@ -136,9 +136,198 @@
 
   window.FloatingFlaconEngine = FloatingFlaconEngine;
 
+  // =========================================================================
+  // WEATHER ENGINE & THERMAL EVAPORATION ADVISOR (Feature 3)
+  // =========================================================================
+  class WeatherEngine {
+    constructor() {
+      this.cities = [
+        { name: 'Guadalajara', temp: 28, condition: 'Cálido y Despejado', icon: '☀️' },
+        { name: 'Ciudad de México', temp: 19, condition: 'Templado / Lluvia Ligera', icon: '⛅' },
+        { name: 'Monterrey', temp: 34, condition: 'Calor Intenso', icon: '🔥' },
+        { name: 'Cancún', temp: 31, condition: 'Bochorno Tropical', icon: '🌴' },
+        { name: 'Puebla', temp: 16, condition: 'Fresco y Húmedo', icon: '🧥' },
+        { name: 'Tijuana', temp: 22, condition: 'Brisa Costera', icon: '🌊' }
+      ];
+      this.currentCityIdx = 0;
+    }
+
+    getCurrentCity() {
+      return this.cities[this.currentCityIdx];
+    }
+
+    cycleNextCity() {
+      this.currentCityIdx = (this.currentCityIdx + 1) % this.cities.length;
+      return this.getCurrentCity();
+    }
+
+    setCityByName(name) {
+      const idx = this.cities.findIndex(c => c.name.toLowerCase().includes(name.toLowerCase()));
+      if (idx !== -1) {
+        this.currentCityIdx = idx;
+      }
+      return this.getCurrentCity();
+    }
+
+    calculateThermalMatch(radarData, currentTemp = null) {
+      const city = this.getCurrentCity();
+      const temp = currentTemp !== null ? currentTemp : city.temp;
+      const min = (radarData && radarData.tempMin) ? radarData.tempMin : 15;
+      const max = (radarData && radarData.tempMax) ? radarData.tempMax : 30;
+      const opt = (min + max) / 2;
+
+      const diff = Math.abs(temp - opt);
+      let matchScore = Math.round(Math.max(45, Math.min(100, 100 - Math.pow(diff / 14, 2) * 35)));
+
+      let advice = '';
+      if (matchScore >= 90) {
+        advice = `🔥 <strong>Rendimiento Ideal Hoy (${temp}°C):</strong> La temperatura actual de ${city.name} es perfecta para la evaporación de estas notas aromáticas. Proyección al 100%.`;
+      } else if (temp > max + 2) {
+        advice = `☀️ <strong>Día Caluroso (${temp}°C):</strong> Fragancia potente. Con el calor de ${city.name}, te recomendamos 2 atomizaciones discretas para no saturar.`;
+      } else if (temp < min - 2) {
+        advice = `❄️ <strong>Clima Fresco (${temp}°C):</strong> En días frescos las notas cítricas se perciben sutiles. Aplica 1 atomización extra en bufanda o solapa.`;
+      } else {
+        advice = `✨ <strong>Buen Rendimiento (${temp}°C):</strong> Balance equilibrado para el clima de ${city.name}. 3 a 4 atomizaciones durarán toda la jornada.`;
+      }
+
+      return {
+        city,
+        temp,
+        matchScore,
+        advice
+      };
+    }
+  }
+
+  // =========================================================================
+  // SCENT TRAIL RADAR ENGINE (Feature 3)
+  // =========================================================================
+  class ScentRadarEngine {
+    constructor() {
+      this.axes = [
+        { key: 'proyeccion', label: 'Proyección', icon: '🚀', min: 1, max: 10, unit: '/10', desc: 'Alcance olfativo: Distancia a la que se percibe tu aroma.' },
+        { key: 'dulzorFrescura', label: 'Espectro', icon: '🌊', min: -100, max: 100, unit: '', desc: 'Polaridad: De Cítrico/Acuático (-100) a Cálido/Vainilla (+100).' },
+        { key: 'elogios', label: 'Elogios', icon: '👑', min: 1, max: 100, unit: '%', desc: 'Probabilidad de recibir cumplidos en eventos y citas.' },
+        { key: 'longevidad', label: 'Longevidad', icon: '⏳', min: 3, max: 16, unit: 'h', desc: 'Horas reales de permanencia verificada en piel.' },
+        { key: 'versatilidad', label: 'Versatilidad', icon: '☀️', min: 1, max: 100, unit: '%', desc: 'Adaptabilidad para uso diario, oficina o noche.' },
+        { key: 'rangoTermico', label: 'Rango Térmico', icon: '🌡️', min: 10, max: 40, unit: '°C', desc: 'Temperatura ambiente ideal para máxima evaporación.' }
+      ];
+    }
+
+    normalizeValue(key, val, radarObj) {
+      if (key === 'proyeccion') {
+        return Math.max(0.1, Math.min(1.0, (val || 7) / 10));
+      }
+      if (key === 'dulzorFrescura') {
+        const v = typeof val === 'number' ? val : 0;
+        return Math.max(0.15, Math.min(1.0, (Math.abs(v) / 100) * 0.7 + 0.3));
+      }
+      if (key === 'elogios') {
+        return Math.max(0.1, Math.min(1.0, (val || 85) / 100));
+      }
+      if (key === 'longevidad') {
+        const h = val || 8.0;
+        return Math.max(0.15, Math.min(1.0, (Math.min(16, Math.max(3, h)) - 3) / 13));
+      }
+      if (key === 'versatilidad') {
+        return Math.max(0.1, Math.min(1.0, (val || 75) / 100));
+      }
+      if (key === 'rangoTermico') {
+        const min = radarObj ? radarObj.tempMin || 15 : 15;
+        const max = radarObj ? radarObj.tempMax || 30 : 30;
+        const span = max - min;
+        return Math.max(0.2, Math.min(1.0, span / 25));
+      }
+      return 0.7;
+    }
+
+    generateSvgMarkup(radarBase, radarRival = null, auraColor = 'cyan') {
+      const radius = 95;
+      const numAxes = 6;
+
+      // 1. Grid Polygons (25%, 50%, 75%, 100%)
+      let gridSvg = '';
+      [0.25, 0.50, 0.75, 1.0].forEach(level => {
+        const points = [];
+        for (let i = 0; i < numAxes; i++) {
+          const angle = (i * Math.PI / 3) - (Math.PI / 2);
+          const r = radius * level;
+          const x = (r * Math.cos(angle)).toFixed(1);
+          const y = (r * Math.sin(angle)).toFixed(1);
+          points.push(`${x},${y}`);
+        }
+        gridSvg += `<polygon class="qx-radar-grid-poly" points="${points.join(' ')}" />`;
+      });
+
+      // 2. Axis lines & Labels
+      let axesSvg = '';
+      const labelRadius = radius + 22;
+      for (let i = 0; i < numAxes; i++) {
+        const angle = (i * Math.PI / 3) - (Math.PI / 2);
+        const x = (radius * Math.cos(angle)).toFixed(1);
+        const y = (radius * Math.sin(angle)).toFixed(1);
+        const lx = (labelRadius * Math.cos(angle)).toFixed(1);
+        const ly = (labelRadius * Math.sin(angle)).toFixed(1);
+
+        axesSvg += `<line class="qx-radar-axis-line" x1="0" y1="0" x2="${x}" y2="${y}" />`;
+        axesSvg += `<text class="qx-radar-axis-label" x="${lx}" y="${ly}">${this.axes[i].icon} ${this.axes[i].label}</text>`;
+      }
+
+      // 3. Base Polygon & Nodes
+      const basePoints = [];
+      const baseNodes = [];
+      for (let i = 0; i < numAxes; i++) {
+        const key = this.axes[i].key;
+        const rawVal = (radarBase && radarBase[key] !== undefined) ? radarBase[key] : (key === 'rangoTermico' ? `${radarBase?.tempMin || 15}-${radarBase?.tempMax || 30}°C` : 0);
+        const norm = this.normalizeValue(key, rawVal, radarBase);
+        const angle = (i * Math.PI / 3) - (Math.PI / 2);
+        const r = radius * norm;
+        const x = (r * Math.cos(angle)).toFixed(1);
+        const y = (r * Math.sin(angle)).toFixed(1);
+        basePoints.push(`${x},${y}`);
+        baseNodes.push({ x, y, axisIdx: i, value: rawVal, desc: this.axes[i].desc, label: this.axes[i].label });
+      }
+
+      let polyBaseSvg = `<polygon class="qx-radar-poly-base" points="${basePoints.join(' ')}" />`;
+      let nodesSvg = '';
+      baseNodes.forEach(node => {
+        nodesSvg += `<circle class="qx-radar-node base" cx="${node.x}" cy="${node.y}" data-axis="${node.axisIdx}" data-label="${node.label}" data-desc="${node.desc}" />`;
+      });
+
+      // 4. Optional Rival Polygon (in Comparison Mode)
+      let rivalSvg = '';
+      if (radarRival) {
+        const rivalPoints = [];
+        for (let i = 0; i < numAxes; i++) {
+          const key = this.axes[i].key;
+          const rawVal = (radarRival && radarRival[key] !== undefined) ? radarRival[key] : (key === 'rangoTermico' ? `${radarRival?.tempMin || 15}-${radarRival?.tempMax || 30}°C` : 0);
+          const norm = this.normalizeValue(key, rawVal, radarRival);
+          const angle = (i * Math.PI / 3) - (Math.PI / 2);
+          const r = radius * norm;
+          const x = (r * Math.cos(angle)).toFixed(1);
+          const y = (r * Math.sin(angle)).toFixed(1);
+          rivalPoints.push(`${x},${y}`);
+        }
+        rivalSvg = `<polygon class="qx-radar-poly-rival" points="${rivalPoints.join(' ')}" />`;
+      }
+
+      return `
+        <g class="qx-radar-grid">${gridSvg}</g>
+        <g class="qx-radar-axes">${axesSvg}</g>
+        <g class="qx-radar-polys">${polyBaseSvg}${rivalSvg}</g>
+        <g class="qx-radar-nodes">${nodesSvg}</g>
+      `;
+    }
+  }
+
+  window.WeatherEngine = WeatherEngine;
+  window.ScentRadarEngine = ScentRadarEngine;
+
   class QuantixStorefront {
     constructor() {
       this.flaconEngine = new FloatingFlaconEngine();
+      this.weatherEngine = new WeatherEngine();
+      this.radarEngine = new ScentRadarEngine();
       this.tenant = null;
       this.products = [];
       this.filteredProducts = [];
@@ -537,6 +726,33 @@
       $('#qx_checkout_form').on('submit', function(e) {
         e.preventDefault();
         self.submitOrder();
+      });
+
+      // Feature 3: Radar Comparison & Weather Triggers
+      $('#btn_open_radar_compare').on('click', () => {
+        self.playHaptic('light');
+        self.openRadarCompareModal();
+      });
+      $('#qx_compare_close, #qx_radar_compare_backdrop').on('click', () => {
+        self.playHaptic('light');
+        self.closeRadarCompareModal();
+      });
+      $('#qx_compare_rival_select').on('change', function() {
+        self.playHaptic('light');
+        self.selectRadarRival($(this).val());
+      });
+      $('#btn_change_weather_city').on('click', function() {
+        self.playHaptic('light');
+        self.weatherEngine.cycleNextCity();
+        self.updateWeatherMatchDisplay();
+      });
+      $('#btn_buy_duo_from_compare').on('click', function() {
+        self.playHaptic('success');
+        if (self.compareBaseProduct && self.compareRivalProduct) {
+          self.closeRadarCompareModal();
+          self.closeProductModal(false);
+          self.openLayeringModal(self.compareBaseProduct, self.compareRivalProduct);
+        }
       });
 
       // Fiscal Intelligence & SPEI bindings
@@ -1136,6 +1352,9 @@
       // Render Adaptive Specs & Metric Bars
       this.renderAdaptiveSpecs(product);
 
+      // Render Scent Trail Radar & Live Weather (Feature 3)
+      this.renderProductRadarSection(product);
+
       // Set dynamic aura colors
       const auraColor = product.auraColor || 'cyan';
       const auraGlowMap = {
@@ -1715,6 +1934,173 @@
       }, 50);
     }
 
+    // =========================================================================
+    // FEATURE 3: RADAR OLFATIVO & LIVE WEATHER PROFILER METHODS
+    // =========================================================================
+    renderProductRadarSection(product) {
+      if (!product) return;
+      const radar = product.radar || {
+        proyeccion: 8,
+        longevidad: 8.5,
+        elogios: 94,
+        versatilidad: 90,
+        dulzorFrescura: -70,
+        tempMin: 18,
+        tempMax: 38
+      };
+
+      // 1. Generate & Insert SVG markup
+      const svgMarkup = this.radarEngine.generateSvgMarkup(radar, null, product.auraColor || 'cyan');
+      $('#qx_pmodal_radar_svg').html(svgMarkup);
+
+      // 2. Populate 6 Tactical Metric Chips
+      $('#qx_chip_proyeccion').text(`${radar.proyeccion || 7}/10`);
+      
+      const df = (radar.dulzorFrescura !== undefined) ? radar.dulzorFrescura : 0;
+      let dfText = 'Balanceado';
+      if (df <= -40) dfText = 'Cítrico / Marino';
+      else if (df < 0) dfText = 'Fresco';
+      else if (df >= 40) dfText = 'Gourmand / Dulce';
+      else if (df > 0) dfText = 'Cálido';
+      $('#qx_chip_espectro').text(dfText);
+
+      $('#qx_chip_elogios').text(`${radar.elogios || 85}%`);
+      $('#qx_chip_longevidad').text(`${radar.longevidad || 8.0}h`);
+      $('#qx_chip_versatilidad').text(`${radar.versatilidad || 75}%`);
+      $('#qx_chip_temperatura').text(`${radar.tempMin || 15}-${radar.tempMax || 30}°C`);
+
+      // 3. Update Weather Match Card
+      this.updateWeatherMatchDisplay(product);
+
+      // 4. Attach Node Hover Tooltips
+      const tooltip = $('#qx_radar_tooltip');
+      const stage = $('#qx_radar_stage');
+      $('#qx_pmodal_radar_svg .qx-radar-node').off('mouseenter mouseleave click').on('mouseenter click', function(e) {
+        const desc = $(this).attr('data-desc');
+        const label = $(this).attr('data-label');
+        tooltip.html(`<strong>${label}</strong><br>${desc}`).show();
+        const nodeX = parseFloat($(this).attr('cx'));
+        const nodeY = parseFloat($(this).attr('cy'));
+        const stageW = stage.width() || 340;
+        const stageH = stage.height() || 280;
+        const screenX = (nodeX / 320) * stageW + (stageW / 2);
+        const screenY = (nodeY / 300) * stageH + (stageH / 2);
+        tooltip.css({ left: `${screenX}px`, top: `${screenY}px` });
+      }).on('mouseleave', function() {
+        tooltip.hide();
+      });
+
+      // 5. Wire Chip Click Handlers
+      const self = this;
+      $('.qx-radar-chip').off('click').on('click', function() {
+        self.playHaptic('light');
+        const axisIdx = parseInt($(this).attr('data-axis'), 10);
+        const targetNode = $(`#qx_pmodal_radar_svg .qx-radar-node[data-axis="${axisIdx}"]`);
+        if (targetNode.length) {
+          targetNode.trigger('click');
+        }
+      });
+    }
+
+    updateWeatherMatchDisplay(product = null) {
+      const prod = product || this.activeProductModal;
+      if (!prod) return;
+      const radar = prod.radar || { tempMin: 18, tempMax: 38 };
+      const thermal = this.weatherEngine.calculateThermalMatch(radar);
+
+      $('#qx_weather_city_icon').text(thermal.city.icon);
+      $('#qx_weather_city_name').text(thermal.city.name);
+      $('#qx_weather_city_temp').text(`${thermal.temp}°C`);
+      $('#qx_weather_match_score').text(`${thermal.matchScore}%`);
+      $('#qx_weather_match_fill').css('width', `${thermal.matchScore}%`);
+      $('#qx_weather_advice_text').html(thermal.advice);
+    }
+
+    openRadarCompareModal(baseProduct = null) {
+      const base = baseProduct || this.activeProductModal || this.products[0];
+      if (!base) return;
+      this.compareBaseProduct = base;
+
+      $('#qx_compare_base_name').text(base.name);
+
+      // Populate rival select with all other products
+      const select = $('#qx_compare_rival_select').empty();
+      const rivals = this.products.filter(p => p.id !== base.id);
+      
+      rivals.forEach((p, idx) => {
+        select.append(`<option value="${p.id}" ${idx === 0 ? 'selected' : ''}>${this.esc(p.name)}</option>`);
+      });
+
+      const initialRivalId = rivals.length ? rivals[0].id : null;
+      if (initialRivalId) {
+        this.selectRadarRival(initialRivalId);
+      }
+
+      $('#qx_radar_compare_backdrop').addClass('active');
+      $('#qx_radar_compare_modal').addClass('active');
+    }
+
+    selectRadarRival(rivalId) {
+      const rival = this.products.find(p => p.id === rivalId);
+      if (!rival || !this.compareBaseProduct) return;
+      this.compareRivalProduct = rival;
+
+      const baseRadar = this.compareBaseProduct.radar || { proyeccion: 8, longevidad: 8.5, elogios: 94, versatilidad: 90, dulzorFrescura: -70, tempMin: 18, tempMax: 38 };
+      const rivalRadar = rival.radar || { proyeccion: 9, longevidad: 11.5, elogios: 96, versatilidad: 70, dulzorFrescura: 80, tempMin: 10, tempMax: 23 };
+
+      // Render dual radar SVG
+      const svgMarkup = this.radarEngine.generateSvgMarkup(baseRadar, rivalRadar, this.compareBaseProduct.auraColor || 'cyan');
+      $('#qx_compare_radar_svg').html(svgMarkup);
+
+      // Populate delta comparison matrix
+      const matrix = $('#qx_compare_delta_matrix').empty();
+
+      // Proyección
+      const projDiff = (rivalRadar.proyeccion || 7) - (baseRadar.proyeccion || 7);
+      let projText = projDiff === 0 ? 'Misma proyección' : (projDiff > 0 ? `+${projDiff} pts superior en ${rival.name}` : `+${Math.abs(projDiff)} pts superior en ${this.compareBaseProduct.name}`);
+      matrix.append(`
+        <div class="qx-delta-row">
+          <span class="qx-delta-metric-title">🚀 Proyección / Estela</span>
+          <span class="qx-delta-comparison ${projDiff > 0 ? 'qx-delta-win-rival' : (projDiff < 0 ? 'qx-delta-win-base' : '')}">${projText}</span>
+        </div>
+      `);
+
+      // Longevidad
+      const longDiff = ((rivalRadar.longevidad || 8.0) - (baseRadar.longevidad || 8.0)).toFixed(1);
+      let longText = Math.abs(parseFloat(longDiff)) < 0.1 ? 'Misma fijación' : (parseFloat(longDiff) > 0 ? `+${longDiff}h más fijación en ${rival.name}` : `+${Math.abs(parseFloat(longDiff))}h más fijación en ${this.compareBaseProduct.name}`);
+      matrix.append(`
+        <div class="qx-delta-row">
+          <span class="qx-delta-metric-title">⏳ Longevidad en Piel</span>
+          <span class="qx-delta-comparison ${parseFloat(longDiff) > 0 ? 'qx-delta-win-rival' : (parseFloat(longDiff) < 0 ? 'qx-delta-win-base' : '')}">${longText}</span>
+        </div>
+      `);
+
+      // Elogios
+      const elogDiff = (rivalRadar.elogios || 85) - (baseRadar.elogios || 85);
+      let elogText = elogDiff === 0 ? 'Afinidad idéntica' : (elogDiff > 0 ? `+${elogDiff}% en ${rival.name}` : `+${Math.abs(elogDiff)}% en ${this.compareBaseProduct.name}`);
+      matrix.append(`
+        <div class="qx-delta-row">
+          <span class="qx-delta-metric-title">👑 Factor de Elogios</span>
+          <span class="qx-delta-comparison ${elogDiff > 0 ? 'qx-delta-win-rival' : (elogDiff < 0 ? 'qx-delta-win-base' : '')}">${elogText}</span>
+        </div>
+      `);
+
+      // Versatilidad
+      const versDiff = (rivalRadar.versatilidad || 75) - (baseRadar.versatilidad || 75);
+      let versText = versDiff === 0 ? 'Misma versatilidad' : (versDiff > 0 ? `+${versDiff}% en ${rival.name}` : `+${Math.abs(versDiff)}% en ${this.compareBaseProduct.name}`);
+      matrix.append(`
+        <div class="qx-delta-row">
+          <span class="qx-delta-metric-title">☀️ Versatilidad</span>
+          <span class="qx-delta-comparison ${versDiff > 0 ? 'qx-delta-win-rival' : (versDiff < 0 ? 'qx-delta-win-base' : '')}">${versText}</span>
+        </div>
+      `);
+    }
+
+    closeRadarCompareModal() {
+      $('#qx_radar_compare_backdrop').removeClass('active');
+      $('#qx_radar_compare_modal').removeClass('active');
+    }
+
     bindFiscalIntelligence() {
       const self = this;
       const rfcInput = $('#qx_cfdi_rfc');
@@ -2203,6 +2589,10 @@
       const container = $('#qx_somm_results').empty();
 
       matches.forEach((m) => {
+        const prod = self.products.find(p => p.id === m.id);
+        const radar = prod ? prod.radar : null;
+        const thermal = radar ? self.weatherEngine.calculateThermalMatch(radar) : null;
+        const weatherBadge = thermal ? `<span style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700;">${thermal.city.icon} ${thermal.matchScore}% Clima ${thermal.city.name}</span>` : '';
         const accordsBadges = (m.accords || []).slice(0, 3).map(a => `<span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:999px; font-size:11px; color:#cbd5e1;">${self.esc(a)}</span>`).join(' ');
 
         const card = $(`
@@ -2211,8 +2601,9 @@
               <img class="qx-somm-card-thumb" src="${self.esc(m.image)}" alt="${self.esc(m.name)}" loading="lazy">
             </div>
             <div class="qx-somm-card-main">
-              <div class="qx-somm-card-top">
+              <div class="qx-somm-card-top" style="flex-wrap:wrap; gap:6px;">
                 <span class="qx-somm-card-family">💎 ${self.esc(m.family)}</span>
+                ${weatherBadge}
                 <span class="qx-somm-affinity-badge">✨ ${m.affinity}% Afinidad</span>
               </div>
               <h3 class="qx-somm-card-title">${self.esc(m.name)}</h3>
