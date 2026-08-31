@@ -27,9 +27,11 @@ try {
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
-               pa.RutaMiniatura as CoverMiniatura
+               pa.RutaMiniatura as CoverMiniatura,
+               ps.FamiliaOlfativa, ps.AcordesPrincipales, ps.TieneDecant, ps.PrecioDecant, ps.AuraColor, ps.AuraParticulas
         FROM productos p
         LEFT JOIN productos_archivos pa ON p.ProductoID = pa.ProductoID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1
+        LEFT JOIN productos_sensorial ps ON p.ProductoID = ps.ProductoID AND p.EmisorID = ps.EmisorID
         WHERE p.EmisorID = ? 
           AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL)
           AND (p.TiendaInicio IS NULL OR p.TiendaInicio <= NOW())
@@ -124,6 +126,13 @@ try {
 
         $cleanDesc = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '&nbsp;'], [' ', ' ', ' ', ' '], $p['descripcion'] ?? '')));
 
+        $hasDecant = ($p['TieneDecant'] ?? 'SI') !== 'NO';
+        $decantPrice = !empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2);
+        $auraColor = !empty($p['AuraColor']) ? $p['AuraColor'] : 'cyan';
+        $auraParticles = !empty($p['AuraParticulas']) ? $p['AuraParticulas'] : 'breeze';
+        $family = $p['FamiliaOlfativa'] ?? '';
+        $accords = json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: [];
+
         $products[] = [
             'id'           => $p['ProductoID'],
             'code'         => $p['noIdentificacion'] ?? '',
@@ -142,7 +151,13 @@ try {
             'photos'       => $fotos,
             'docs'         => $docs,
             'storeStart'   => $p['TiendaInicio'] ?? null,
-            'storeEnd'     => $p['TiendaFin'] ?? null
+            'storeEnd'     => $p['TiendaFin'] ?? null,
+            'hasDecant'    => $hasDecant,
+            'decantPrice'  => $decantPrice,
+            'auraColor'    => $auraColor,
+            'auraParticles'=> $auraParticles,
+            'family'       => $family,
+            'accords'      => $accords
         ];
     }
 

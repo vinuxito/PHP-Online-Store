@@ -47,6 +47,7 @@
 
     init() {
       this.bindGlobalEvents();
+      this.initSensoryAtelier();
       this.loadCatalog();
       this.renderCartUI();
       
@@ -289,13 +290,35 @@
         $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text(self.pmodalQty);
       });
 
+      // Format Selector in Product Modal
+      $('#qx_format_full').on('click', function() {
+        self.playHaptic('light');
+        self.setModalFormat('full');
+      });
+
+      $('#qx_format_decant').on('click', function() {
+        self.playHaptic('light');
+        self.setModalFormat('decant');
+      });
+
+      // Smart Upsell Add in Cart Drawer
+      $('#qx_btn_upsell_add').on('click', function() {
+        self.playHaptic('success');
+        const prodId = $(this).data('prod-id');
+        if (prodId) {
+          self.addToCart(prodId, 1, null, 'decant');
+          self.showToast('🧪 ¡Decant de viaje agregado a tu bolsa!');
+        }
+      });
+
       $('#qx_pmodal_btn_add').on('click', function() {
         self.playHaptic('success');
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
+          const format = self.activeProductFormat || 'full';
           self.closeProductModal(false);
-          self.addToCart(prod, qty, $('#qx_pmodal_main_img'));
+          self.addToCart(prod, qty, $('#qx_pmodal_main_img'), format);
         }
       });
 
@@ -304,8 +327,9 @@
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
           const qty = self.pmodalQty || 1;
+          const format = self.activeProductFormat || 'full';
           self.closeProductModal(false);
-          self.addToCart(prod, qty);
+          self.addToCart(prod, qty, null, format);
           self.openCheckout();
         }
       });
@@ -533,31 +557,40 @@
       return card;
     }
 
-    addToCart(productOrId, qty = 1, originEl = null) {
+    addToCart(productOrId, qty = 1, originEl = null, format = 'full') {
       let product = productOrId;
       if (typeof productOrId === 'string' || typeof productOrId === 'number') {
         product = this.products.find(p => p.id == productOrId);
       }
       if (!product) return;
 
-      const existing = this.cart.items.find(item => item.id === product.id);
+      const isDecant = format === 'decant';
+      const itemId = isDecant ? `${product.id}__decant` : product.id;
+      const itemName = isDecant ? `${product.name} (Decant 5ml)` : product.name;
+      const itemPriceWithTax = isDecant ? (product.decantPrice || Math.round(product.priceWithTax * 0.18)) : product.priceWithTax;
+      const vatRate = product.vatRate || 16;
+      const unitPrice = itemPriceWithTax / (1 + vatRate / 100);
+
+      const existing = this.cart.items.find(item => item.id === itemId);
       if (existing) {
         existing.qty += qty;
       } else {
         this.cart.items.push({
-          id: product.id,
+          id: itemId,
+          baseId: product.id,
           code: product.code,
-          sku: product.sku,
-          name: product.name,
+          sku: isDecant ? (product.sku ? `${product.sku}-DEC5` : 'DEC-5ML') : product.sku,
+          name: itemName,
           thumb: product.cover,
-          unitPrice: product.unitPrice,
-          vatRate: product.vatRate,
-          priceWithTax: product.priceWithTax,
+          unitPrice: unitPrice,
+          vatRate: vatRate,
+          priceWithTax: itemPriceWithTax,
+          isDecant: isDecant,
           qty: qty
         });
       }
       this.saveCart();
-      this.showToast(`✔ ${product.name} agregado al carrito`);
+      this.showToast(`✔ ${itemName} agregado a la bolsa`);
       if (originEl && originEl.length) {
         this.animateFlyToCart(originEl, product.cover);
       } else {
@@ -597,6 +630,7 @@
             <div style="font-size:13px">Explora el catálogo y agrega tus productos favoritos.</div>
           </div>
         `);
+        $('#qx_cart_upsell').hide();
         $('#qx_cart_subtotal').text('$ 0.00');
         $('#qx_cart_iva').text('$ 0.00');
         $('#qx_cart_total').text('$ 0.00');
@@ -614,11 +648,13 @@
         subtotal += itemSubtotal;
         totalIva += itemIva;
 
+        const decantBadge = item.isDecant ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:rgba(236,72,153,0.18); color:#f472b6; border:1px solid rgba(236,72,153,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Decant 5ml</span>` : '';
+
         const row = $(`
           <div class="qx-cart-item">
             <img class="qx-cart-item-img" src="${self.esc(item.thumb)}" alt="">
             <div class="qx-cart-item-info">
-              <div class="qx-cart-item-name">${self.esc(item.name)}</div>
+              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge}</div>
               <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
             </div>
             <div class="qx-cart-stepper">
@@ -633,6 +669,25 @@
         row.find('.btn-inc').on('click', () => { self.playHaptic('light'); self.updateCartItemQty(item.id, 1); });
         list.append(row);
       });
+
+      // Render Smart Decant Upsell if applicable
+      const fullBottleItem = this.cart.items.find(i => !i.isDecant);
+      if (fullBottleItem) {
+        const fullProd = this.products.find(p => p.id === (fullBottleItem.baseId || fullBottleItem.id));
+        const hasDecantInCart = this.cart.items.some(i => i.isDecant && (i.baseId === fullProd?.id || i.id === `${fullProd?.id}__decant`));
+        if (fullProd && fullProd.hasDecant && !hasDecantInCart) {
+          const decPrice = fullProd.decantPrice || Math.round(fullProd.priceWithTax * 0.18);
+          $('#qx_upsell_img').attr('src', fullProd.cover);
+          $('#qx_upsell_name').text(`${fullProd.name} (5ml)`);
+          $('#qx_upsell_price').text(`+ $ ${self.formatMoney(decPrice)} MXN`);
+          $('#qx_btn_upsell_add').data('prod-id', fullProd.id);
+          $('#qx_cart_upsell').show();
+        } else {
+          $('#qx_cart_upsell').hide();
+        }
+      } else {
+        $('#qx_cart_upsell').hide();
+      }
 
       const grandTotal = subtotal + totalIva;
       $('#qx_cart_subtotal').text(`$ ${self.formatMoney(subtotal)}`);
@@ -849,6 +904,23 @@
       // Quantity reset
       $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text('1');
 
+      // Reset & Populate Format Selector (Full Bottle vs Decant)
+      this.activeProductFormat = 'full';
+      $('#qx_format_full').addClass('active');
+      $('#qx_format_decant').removeClass('active');
+      $('#qx_format_price_full').text(`$ ${self.formatMoney(product.priceWithTax)}`);
+      
+      const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+      $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
+
+      if (product.hasDecant !== false) {
+        $('#qx_format_selector').show();
+      } else {
+        $('#qx_format_selector').hide();
+      }
+      $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
+      $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
+
       // WhatsApp concierge button
       if (self.tenant && self.tenant.showWhatsapp && self.tenant.whatsappPhone) {
         const rawPhone = String(self.tenant.whatsappPhone).replace(/[^0-9]/g, '');
@@ -863,12 +935,40 @@
       // Render Adaptive Specs & Metric Bars
       this.renderAdaptiveSpecs(product);
 
+      // Start Scent Aura Particle Canvas
+      this.startScentAura(product.auraColor || 'cyan', product.auraParticles || 'breeze');
+
       // Open Modal
       $('#qx_product_modal_backdrop').addClass('active');
       $('#qx_product_modal').addClass('active');
     }
 
+    setModalFormat(format) {
+      if (!this.activeProductModal) return;
+      this.activeProductFormat = format;
+      const product = this.activeProductModal;
+      const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+
+      if (format === 'decant') {
+        $('#qx_format_decant').addClass('active');
+        $('#qx_format_full').removeClass('active');
+        $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(decPrice)}`);
+        $('#qx_pmodal_btn_add span').text('🧪 Agregar Decant (5ml)');
+        $('#qx_pmodal_btn_buy span').text('⚡ Comprar Decant Ahora');
+      } else {
+        $('#qx_format_full').addClass('active');
+        $('#qx_format_decant').removeClass('active');
+        $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(product.priceWithTax)}`);
+        $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
+        $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
+      }
+    }
+
     closeProductModal(syncHistory = true) {
+      this.stopScentAura();
+      $('#qx_pmodal_swipe_track').css({ '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
+      $('#qx_pmodal_glass_sheen').css('--sheen-x', '-120%');
+
       $('#qx_product_modal_backdrop').removeClass('active');
       $('#qx_product_modal').removeClass('active');
       this.activeProductModal = null;
@@ -1943,6 +2043,164 @@
 
         container.append(card);
       });
+    }
+
+    initSensoryAtelier() {
+      const self = this;
+      const stage = $('#qx_pmodal_stage');
+      const target = $('#qx_pmodal_swipe_track');
+      const sheen = $('#qx_pmodal_glass_sheen');
+
+      // Mousemove parallax for desktop
+      stage.on('mousemove', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+
+        const rx = ((y - cy) / cy) * -12;
+        const ry = ((x - cx) / cx) * 14;
+        const sheenX = ((x / rect.width) * 200) - 50;
+
+        target.css({
+          '--tilt-rx': `${rx.toFixed(2)}deg`,
+          '--tilt-ry': `${ry.toFixed(2)}deg`
+        });
+        sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
+      });
+
+      stage.on('mouseleave', function() {
+        target.css({
+          '--tilt-rx': '0deg',
+          '--tilt-ry': '0deg'
+        });
+        sheen.css('--sheen-x', '-120%');
+      });
+
+      // Touchmove for mobile 3D tilt
+      stage.on('touchmove', function(e) {
+        if (!e.touches || !e.touches[0]) return;
+        const rect = this.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+
+        const rx = ((y - cy) / cy) * -10;
+        const ry = ((x - cx) / cx) * 12;
+        const sheenX = ((x / rect.width) * 200) - 50;
+
+        target.css({
+          '--tilt-rx': `${rx.toFixed(2)}deg`,
+          '--tilt-ry': `${ry.toFixed(2)}deg`
+        });
+        sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
+      });
+
+      stage.on('touchend', function() {
+        target.css({
+          '--tilt-rx': '0deg',
+          '--tilt-ry': '0deg'
+        });
+        sheen.css('--sheen-x', '-120%');
+      });
+
+      // Mobile DeviceOrientation Gyroscope
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', function(e) {
+          if (!self.activeProductModal) return;
+          const gamma = e.gamma || 0; // Left-Right [-90,90]
+          const beta = e.beta || 0;   // Front-Back [-180,180]
+
+          const clampedRy = Math.max(-18, Math.min(18, gamma * 0.4));
+          const clampedRx = Math.max(-14, Math.min(14, (beta - 45) * 0.3));
+          const sheenX = ((gamma + 45) / 90) * 150 - 25;
+
+          target.css({
+            '--tilt-rx': `${clampedRx.toFixed(2)}deg`,
+            '--tilt-ry': `${clampedRy.toFixed(2)}deg`
+          });
+          sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
+        }, true);
+      }
+    }
+
+    startScentAura(colorName = 'cyan', particleType = 'breeze') {
+      const canvas = document.getElementById('qx_pmodal_aura_canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width || 380;
+      canvas.height = rect.height || 420;
+
+      const colorPalette = {
+        cyan: ['#38bdf8', '#06b6d4', '#e0f2fe'],
+        gold: ['#fbbf24', '#f59e0b', '#fef3c7'],
+        amber: ['#f97316', '#d97706', '#ffedd5'],
+        emerald: ['#34d399', '#10b981', '#d1fae5'],
+        rose: ['#f472b6', '#ec4899', '#fce7f3'],
+        violet: ['#a78bfa', '#8b5cf6', '#ede9fe']
+      }[colorName] || ['#38bdf8', '#06b6d4', '#e0f2fe'];
+
+      this.stopScentAura();
+      this.auraParticles = [];
+      const count = 30;
+
+      for (let i = 0; i < count; i++) {
+        this.auraParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2.2 + 1.0,
+          color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -(Math.random() * 0.7 + 0.3),
+          alpha: Math.random() * 0.7 + 0.2,
+          decay: Math.random() * 0.005 + 0.003
+        });
+      }
+
+      const self = this;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        self.auraParticles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+
+          if (p.alpha <= 0 || p.y < -10 || p.x < -10 || p.x > canvas.width + 10) {
+            p.x = Math.random() * canvas.width;
+            p.y = canvas.height + 5;
+            p.alpha = Math.random() * 0.7 + 0.3;
+            p.radius = Math.random() * 2.2 + 1.0;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        self.auraAnimId = requestAnimationFrame(animate);
+      }
+
+      this.auraAnimId = requestAnimationFrame(animate);
+    }
+
+    stopScentAura() {
+      if (this.auraAnimId) {
+        cancelAnimationFrame(this.auraAnimId);
+        this.auraAnimId = null;
+      }
     }
 
     esc(str) {

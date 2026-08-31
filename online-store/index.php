@@ -131,6 +131,22 @@ $tenant = StorefrontTenant::resolve();
 
     <div class="qx-cart-list" id="qx_cart_list"></div>
 
+    <!-- Sensory Atelier: Smart Decant Upsell Card -->
+    <div class="qx-cart-upsell" id="qx_cart_upsell" style="display:none;">
+      <div class="qx-upsell-header">
+        <span class="qx-upsell-badge">🧪 Cata & Viaje</span>
+        <span class="qx-upsell-title">Descubre el Decant de Bolsillo (5ml)</span>
+      </div>
+      <div class="qx-upsell-body">
+        <img class="qx-upsell-img" id="qx_upsell_img" src="" alt="Decant Muestra">
+        <div class="qx-upsell-details">
+          <div class="qx-upsell-name" id="qx_upsell_name">Decant Atomizador 5ml</div>
+          <div class="qx-upsell-price" id="qx_upsell_price">+ $ 150.00 MXN</div>
+        </div>
+        <button type="button" class="qx-btn-upsell-add" id="qx_btn_upsell_add">+ Agregar</button>
+      </div>
+    </div>
+
     <div class="qx-cart-footer">
       <div class="qx-summary-row">
         <span>Subtotal</span>
@@ -296,13 +312,16 @@ $tenant = StorefrontTenant::resolve();
     </div>
     
     <div class="qx-pmodal-layout">
-      <!-- Left Column: Gallery with Touch-Swipeable Track & Dots -->
+      <!-- Left Column: Gallery with Touch-Swipeable Track, Scent Aura Canvas & 3D Tilt -->
       <div class="qx-pmodal-gallery">
-        <div class="qx-pmodal-stage" id="qx_pmodal_stage">
-          <div class="qx-pmodal-swipe-track" id="qx_pmodal_swipe_track">
-            <img id="qx_pmodal_main_img" src="" alt="Vista previa del producto">
+        <div class="qx-pmodal-stage qx-tilt-container" id="qx_pmodal_stage">
+          <canvas class="qx-aura-canvas" id="qx_pmodal_aura_canvas"></canvas>
+          <div class="qx-pmodal-swipe-track qx-tilt-target" id="qx_pmodal_swipe_track">
+            <img id="qx_pmodal_main_img" class="qx-tilt-img" src="" alt="Vista previa del producto">
           </div>
+          <div class="qx-glass-sheen" id="qx_pmodal_glass_sheen"></div>
           <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Edición Destacada</span>
+          <div class="qx-tilt-hint" id="qx_tilt_hint"><span>✨ Inclina o mueve para explorar en 3D</span></div>
         </div>
         <!-- Swipe Pagination Dots -->
         <div class="qx-pmodal-dots" id="qx_pmodal_dots"></div>
@@ -328,6 +347,26 @@ $tenant = StorefrontTenant::resolve();
             <span class="qx-pmodal-pill tax">✔ IVA 16% Incluido</span>
             <span class="qx-pmodal-pill cfdi">⚡ Facturación CFDI 4.0</span>
             <span class="qx-pmodal-pill stock" id="qx_pmodal_stock">📦 En Existencia</span>
+          </div>
+        </div>
+
+        <!-- Sensory Atelier: Format Selector (100ml Bottle vs 5ml Decant) -->
+        <div class="qx-format-selector" id="qx_format_selector">
+          <div class="qx-format-header">
+            <span class="qx-format-title">✨ Selecciona tu Formato</span>
+            <span class="qx-format-sub">Prueba antes de abrir o llévate el frasco de autor</span>
+          </div>
+          <div class="qx-format-grid">
+            <button type="button" class="qx-format-card active" id="qx_format_full" data-format="full">
+              <div class="qx-format-card-badge">Tamaño Original</div>
+              <div class="qx-format-card-title">🛍️ Frasco Completo (100ml)</div>
+              <div class="qx-format-card-price" id="qx_format_price_full">$ 0.00</div>
+            </button>
+            <button type="button" class="qx-format-card" id="qx_format_decant" data-format="decant">
+              <div class="qx-format-card-badge qx-badge-decant">🧪 Muestra de Cata</div>
+              <div class="qx-format-card-title">Decant Atomizador (5ml)</div>
+              <div class="qx-format-card-price" id="qx_format_price_decant">$ 180.00</div>
+            </button>
           </div>
         </div>
 
