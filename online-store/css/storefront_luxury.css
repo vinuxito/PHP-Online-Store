@@ -6924,9 +6924,30 @@ body {
   animation: qxPulse 2s infinite ease-in-out;
 }
 
+.qx-agenda-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.qx-agenda-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
 .qx-agenda-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
   max-width: 960px;
-  width: 94%;
+  width: 94vw;
   max-height: 90vh;
   overflow-y: auto;
   background: radial-gradient(circle at top right, #1f1627 0%, #0c0f18 100%);
@@ -6934,6 +6955,41 @@ body {
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.15);
   border-radius: 24px;
   padding: 28px;
+  z-index: 10001;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.qx-agenda-modal.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.qx-agenda-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.qx-agenda-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+  transform: rotate(90deg);
 }
 
 .qx-agenda-header {
@@ -6990,17 +7046,24 @@ body {
   gap: 8px;
   padding: 10px 8px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.qx-astep-item:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .qx-astep-item.active {
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(245, 158, 11, 0.18);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
 }
 
 .qx-astep-num {

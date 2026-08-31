@@ -14,7 +14,7 @@ $tenant = StorefrontTenant::resolve();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($tenant->brandName); ?> — Boutique Oficial</title>
   <meta name="description" content="<?php echo htmlspecialchars($tenant->description); ?>">
-  <link rel="stylesheet" href="css/storefront_luxury.css?v=20260830_01">
+  <link rel="stylesheet" href="css/storefront_luxury.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_luxury.css'); ?>">
   <style>
     :root {
       --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
@@ -1308,8 +1308,8 @@ $tenant = StorefrontTenant::resolve();
   </div>
 
   <!-- Feature 8: The Royal Concierge Agenda & Haute Parfumerie Atelier Booking Suite -->
-  <div class="qx-modal-backdrop" id="qx_agenda_backdrop"></div>
-  <div class="qx-modal qx-agenda-modal" id="qx_agenda_modal">
+  <div class="qx-agenda-backdrop" id="qx_agenda_backdrop"></div>
+  <div class="qx-agenda-modal" id="qx_agenda_modal">
     <div class="qx-agenda-container">
       <!-- Modal Header -->
       <div class="qx-agenda-header">
@@ -1320,7 +1320,7 @@ $tenant = StorefrontTenant::resolve();
             <h2 class="qx-agenda-title">The Royal Concierge Agenda & Atelier Booking</h2>
           </div>
         </div>
-        <button type="button" class="qx-modal-close" id="qx_agenda_close" aria-label="Cerrar">&times;</button>
+        <button type="button" class="qx-agenda-close" id="qx_agenda_close" aria-label="Cerrar">&times;</button>
       </div>
 
       <!-- Stepper Navigation Rail -->
@@ -1647,6 +1647,6 @@ $tenant = StorefrontTenant::resolve();
     </button>
   </nav>
 
-  <script src="js/storefront_app.js?v=20260831_01"></script>
+  <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
 </body>
 </html>
