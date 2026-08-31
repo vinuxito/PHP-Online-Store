@@ -69,6 +69,10 @@ $tenant = StorefrontTenant::resolve();
       </div>
 
       <div class="qx-nav-actions">
+        <button type="button" class="qx-layering-nav-btn" id="qx_btn_nav_layering" title="Atelier de Alquimia de Capas & Layering">
+          <span class="qx-layering-sparkle">🧪</span>
+          <span>Alquimia</span>
+        </button>
         <button type="button" class="qx-somm-nav-btn" id="qx_btn_sommelier_trigger" title="Asesor Sensorial Aura AI Sommelier">
           <span class="qx-somm-sparkle">✨</span>
           <span>Aura Sommelier</span>
@@ -433,6 +437,11 @@ $tenant = StorefrontTenant::resolve();
             </button>
           </div>
 
+          <!-- Layering Alchemy Trigger Button -->
+          <button type="button" class="qx-btn-pmodal-layering" id="qx_pmodal_btn_layering">
+            <span>🧪 Probar Alquimia de Capas (Layering Studio)</span>
+          </button>
+
           <!-- VIP WhatsApp inquiry button -->
           <a href="#" target="_blank" class="qx-btn-pmodal-wa" id="qx_pmodal_btn_wa" style="display:none;">
             <span>💬</span>
@@ -519,6 +528,120 @@ $tenant = StorefrontTenant::resolve();
           <div style="font-size:36px; margin-bottom:10px;">✨</div>
           <div style="font-size:15px; font-weight:700; color:#fff;">Escribe o selecciona una ocasión</div>
           <div style="font-size:13px; margin-top:4px;">Tu Sommelier personal analizará la pirámide olfativa y estela de cada pieza.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- The Fragrance Wardrobe & Layering Alchemy Modal (Feature 2) -->
+  <div class="qx-layering-backdrop" id="qx_layering_backdrop"></div>
+  <div class="qx-layering-modal" id="qx_layering_modal" role="dialog" aria-modal="true" aria-labelledby="qx_layering_title">
+    <div class="qx-layering-header">
+      <div class="qx-layering-badge"><span>🧪</span> Atelier de Alquimia & Layering</div>
+      <h2 class="qx-layering-title" id="qx_layering_title">Alquimia de Capas</h2>
+      <p class="qx-layering-subtitle">Diseña tu firma olfativa única combinando dos fragancias complementarias.</p>
+      <button type="button" class="qx-layering-close" id="qx_layering_close" aria-label="Cerrar Alquimia">&times;</button>
+    </div>
+
+    <div class="qx-layering-body">
+      <!-- Dual Flacons Interactive Stage -->
+      <div class="qx-layering-crucible">
+        <canvas class="qx-fusion-canvas" id="qx_layering_fusion_canvas"></canvas>
+        
+        <!-- Base Bottle Card (Left) -->
+        <div class="qx-flacon-card base" id="qx_layering_base_card">
+          <div class="qx-flacon-role">🍾 Fragancia Base (Fijación)</div>
+          <div class="qx-flacon-thumb-wrap">
+            <img id="qx_base_img" class="qx-flacon-thumb" src="" alt="Fragancia Base">
+          </div>
+          <div class="qx-flacon-name" id="qx_base_name">Selecciona Base</div>
+          <div class="qx-flacon-family" id="qx_base_family">Familia Olfativa</div>
+          <div class="qx-flacon-price" id="qx_base_price">$ 0.00</div>
+        </div>
+
+        <!-- Swap / Fusion Center Node -->
+        <div class="qx-crucible-center">
+          <button type="button" class="qx-btn-swap-flacons" id="qx_btn_swap_layering" title="Intercambiar roles Base ⇄ Acento">
+            <span>⇄</span>
+          </button>
+          <div class="qx-fusion-orb">⚡</div>
+        </div>
+
+        <!-- Accent Bottle Card (Right) -->
+        <div class="qx-flacon-card accent" id="qx_layering_accent_card">
+          <div class="qx-flacon-role">✨ Fragancia Acento (Salida)</div>
+          <div class="qx-flacon-thumb-wrap">
+            <img id="qx_accent_img" class="qx-flacon-thumb" src="" alt="Fragancia Acento">
+          </div>
+          <div class="qx-flacon-name" id="qx_accent_name">Selecciona Acento</div>
+          <div class="qx-flacon-family" id="qx_accent_family">Familia Olfativa</div>
+          <div class="qx-flacon-price" id="qx_accent_price">$ 0.00</div>
+        </div>
+      </div>
+
+      <!-- Synergy Results Panel -->
+      <div class="qx-layering-synergy-panel" id="qx_layering_synergy_panel">
+        <div class="qx-synergy-top-row">
+          <div class="qx-synergy-score-wrap">
+            <div class="qx-synergy-score-val" id="qx_layering_score_val">96%</div>
+            <div class="qx-synergy-score-lbl">Sinergia Alquímica</div>
+          </div>
+          <div class="qx-synergy-meta">
+            <h3 class="qx-synergy-type" id="qx_layering_synergy_type">Contraste Magisterial</h3>
+            <p class="qx-synergy-desc" id="qx_layering_synergy_desc">Cálida fijación de fondo realzada con acordes frescos de alta proyección.</p>
+            <div class="qx-synergy-tags">
+              <span class="qx-tag-item" id="qx_layering_occasion">🌙 Noches de Gala & Citas</span>
+              <span class="qx-tag-item" id="qx_layering_longevity">⏱️ 12.0 Horas de Fijación</span>
+              <span class="qx-tag-item" id="qx_layering_sillage">🔥 Modo Bestia (Nivel 4)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hybrid Olfactory Pyramid -->
+        <div class="qx-hybrid-pyramid-box">
+          <h4 class="qx-pyramid-title">Pirámide Olfativa Resultante</h4>
+          <div class="qx-pyramid-levels">
+            <div class="qx-pyramid-level top">
+              <span class="lvl-label">Salida (Acento)</span>
+              <span class="lvl-notes" id="qx_pyr_top">Bergamota Fresca, Manzana Crujiente</span>
+            </div>
+            <div class="qx-pyramid-level heart">
+              <span class="lvl-label">Corazón (Armonía)</span>
+              <span class="lvl-notes" id="qx_pyr_heart">Canela & Nuez Moscada, Lavanda Noble</span>
+            </div>
+            <div class="qx-pyramid-level base">
+              <span class="lvl-label">Fondo (Fijación)</span>
+              <span class="lvl-notes" id="qx_pyr_base">Ámbar Resinoso, Cedro de Virginia</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duo Pack Bundle Purchase Box -->
+        <div class="qx-layering-bundle-box">
+          <div class="qx-bundle-pricing-row">
+            <div class="qx-bundle-tag">🎁 Duo Pack Alquímico (15% OFF)</div>
+            <div class="qx-bundle-prices">
+              <span class="qx-bundle-old" id="qx_bundle_old_price">$ 751.68</span>
+              <span class="qx-bundle-current" id="qx_bundle_current_price">$ 638.93 MXN</span>
+              <span class="qx-bundle-savings" id="qx_bundle_savings">Ahorras $ 112.75</span>
+            </div>
+          </div>
+          <div class="qx-bundle-actions">
+            <button type="button" class="qx-btn-bundle-buy" id="qx_btn_buy_duo_pack">
+              <span>⚡ Comprar Duo Pack (2 Frascos 100ml)</span>
+            </button>
+            <button type="button" class="qx-btn-bundle-decants" id="qx_btn_buy_duo_decants">
+              <span>🧪 Probar Dueto Decants (5ml + 5ml) • <strong id="qx_decants_bundle_price">$ 306.00</strong></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suggested Companion Carousel -->
+      <div class="qx-layering-companions-sec">
+        <h4 class="qx-companions-title">Otras Fragancias Compatibles con esta Base</h4>
+        <div class="qx-companions-scroll" id="qx_layering_companions_list">
+          <!-- Dynamically populated -->
         </div>
       </div>
     </div>
@@ -659,6 +782,10 @@ $tenant = StorefrontTenant::resolve();
     <button type="button" class="qx-dock-item highlight" id="qx_dock_concierge" aria-label="Concierge Quiz">
       <span class="qx-dock-icon">✨</span>
       <span class="qx-dock-label">Concierge</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_layering" aria-label="Alquimia de Capas">
+      <span class="qx-dock-icon">🧪</span>
+      <span class="qx-dock-label">Alquimia</span>
     </button>
     <button type="button" class="qx-dock-item" id="qx_dock_cart" aria-label="Bolsa de Compras">
       <span class="qx-dock-icon-wrap">

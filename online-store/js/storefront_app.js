@@ -42,6 +42,13 @@
       this.quizAnswers = {};
       this.quizStep = 1;
 
+      // Layering Alchemy State
+      this.layeringBaseProd = null;
+      this.layeringAccentProd = null;
+      this.layeringSynergyData = null;
+      this.fusionAnimId = null;
+      this.fusionParticles = [];
+
       this.init();
     }
 
@@ -332,6 +339,39 @@
           self.addToCart(prod, qty, null, format);
           self.openCheckout();
         }
+      });
+
+      // Layering Alchemy Atelier Triggers & Actions
+      $('#qx_btn_nav_layering, #qx_dock_layering').on('click', function() {
+        self.playHaptic('light');
+        self.openLayeringModal();
+      });
+
+      $('#qx_pmodal_btn_layering').on('click', function() {
+        self.playHaptic('light');
+        const prod = self.activeProductModal || self.products[0];
+        self.closeProductModal(false);
+        self.openLayeringModal(prod);
+      });
+
+      $('#qx_layering_close, #qx_layering_backdrop').on('click', function() {
+        self.playHaptic('light');
+        self.closeLayeringModal();
+      });
+
+      $('#qx_btn_swap_layering').on('click', function() {
+        self.playHaptic('medium');
+        self.swapLayeringFlacons();
+      });
+
+      $('#qx_btn_buy_duo_pack').on('click', function() {
+        self.playHaptic('success');
+        self.addDuoPackToCart('full');
+      });
+
+      $('#qx_btn_buy_duo_decants').on('click', function() {
+        self.playHaptic('success');
+        self.addDuoPackToCart('decant');
       });
 
       // Share Button
@@ -648,13 +688,14 @@
         subtotal += itemSubtotal;
         totalIva += itemIva;
 
-        const decantBadge = item.isDecant ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:rgba(236,72,153,0.18); color:#f472b6; border:1px solid rgba(236,72,153,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Decant 5ml</span>` : '';
+        const decantBadge = (item.isDecant && !item.isDuoPack) ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:rgba(236,72,153,0.18); color:#f472b6; border:1px solid rgba(236,72,153,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Decant 5ml</span>` : '';
+        const duoBadge = item.isDuoPack ? (item.isDecant ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Dueto Decants (15% OFF)</span>` : `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🎁 Duo Pack (15% OFF)</span>`) : '';
 
         const row = $(`
           <div class="qx-cart-item">
             <img class="qx-cart-item-img" src="${self.esc(item.thumb)}" alt="">
             <div class="qx-cart-item-info">
-              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge}</div>
+              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge}</div>
               <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
             </div>
             <div class="qx-cart-stepper">
@@ -2201,6 +2242,302 @@
         cancelAnimationFrame(this.auraAnimId);
         this.auraAnimId = null;
       }
+    }
+
+    // =========================================================================
+    // FEATURE 2: THE FRAGRANCE WARDROBE & LAYERING ALCHEMY ATELIER
+    // =========================================================================
+    openLayeringModal(baseProduct = null, accentProduct = null) {
+      const self = this;
+      if (!baseProduct) {
+        baseProduct = this.products[0];
+      }
+      if (!baseProduct) return;
+
+      this.layeringBaseProd = baseProduct;
+      this.layeringAccentProd = accentProduct;
+
+      // Update Base UI Card
+      $('#qx_base_img').attr('src', baseProduct.cover);
+      $('#qx_base_name').text(baseProduct.name);
+      $('#qx_base_family').text(baseProduct.family || 'Amaderada Noble');
+      $('#qx_base_price').text(`$ ${self.formatMoney(baseProduct.priceWithTax)}`);
+
+      // Open Modal
+      $('#qx_layering_backdrop').addClass('active');
+      $('#qx_layering_modal').addClass('active');
+
+      // Load companions
+      this.loadLayeringCompanions(baseProduct.id);
+    }
+
+    closeLayeringModal() {
+      $('#qx_layering_backdrop').removeClass('active');
+      $('#qx_layering_modal').removeClass('active');
+      this.stopFusionParticles();
+    }
+
+    loadLayeringCompanions(baseId) {
+      const self = this;
+      const list = $('#qx_layering_companions_list');
+      list.html('<div style="color:var(--qx-text-muted); font-size:12px; padding:10px;">Calculando sinergias del catálogo...</div>');
+
+      $.ajax({
+        url: 'api/layering.php',
+        method: 'GET',
+        data: {
+          action: 'recommend',
+          baseId: baseId,
+          tenant: self.tenantId
+        },
+        dataType: 'json',
+        success: function(resp) {
+          if (resp && resp.Status === 'OK' && Array.isArray(resp.companions) && resp.companions.length > 0) {
+            list.empty();
+            resp.companions.forEach((comp, idx) => {
+              const p = comp.product;
+              const isSelected = (!self.layeringAccentProd && idx === 0) || (self.layeringAccentProd && self.layeringAccentProd.id === p.id);
+              
+              const chip = $(`
+                <div class="qx-companion-chip ${isSelected ? 'active' : ''}" data-prod-id="${p.id}">
+                  <div class="qx-comp-thumb-wrap">
+                    <img class="qx-comp-thumb" src="${self.esc(p.cover)}" alt="${self.esc(p.name)}">
+                  </div>
+                  <div class="qx-comp-name">${self.esc(p.name)}</div>
+                  <div class="qx-comp-score">✨ ${comp.affinityScore}% Sinergia</div>
+                </div>
+              `);
+
+              chip.on('click', function() {
+                self.playHaptic('light');
+                $('.qx-companion-chip').removeClass('active');
+                $(this).addClass('active');
+                self.selectLayeringAccent(p);
+              });
+
+              list.append(chip);
+            });
+
+            if (!self.layeringAccentProd && resp.companions[0]) {
+              self.selectLayeringAccent(resp.companions[0].product);
+            } else if (self.layeringAccentProd) {
+              self.calculateLayeringSynergy(self.layeringBaseProd.id, self.layeringAccentProd.id);
+            }
+          } else {
+            list.html('<div style="color:var(--qx-text-muted); font-size:12px; padding:10px;">No se encontraron acompañantes adicionales.</div>');
+          }
+        },
+        error: function() {
+          list.html('<div style="color:var(--qx-text-muted); font-size:12px; padding:10px;">Error al conectar con el motor de sinergias.</div>');
+        }
+      });
+    }
+
+    selectLayeringAccent(accentProduct) {
+      const self = this;
+      this.layeringAccentProd = accentProduct;
+
+      $('#qx_accent_img').attr('src', accentProduct.cover);
+      $('#qx_accent_name').text(accentProduct.name);
+      $('#qx_accent_family').text(accentProduct.family || 'Oriental');
+      $('#qx_accent_price').text(`$ ${self.formatMoney(accentProduct.priceWithTax)}`);
+
+      if (this.layeringBaseProd && this.layeringAccentProd) {
+        this.calculateLayeringSynergy(this.layeringBaseProd.id, this.layeringAccentProd.id);
+      }
+    }
+
+    swapLayeringFlacons() {
+      if (!this.layeringBaseProd || !this.layeringAccentProd) return;
+      const temp = this.layeringBaseProd;
+      this.layeringBaseProd = this.layeringAccentProd;
+      this.layeringAccentProd = temp;
+
+      // Update UI
+      $('#qx_base_img').attr('src', this.layeringBaseProd.cover);
+      $('#qx_base_name').text(this.layeringBaseProd.name);
+      $('#qx_base_family').text(this.layeringBaseProd.family || 'Amaderada Noble');
+      $('#qx_base_price').text(`$ ${this.formatMoney(this.layeringBaseProd.priceWithTax)}`);
+
+      $('#qx_accent_img').attr('src', this.layeringAccentProd.cover);
+      $('#qx_accent_name').text(this.layeringAccentProd.name);
+      $('#qx_accent_family').text(this.layeringAccentProd.family || 'Oriental');
+      $('#qx_accent_price').text(`$ ${this.formatMoney(this.layeringAccentProd.priceWithTax)}`);
+
+      this.loadLayeringCompanions(this.layeringBaseProd.id);
+    }
+
+    calculateLayeringSynergy(baseId, accentId) {
+      const self = this;
+      $.ajax({
+        url: 'api/layering.php',
+        method: 'GET',
+        data: {
+          action: 'match',
+          baseId: baseId,
+          accentId: accentId,
+          tenant: self.tenantId
+        },
+        dataType: 'json',
+        success: function(resp) {
+          if (resp && resp.Status === 'OK' && resp.synergy) {
+            self.layeringSynergyData = resp;
+            self.renderSynergyUI(resp);
+          }
+        }
+      });
+    }
+
+    renderSynergyUI(data) {
+      const syn = data.synergy;
+      const base = data.base;
+      const accent = data.accent;
+
+      $('#qx_layering_score_val').text(`${syn.affinityScore}%`);
+      $('#qx_layering_synergy_type').text(syn.synergyType);
+      $('#qx_layering_synergy_desc').text(syn.blendName);
+
+      $('#qx_layering_occasion').text(`🌙 ${syn.recommendedOccasion}`);
+      $('#qx_layering_longevity').text(`⏱️ ${syn.hybridLongevity} Horas de Fijación`);
+      $('#qx_layering_sillage').text(`🔥 Modo Sillage Nivel ${syn.hybridSillage}`);
+
+      // Pyramid
+      $('#qx_pyr_top').text(syn.hybridPyramid.top.join(', ') || 'Cítricos chispeantes, Bergamota');
+      $('#qx_pyr_heart').text(syn.hybridPyramid.heart.join(', ') || 'Lavanda noble, Especias finas');
+      $('#qx_pyr_base').text(syn.hybridPyramid.base.join(', ') || 'Ámbar, Cedro noble');
+
+      // Bundle Box Pricing
+      const b = syn.bundle;
+      $('#qx_bundle_old_price').text(`$ ${this.formatMoney(b.fullRegularPrice)}`);
+      $('#qx_bundle_current_price').text(`$ ${this.formatMoney(b.fullBundlePrice)} MXN`);
+      $('#qx_bundle_savings').text(`Ahorras $ ${this.formatMoney(b.fullSavings)}`);
+      $('#qx_decants_bundle_price').text(`$ ${this.formatMoney(b.decantBundlePrice)} MXN`);
+
+      // Start fusion canvas animation
+      this.startFusionParticles(base.auraColor || 'cyan', accent.auraColor || 'gold');
+    }
+
+    startFusionParticles(color1, color2) {
+      this.stopFusionParticles();
+      const canvas = document.getElementById('qx_layering_fusion_canvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width || 800;
+      canvas.height = rect.height || 260;
+      const ctx = canvas.getContext('2d');
+
+      const palette = {
+        cyan: '#00e5ff',
+        gold: '#fbbf24',
+        amber: '#f59e0b',
+        emerald: '#10b981',
+        rose: '#ec4899',
+        violet: '#8b5cf6'
+      };
+
+      const c1 = palette[color1] || '#00e5ff';
+      const c2 = palette[color2] || '#fbbf24';
+
+      this.fusionParticles = [];
+      const count = 36;
+      const midX = canvas.width / 2;
+      const midY = canvas.height / 2;
+
+      for (let i = 0; i < count; i++) {
+        const fromLeft = i % 2 === 0;
+        this.fusionParticles.push({
+          fromLeft: fromLeft,
+          x: fromLeft ? Math.random() * (canvas.width * 0.35) : canvas.width - Math.random() * (canvas.width * 0.35),
+          y: Math.random() * canvas.height,
+          targetX: midX + (Math.random() * 40 - 20),
+          targetY: midY + (Math.random() * 40 - 20),
+          radius: Math.random() * 2.2 + 1.2,
+          color: fromLeft ? c1 : c2,
+          speed: Math.random() * 0.02 + 0.015,
+          alpha: Math.random() * 0.7 + 0.3
+        });
+      }
+
+      const self = this;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        self.fusionParticles.forEach(p => {
+          p.x += (p.targetX - p.x) * p.speed;
+          p.y += (p.targetY - p.y) * p.speed;
+
+          const dist = Math.hypot(p.targetX - p.x, p.targetY - p.y);
+          if (dist < 15) {
+            p.x = p.fromLeft ? Math.random() * (canvas.width * 0.35) : canvas.width - Math.random() * (canvas.width * 0.35);
+            p.y = Math.random() * canvas.height;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        self.fusionAnimId = requestAnimationFrame(animate);
+      }
+
+      this.fusionAnimId = requestAnimationFrame(animate);
+    }
+
+    stopFusionParticles() {
+      if (this.fusionAnimId) {
+        cancelAnimationFrame(this.fusionAnimId);
+        this.fusionAnimId = null;
+      }
+    }
+
+    addDuoPackToCart(format = 'full') {
+      if (!this.layeringBaseProd || !this.layeringAccentProd || !this.layeringSynergyData) return;
+      const syn = this.layeringSynergyData.synergy;
+      const b = syn.bundle;
+      const base = this.layeringBaseProd;
+      const accent = this.layeringAccentProd;
+
+      const isDecant = (format === 'decant');
+      const unitPriceWithTax = isDecant ? b.decantBundlePrice : b.fullBundlePrice;
+      const vatRate = 16.0;
+      const unitPriceBeforeTax = Number((unitPriceWithTax / (1 + vatRate / 100)).toFixed(2));
+
+      const bundleItem = {
+        id: `duo__${base.id}__${accent.id}${isDecant ? '__dec' : ''}`,
+        baseId: base.id,
+        accentId: accent.id,
+        name: isDecant ? `🧪 Dueto Decants 5ml: ${base.name} + ${accent.name}` : `🎁 Duo Pack Alquímico (15% OFF): ${base.name} + ${accent.name}`,
+        thumb: base.cover,
+        thumbAccent: accent.cover,
+        unitPrice: unitPriceBeforeTax,
+        vatRate: vatRate,
+        iepsRate: 0,
+        priceWithTax: unitPriceWithTax,
+        qty: 1,
+        isDuoPack: true,
+        isDecant: isDecant,
+        bundleDiscountPercent: 15
+      };
+
+      const existingIdx = this.cart.items.findIndex(i => i.id === bundleItem.id);
+      if (existingIdx >= 0) {
+        this.cart.items[existingIdx].qty += 1;
+      } else {
+        this.cart.items.push(bundleItem);
+      }
+
+      this.saveCart();
+      this.renderCartUI();
+      this.closeLayeringModal();
+      this.openCart();
+      this.showToast(`✨ ¡${isDecant ? 'Dueto de Decants' : 'Duo Pack Alquímico'} añadido a tu bolsa con 15% OFF!`);
     }
 
     esc(str) {
