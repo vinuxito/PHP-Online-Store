@@ -122,6 +122,7 @@
           if (resp.Status === 'OK') {
             self.tenant = resp.Tenant;
             self.products = resp.Products || [];
+            self.renderHero3DCarousel(resp.Featured || []);
             self.renderCategories(resp.Categories || []);
             self.applyFilters();
           } else {
@@ -501,6 +502,174 @@
       $('#qx_lightbox_img').css({
         transform: `translate(${this.panCurrentX}px, ${this.panCurrentY}px) scale(${this.zoomScale}) rotate(${this.zoomRotation}deg)`
       });
+    }
+
+    renderHero3DCarousel(featured) {
+      const self = this;
+      const wrapper = $('#qx_hero_carousel_wrapper');
+      const stage = $('#qx_3d_stage');
+      const dotsContainer = $('#qx_3d_dots');
+
+      if (!featured || featured.length === 0) {
+        wrapper.hide();
+        return;
+      }
+
+      stage.empty();
+      dotsContainer.empty();
+      wrapper.show();
+
+      this.heroFeatured = featured;
+      this.heroActiveIndex = 0;
+      this.heroAutoPlayTimer = null;
+
+      featured.forEach((p, idx) => {
+        const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
+        const cardHtml = `
+          <div class="qx-3d-card" data-index="${idx}" data-id="${self.esc(p.id)}">
+            <span class="qx-3d-badge">★ Edición Destacada</span>
+            <div class="qx-3d-img-container">
+              <img src="${self.esc(coverImg)}" alt="${self.esc(p.name)}" class="qx-3d-img" loading="lazy">
+            </div>
+            <div class="qx-3d-info">
+              <div class="qx-3d-title" title="${self.esc(p.name)}">${self.esc(p.name)}</div>
+              <div class="qx-3d-bottom-row">
+                <div class="qx-3d-price">$${self.formatMoney(p.priceWithTax)}</div>
+                <button type="button" class="qx-3d-btn-buy" data-id="${self.esc(p.id)}">
+                  <span>🛍️</span> Comprar
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        stage.append(cardHtml);
+        dotsContainer.append(`<div class="qx-3d-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></div>`);
+      });
+
+      this.update3DCarousel();
+
+      // Prev / Next Arrows
+      $('#qx_3d_prev').off('click').on('click', (e) => {
+        e.stopPropagation();
+        self.prev3DSlide();
+      });
+      $('#qx_3d_next').off('click').on('click', (e) => {
+        e.stopPropagation();
+        self.next3DSlide();
+      });
+
+      // Dots Click
+      dotsContainer.find('.qx-3d-dot').off('click').on('click', function(e) {
+        e.stopPropagation();
+        const targetIdx = parseInt($(this).data('index'), 10);
+        self.goTo3DSlide(targetIdx);
+      });
+
+      // Card Click Handler
+      stage.find('.qx-3d-card').off('click').on('click', function(e) {
+        if ($(e.target).closest('.qx-3d-btn-buy').length) {
+          return;
+        }
+        const clickedIdx = parseInt($(this).data('index'), 10);
+        if (clickedIdx === self.heroActiveIndex) {
+          const prodId = $(this).data('id');
+          const product = self.products.find(p => p.id === prodId);
+          if (product && product.photos && product.photos.length > 0) {
+            self.openLightbox(product.photos, 0);
+          }
+        } else {
+          self.goTo3DSlide(clickedIdx);
+        }
+      });
+
+      // 1-Click Buy Button
+      stage.find('.qx-3d-btn-buy').off('click').on('click', function(e) {
+        e.stopPropagation();
+        const prodId = $(this).data('id');
+        self.addToCart(prodId, 1);
+        self.openCart();
+      });
+
+      // Touch / Mouse Swipe
+      let touchStartX = 0;
+      let touchEndX = 0;
+      stage.off('touchstart mousedown').on('touchstart mousedown', function(e) {
+        touchStartX = e.pageX || (e.originalEvent.touches && e.originalEvent.touches[0].pageX) || 0;
+      });
+      stage.off('touchend mouseup').on('touchend mouseup', function(e) {
+        touchEndX = e.pageX || (e.originalEvent.changedTouches && e.originalEvent.changedTouches[0].pageX) || 0;
+        const diff = touchEndX - touchStartX;
+        if (diff > 50) {
+          self.prev3DSlide();
+        } else if (diff < -50) {
+          self.next3DSlide();
+        }
+      });
+
+      // Auto-play interval
+      this.start3DAutoPlay();
+      wrapper.off('mouseenter').on('mouseenter', () => self.stop3DAutoPlay());
+      wrapper.off('mouseleave').on('mouseleave', () => self.start3DAutoPlay());
+    }
+
+    update3DCarousel() {
+      const stage = $('#qx_3d_stage');
+      const dots = $('#qx_3d_dots');
+      const total = this.heroFeatured ? this.heroFeatured.length : 0;
+      if (total === 0) return;
+
+      const current = this.heroActiveIndex;
+      const prevIdx = (current - 1 + total) % total;
+      const nextIdx = (current + 1) % total;
+
+      stage.find('.qx-3d-card').each(function() {
+        const idx = parseInt($(this).data('index'), 10);
+        $(this).removeClass('active prev next hidden');
+        if (idx === current) {
+          $(this).addClass('active');
+        } else if (idx === prevIdx) {
+          $(this).addClass('prev');
+        } else if (idx === nextIdx) {
+          $(this).addClass('next');
+        } else {
+          $(this).addClass('hidden');
+        }
+      });
+
+      dots.find('.qx-3d-dot').removeClass('active');
+      dots.find(`.qx-3d-dot[data-index="${current}"]`).addClass('active');
+    }
+
+    next3DSlide() {
+      if (!this.heroFeatured || this.heroFeatured.length === 0) return;
+      this.heroActiveIndex = (this.heroActiveIndex + 1) % this.heroFeatured.length;
+      this.update3DCarousel();
+    }
+
+    prev3DSlide() {
+      if (!this.heroFeatured || this.heroFeatured.length === 0) return;
+      this.heroActiveIndex = (this.heroActiveIndex - 1 + this.heroFeatured.length) % this.heroFeatured.length;
+      this.update3DCarousel();
+    }
+
+    goTo3DSlide(index) {
+      if (!this.heroFeatured || index < 0 || index >= this.heroFeatured.length) return;
+      this.heroActiveIndex = index;
+      this.update3DCarousel();
+    }
+
+    start3DAutoPlay() {
+      this.stop3DAutoPlay();
+      this.heroAutoPlayTimer = setInterval(() => {
+        this.next3DSlide();
+      }, 5500);
+    }
+
+    stop3DAutoPlay() {
+      if (this.heroAutoPlayTimer) {
+        clearInterval(this.heroAutoPlayTimer);
+        this.heroAutoPlayTimer = null;
+      }
     }
 
     showToast(msg) {

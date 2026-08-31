@@ -141,6 +141,36 @@ try {
         ];
     }
 
+    // Extract Featured Curated Products
+    $stmtFeat = $db->prepare("SELECT Valor FROM emisoresde WHERE EmisorID = ? AND Variable = 'STORE_FEATURED_PRODS' LIMIT 1");
+    $stmtFeat->execute([$tenant->emisorId]);
+    $rowFeat = $stmtFeat->fetch();
+    $featuredIds = [];
+    if ($rowFeat && !empty($rowFeat['Valor'])) {
+        $featuredIds = array_filter(array_map('trim', explode(',', $rowFeat['Valor'])));
+    }
+
+    $featuredProducts = [];
+    foreach ($products as &$prod) {
+        $prod['isFeatured'] = in_array($prod['id'], $featuredIds);
+        if ($prod['isFeatured']) {
+            $featuredProducts[] = $prod;
+        }
+    }
+    unset($prod);
+
+    // Fallback: if fewer than 3 featured products, take top 4 with photos
+    if (count($featuredProducts) < 3) {
+        $featuredProducts = [];
+        foreach ($products as &$prod) {
+            if (!empty($prod['photos']) && count($featuredProducts) < 5) {
+                $prod['isFeatured'] = true;
+                $featuredProducts[] = $prod;
+            }
+        }
+        unset($prod);
+    }
+
     echo json_encode([
         'Status'     => 'OK',
         'Tenant'     => [
@@ -156,6 +186,7 @@ try {
             'address'     => $tenant->address
         ],
         'Categories' => $categories,
+        'Featured'   => $featuredProducts,
         'Products'   => $products,
         'Total'      => count($products)
     ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);

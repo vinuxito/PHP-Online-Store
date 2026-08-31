@@ -852,3 +852,264 @@ body {
     max-width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+   8. Hero 3D Star Carousel (Obsidian Glass Architecture)
+   -------------------------------------------------------------------------- */
+.qx-hero-carousel-3d-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+  margin: 32px auto 8px;
+  padding: 10px 0 20px;
+  perspective: 1200px;
+  overflow: visible;
+  user-select: none;
+}
+
+.qx-3d-stage {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+
+.qx-3d-card {
+  position: absolute;
+  width: 320px;
+  height: 360px;
+  background: rgba(19, 29, 51, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.65s ease, box-shadow 0.65s ease, border-color 0.4s ease;
+  will-change: transform, opacity;
+}
+
+.qx-3d-card:hover {
+  border-color: var(--qx-accent);
+}
+
+.qx-3d-card.active {
+  transform: translate3d(0, 0, 80px) scale(1.05);
+  z-index: 15;
+  opacity: 1;
+  border-color: rgba(251, 191, 36, 0.6);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  pointer-events: auto;
+}
+
+.qx-3d-card.prev {
+  transform: translate3d(-68%, 0, -60px) rotateY(32deg) scale(0.82);
+  z-index: 8;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  pointer-events: auto;
+}
+
+.qx-3d-card.next {
+  transform: translate3d(68%, 0, -60px) rotateY(-32deg) scale(0.82);
+  z-index: 8;
+  opacity: 0.65;
+  filter: brightness(0.75);
+  pointer-events: auto;
+}
+
+.qx-3d-card.hidden {
+  transform: translate3d(0, 0, -250px) scale(0.5);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.qx-3d-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  background: rgba(251, 191, 36, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.qx-3d-img-container {
+  width: 100%;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  margin-bottom: 12px;
+}
+
+.qx-3d-img {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.5));
+  transition: transform 0.4s ease;
+}
+
+.qx-3d-card.active:hover .qx-3d-img {
+  transform: scale(1.08) translateY(-4px);
+}
+
+.qx-3d-info {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qx-3d-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qx-3d-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.qx-3d-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--qx-accent);
+  letter-spacing: -0.3px;
+}
+
+.qx-3d-btn-buy {
+  background: var(--qx-accent-gradient);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.qx-3d-btn-buy:hover {
+  transform: scale(1.04);
+  filter: brightness(1.15);
+}
+
+/* Nav Arrows */
+.qx-3d-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.qx-3d-nav-arrow:hover {
+  background: var(--qx-accent);
+  color: #090d16;
+  transform: translateY(-50%) scale(1.1);
+  border-color: var(--qx-accent);
+}
+
+.qx-3d-nav-arrow.prev {
+  left: -10px;
+}
+
+.qx-3d-nav-arrow.next {
+  right: -10px;
+}
+
+/* Dots */
+.qx-3d-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.qx-3d-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.35s ease;
+}
+
+.qx-3d-dot.active {
+  width: 24px;
+  background: var(--qx-accent);
+  box-shadow: 0 0 10px var(--qx-accent);
+}
+
+@media (max-width: 768px) {
+  .qx-3d-stage {
+    height: 330px;
+  }
+  .qx-3d-card {
+    width: 250px;
+    height: 320px;
+    padding: 14px;
+  }
+  .qx-3d-card.prev {
+    transform: translate3d(-52%, 0, -40px) rotateY(25deg) scale(0.82);
+  }
+  .qx-3d-card.next {
+    transform: translate3d(52%, 0, -40px) rotateY(-25deg) scale(0.82);
+  }
+  .qx-3d-img-container {
+    height: 140px;
+  }
+  .qx-3d-nav-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+

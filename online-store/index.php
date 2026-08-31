@@ -83,6 +83,14 @@ $tenant = StorefrontTenant::resolve();
     <h1 class="qx-hero-title"><?php echo htmlspecialchars($tenant->brandName); ?></h1>
     <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
     
+    <!-- Hero 3D Star Carousel -->
+    <div class="qx-hero-carousel-3d-wrapper" id="qx_hero_carousel_wrapper" style="display:none;">
+      <button class="qx-3d-nav-arrow prev" id="qx_3d_prev" aria-label="Anterior">‹</button>
+      <div class="qx-3d-stage" id="qx_3d_stage"></div>
+      <button class="qx-3d-nav-arrow next" id="qx_3d_next" aria-label="Siguiente">›</button>
+      <div class="qx-3d-dots" id="qx_3d_dots"></div>
+    </div>
+
     <!-- Category Filter Pills -->
     <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
   </section>
