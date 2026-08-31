@@ -228,6 +228,86 @@ $tenant = StorefrontTenant::resolve();
     </form>
   </aside>
 
+  <!-- Executive Product Detail Modal (Atelier Showcase) -->
+  <div class="qx-product-modal-backdrop" id="qx_product_modal_backdrop"></div>
+  <div class="qx-product-modal" id="qx_product_modal" role="dialog" aria-modal="true" aria-labelledby="qx_pmodal_title">
+    <button type="button" class="qx-pmodal-close" id="qx_pmodal_close" aria-label="Cerrar modal">&times;</button>
+    
+    <div class="qx-pmodal-layout">
+      <!-- Left Column: Gallery -->
+      <div class="qx-pmodal-gallery">
+        <div class="qx-pmodal-stage">
+          <img id="qx_pmodal_main_img" src="" alt="Vista previa del producto">
+          <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Destacado</span>
+        </div>
+        <div class="qx-pmodal-filmstrip" id="qx_pmodal_filmstrip"></div>
+      </div>
+
+      <!-- Right Column: Details & Commercial Actions -->
+      <div class="qx-pmodal-info">
+        <div class="qx-pmodal-meta">
+          <span class="qx-pmodal-cat" id="qx_pmodal_cat">PERFUME</span>
+          <span class="qx-pmodal-sku" id="qx_pmodal_sku">SKU: 00163...</span>
+          <span class="qx-pmodal-sat" id="qx_pmodal_sat">SAT: 53131600</span>
+        </div>
+
+        <h2 class="qx-pmodal-title" id="qx_pmodal_title">Nombre del Producto</h2>
+
+        <div class="qx-pmodal-price-box">
+          <div class="qx-pmodal-price-row">
+            <span class="qx-pmodal-price" id="qx_pmodal_price">$ 0.00</span>
+            <span class="qx-pmodal-currency">MXN</span>
+          </div>
+          <div class="qx-pmodal-badges">
+            <span class="qx-pmodal-pill tax">✔ IVA 16% Incluido</span>
+            <span class="qx-pmodal-pill cfdi">⚡ Facturación CFDI 4.0</span>
+            <span class="qx-pmodal-pill stock" id="qx_pmodal_stock">📦 En Existencia</span>
+          </div>
+        </div>
+
+        <div class="qx-pmodal-section">
+          <h3 class="qx-pmodal-sec-title">Especificaciones & Detalles</h3>
+          <div class="qx-pmodal-desc" id="qx_pmodal_desc">Descripción detallada...</div>
+        </div>
+
+        <!-- Documents / Fichas Técnicas if any -->
+        <div class="qx-pmodal-section" id="qx_pmodal_docs_sec" style="display:none;">
+          <h3 class="qx-pmodal-sec-title">Documentos & Ficha Técnica</h3>
+          <div id="qx_pmodal_docs" class="qx-pmodal-docs-list"></div>
+        </div>
+
+        <!-- Quantity & Direct Purchase -->
+        <div class="qx-pmodal-actions-box">
+          <div class="qx-pmodal-qty-row">
+            <span style="font-size:13px; font-weight:700; color:var(--qx-text-muted);">Cantidad:</span>
+            <div class="pmodal-stepper">
+              <button type="button" class="qx-step-btn" id="qx_pmodal_qty_dec">-</button>
+              <span id="qx_pmodal_qty_val" style="font-size:13px; font-weight:800; min-width:24px; text-align:center;">1</span>
+              <button type="button" class="qx-step-btn" id="qx_pmodal_qty_inc">+</button>
+            </div>
+          </div>
+
+          <div class="qx-pmodal-buttons">
+            <button type="button" class="qx-btn-pmodal-cart" id="qx_pmodal_btn_add">
+              <span>🛍️</span>
+              <span>Agregar al Carrito</span>
+            </button>
+            <button type="button" class="qx-btn-pmodal-buy" id="qx_pmodal_btn_buy">
+              <span>⚡</span>
+              <span>Comprar Ahora</span>
+            </button>
+          </div>
+
+          <!-- VIP WhatsApp inquiry button -->
+          <a href="#" target="_blank" class="qx-btn-pmodal-wa" id="qx_pmodal_btn_wa" style="display:none;">
+            <span>💬</span>
+            <span>Consultar por WhatsApp con Concierge VIP</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Obsidian Lightbox 4K Modal Overlay -->
   <div class="qx-lightbox-overlay" id="qx_lightbox_overlay">
     <button type="button" class="qx-lightbox-close" id="qx_lightbox_close">&times;</button>

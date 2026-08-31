@@ -25,6 +25,10 @@
       this.panCurrentX = 0;
       this.panCurrentY = 0;
 
+      // Product Modal State
+      this.activeProductModal = null;
+      this.pmodalQty = 1;
+
       this.init();
     }
 
@@ -67,6 +71,7 @@
         } else if (e.key === 'Escape') {
           self.closeAllDrawers();
           self.closeLightbox();
+          self.closeProductModal();
         }
       });
 
@@ -80,6 +85,34 @@
         self.openCheckout();
       });
       $('#qx_checkout_close, #qx_checkout_backdrop').on('click', () => self.closeCheckout());
+
+      // Product Modal Events
+      $('#qx_pmodal_close, #qx_product_modal_backdrop').on('click', () => self.closeProductModal());
+
+      $('#qx_pmodal_qty_dec').on('click', function() {
+        self.pmodalQty = Math.max(1, (self.pmodalQty || 1) - 1);
+        $('#qx_pmodal_qty_val').text(self.pmodalQty);
+      });
+
+      $('#qx_pmodal_qty_inc').on('click', function() {
+        self.pmodalQty = (self.pmodalQty || 1) + 1;
+        $('#qx_pmodal_qty_val').text(self.pmodalQty);
+      });
+
+      $('#qx_pmodal_btn_add').on('click', function() {
+        if (self.activeProductModal) {
+          self.addToCart(self.activeProductModal, self.pmodalQty || 1);
+          self.closeProductModal();
+        }
+      });
+
+      $('#qx_pmodal_btn_buy').on('click', function() {
+        if (self.activeProductModal) {
+          self.addToCart(self.activeProductModal, self.pmodalQty || 1);
+          self.closeProductModal();
+          self.openCheckout();
+        }
+      });
 
       // CFDI 4.0 Checkbox Toggle
       $('#qx_require_cfdi').on('change', function() {
@@ -194,9 +227,9 @@
 
       // Media Stage
       const media = $(`
-        <div class="qx-card-media" title="Haz clic para Quick Look 4K">
+        <div class="qx-card-media" title="Haz clic para ver detalles y fotos">
           <img class="qx-card-img" src="${self.esc(initialPhoto)}" alt="${self.esc(p.name)}">
-          <div class="qx-card-zoom-badge">🔍 Zoom 4K</div>
+          <div class="qx-card-zoom-badge">✨ Ver Ficha</div>
         </div>
       `);
 
@@ -216,9 +249,9 @@
         media.append(scrubBar);
       }
 
-      // Click on image opens Lightbox
+      // Click on image opens Product Detail Modal
       media.on('click', () => {
-        self.openLightbox(photos, 0);
+        self.openProductModal(p);
       });
 
       // Card Content
@@ -228,7 +261,7 @@
             <span class="qx-card-category">${self.esc(p.category || 'General')}</span>
             ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
           </div>
-          <div class="qx-card-title" title="${self.esc(p.name)}">${self.esc(p.name)}</div>
+          <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
           <div class="qx-card-footer">
             <div class="qx-card-price-block">
               <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
@@ -241,6 +274,10 @@
         </div>
       `);
 
+      body.find('.qx-card-title').on('click', () => {
+        self.openProductModal(p);
+      });
+
       body.find('.qx-btn-add-cart').on('click', (e) => {
         e.stopPropagation();
         self.addToCart(p);
@@ -250,7 +287,13 @@
       return card;
     }
 
-    addToCart(product, qty = 1) {
+    addToCart(productOrId, qty = 1) {
+      let product = productOrId;
+      if (typeof productOrId === 'string' || typeof productOrId === 'number') {
+        product = this.products.find(p => p.id == productOrId);
+      }
+      if (!product) return;
+
       const existing = this.cart.items.find(item => item.id === product.id);
       if (existing) {
         existing.qty += qty;
@@ -372,6 +415,99 @@
     closeAllDrawers() {
       this.closeCart();
       this.closeCheckout();
+      this.closeProductModal();
+    }
+
+    openProductModal(product) {
+      if (!product) return;
+      this.activeProductModal = product;
+      this.pmodalQty = 1;
+
+      const self = this;
+      const photos = product.photos && product.photos.length ? product.photos : [{ thumb: product.cover, url: product.cover }];
+      const initialPhoto = photos[0].url || photos[0].thumb || product.cover;
+
+      // Gallery main image & badge
+      $('#qx_pmodal_main_img').attr('src', initialPhoto).attr('alt', product.name);
+      if (product.isFeatured) {
+        $('#qx_pmodal_badge').text('★ Edición Destacada').show();
+      } else {
+        $('#qx_pmodal_badge').hide();
+      }
+
+      // Filmstrip thumbnails
+      const filmstrip = $('#qx_pmodal_filmstrip').empty();
+      if (photos.length > 1) {
+        photos.forEach((photo, idx) => {
+          const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" src="${self.esc(photo.thumb || photo.url)}" alt="">`);
+          thumbImg.on('click', function() {
+            filmstrip.find('.qx-pmodal-thumb').removeClass('active');
+            $(this).addClass('active');
+            $('#qx_pmodal_main_img').attr('src', photo.url || photo.thumb);
+          });
+          filmstrip.append(thumbImg);
+        });
+        filmstrip.show();
+      } else {
+        filmstrip.hide();
+      }
+
+      // Meta & Titles
+      $('#qx_pmodal_cat').text(product.category || 'GENERAL');
+      $('#qx_pmodal_sku').text(product.sku ? `SKU: ${product.sku}` : (product.code ? `CÓD: ${product.code}` : ''));
+      $('#qx_pmodal_sat').text(product.satKey ? `SAT: ${product.satKey}` : '');
+      $('#qx_pmodal_title').text(product.name);
+
+      // Price & Stock
+      $('#qx_pmodal_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
+      if (product.stock > 0) {
+        $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
+      } else {
+        $('#qx_pmodal_stock').text(`📦 Disponible para envío inmediato`).show();
+      }
+
+      // Specs / Description
+      const desc = product.notes ? product.notes : `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+      $('#qx_pmodal_desc').text(desc);
+
+      // Documents / Ficha Técnica
+      const docsList = $('#qx_pmodal_docs').empty();
+      if (product.docs && product.docs.length > 0) {
+        product.docs.forEach(doc => {
+          docsList.append(`
+            <a href="${self.esc(doc.url)}" target="_blank" class="qx-pmodal-doc-link">
+              📄 ${self.esc(doc.title || 'Ficha Técnica')} ↗
+            </a>
+          `);
+        });
+        $('#qx_pmodal_docs_sec').show();
+      } else {
+        $('#qx_pmodal_docs_sec').hide();
+      }
+
+      // Quantity reset
+      $('#qx_pmodal_qty_val').text('1');
+
+      // WhatsApp concierge button
+      if (self.tenant && self.tenant.showWhatsapp && self.tenant.whatsappPhone) {
+        const rawPhone = String(self.tenant.whatsappPhone).replace(/[^0-9]/g, '');
+        const currentUrl = window.location.href;
+        const waMsg = `¡Hola! Deseo más información y adquirir el producto: *${product.name}* (Precio: $${self.formatMoney(product.priceWithTax)} MXN) de la tienda online: ${currentUrl}`;
+        const waLink = `https://wa.me/${encodeURIComponent(rawPhone)}?text=${encodeURIComponent(waMsg)}`;
+        $('#qx_pmodal_btn_wa').attr('href', waLink).show();
+      } else {
+        $('#qx_pmodal_btn_wa').hide();
+      }
+
+      // Open Modal
+      $('#qx_product_modal_backdrop').addClass('active');
+      $('#qx_product_modal').addClass('active');
+    }
+
+    closeProductModal() {
+      $('#qx_product_modal_backdrop').removeClass('active');
+      $('#qx_product_modal').removeClass('active');
+      this.activeProductModal = null;
     }
 
     renderCheckoutSummary() {
@@ -574,8 +710,8 @@
         if (clickedIdx === self.heroActiveIndex) {
           const prodId = $(this).data('id');
           const product = self.products.find(p => p.id === prodId);
-          if (product && product.photos && product.photos.length > 0) {
-            self.openLightbox(product.photos, 0);
+          if (product) {
+            self.openProductModal(product);
           }
         } else {
           self.goTo3DSlide(clickedIdx);
@@ -587,7 +723,6 @@
         e.stopPropagation();
         const prodId = $(this).data('id');
         self.addToCart(prodId, 1);
-        self.openCart();
       });
 
       // Touch / Mouse Swipe
