@@ -130,6 +130,7 @@ try {
         $decantPrice = !empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2);
         $auraColor = !empty($p['AuraColor']) ? $p['AuraColor'] : 'cyan';
         $auraParticles = !empty($p['AuraParticulas']) ? $p['AuraParticulas'] : 'breeze';
+        $autoIsolate = ($p['AutoIsolate'] ?? 'SI') !== 'NO';
         $family = $p['FamiliaOlfativa'] ?? '';
         $accords = json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: [];
 
@@ -156,6 +157,7 @@ try {
             'decantPrice'  => $decantPrice,
             'auraColor'    => $auraColor,
             'auraParticles'=> $auraParticles,
+            'autoIsolate'  => $autoIsolate,
             'family'       => $family,
             'accords'      => $accords
         ];
