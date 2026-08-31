@@ -69,6 +69,11 @@ $tenant = StorefrontTenant::resolve();
       </div>
 
       <div class="qx-nav-actions">
+        <button type="button" class="qx-tasting-nav-btn" id="qx_btn_nav_tasting" title="Masterclass VIP & Sala Privada de Cata 1-a-1">
+          <span class="qx-tasting-sparkle">🍷</span>
+          <span>Cata Virtual</span>
+          <span class="qx-tasting-live-dot" title="Sommelier en Línea"></span>
+        </button>
         <button type="button" class="qx-vault-nav-btn" id="qx_btn_nav_vault" title="Bóveda de Fidelidad & Club de Recargas VIP">
           <span class="qx-vault-sparkle">👑</span>
           <span>Bóveda VIP</span>
@@ -1071,6 +1076,233 @@ $tenant = StorefrontTenant::resolve();
     </div>
   </div>
 
+  <!-- The Private Tasting Room & Live Virtual Sommelier Atelier Modal (Feature 7) -->
+  <div class="qx-tasting-backdrop" id="qx_tasting_backdrop"></div>
+  <div class="qx-tasting-modal" id="qx_tasting_modal" role="dialog" aria-modal="true" aria-labelledby="qx_tasting_title">
+    <div class="qx-tasting-header">
+      <div class="qx-tasting-emblem">
+        <span class="qx-tasting-emblem-icon">🍷</span>
+        <div>
+          <div class="qx-tasting-sup">SALÓN PRIVADO DE ALTA PERFUMERÍA</div>
+          <h2 class="qx-tasting-title" id="qx_tasting_title">The Private Tasting Room & Live Atelier</h2>
+        </div>
+      </div>
+      <div class="qx-tasting-header-right">
+        <div class="qx-somm-badge-tag" id="qx_somm_header_tag">Jean-Luc Moreau (Master Perfumer)</div>
+        <button type="button" class="qx-tasting-close" id="qx_tasting_close" aria-label="Cerrar Sala">&times;</button>
+      </div>
+    </div>
+
+    <div class="qx-tasting-body">
+      <!-- VIEW 1: Reservation & Discovery Box Flow -->
+      <div class="qx-tasting-view-booking" id="qx_tasting_view_booking">
+        <div class="qx-tasting-banner">
+          <span class="qx-tbanner-icon">💎</span>
+          <div class="qx-tbanner-text">
+            <strong>Masterclass Privada 1-a-1 de 20 Minutos</strong>
+            <p>Incluye tu <em>Coffret Découverte (4x5ml)</em> con envío prioritario. El 100% de tu pago ($499 MXN) se bonifica íntegramente al adquirir tu frasco completo de 100ml.</p>
+          </div>
+        </div>
+
+        <div class="qx-tbooking-grid">
+          <!-- Step A: Slot Selection -->
+          <div class="qx-tstep-card">
+            <div class="qx-tstep-title">
+              <span>📅</span> 1. Elige Fecha & Horario Disponible
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:12px; color:#94a3b8;">Horarios de cata (20 min):</span>
+              <span style="font-size:11px; color:#c084fc; font-weight:700;" id="qx_tasting_curr_date_lbl">Hoy, 31 de Agosto</span>
+            </div>
+            <div class="qx-slots-container" id="qx_tasting_slots_container">
+              <!-- Loaded dynamically via TastingRoomEngine -->
+            </div>
+
+            <div style="margin-top:20px;">
+              <div class="qx-tstep-title">
+                <span>📹</span> 2. Canal de Videollamada Preferido
+              </div>
+              <div class="qx-channel-options">
+                <label class="qx-channel-pill selected" id="qx_lbl_chan_webrtc">
+                  <input type="radio" name="qx_tasting_channel" value="WEBRTC" checked style="display:none;">
+                  <span style="font-size:20px;">💻</span>
+                  <div>
+                    <strong>Sala In-App HD</strong>
+                    <span>En tu navegador web</span>
+                  </div>
+                </label>
+                <label class="qx-channel-pill" id="qx_lbl_chan_wa">
+                  <input type="radio" name="qx_tasting_channel" value="WHATSAPP" style="display:none;">
+                  <span style="font-size:20px;">💬</span>
+                  <div>
+                    <strong>WhatsApp VIP</strong>
+                    <span>Llamada 1-a-1 directa</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step B: Discovery Box & Client Info -->
+          <div class="qx-tstep-card">
+            <div class="qx-tstep-title">
+              <span>🎁</span> 3. Discovery Tasting Box Asignada
+            </div>
+            <div class="qx-box-preview-card" id="qx_box_preview_card">
+              <div class="qx-box-prev-header">
+                <span class="qx-box-prev-title">Coffret Découverte: Joyas Orientales (4x5ml)</span>
+                <span class="qx-box-prev-price">$ 499.00 MXN</span>
+              </div>
+              <span class="qx-box-cashback-badge">💎 100% Bonificable en Frasco 100ml</span>
+              <p style="font-size:12px; color:#94a3b8; line-height:1.4; margin-bottom:6px;">
+                Incluye 4 decants de 5ml de alta concentración, tiras olfativas de algodón egipcio y guía numerada.
+              </p>
+            </div>
+
+            <div class="qx-tstep-title" style="margin-top:14px;">
+              <span>👤</span> 4. Datos del Asistente
+            </div>
+            <form id="qx_tasting_booking_form" onsubmit="return false;">
+              <div class="qx-tform-row">
+                <input type="text" class="qx-tform-input" id="qx_tform_name" placeholder="Nombre Completo *" required value="Alexander von Humboldt">
+                <input type="tel" class="qx-tform-input" id="qx_tform_phone" placeholder="Teléfono WhatsApp *" required value="+52 33 1825 9000">
+              </div>
+              <div class="qx-tform-row">
+                <input type="email" class="qx-tform-input" id="qx_tform_email" placeholder="Correo Electrónico *" required value="alexander@humboldt-expeditions.org">
+                <input type="text" class="qx-tform-input" id="qx_tform_city" placeholder="Ciudad / Estado" value="Guadalajara, JAL">
+              </div>
+              <input type="text" class="qx-tform-input" id="qx_tform_notes" placeholder="Tus acordes preferidos (ej. Acuático, Dulce, Maderas)">
+
+              <button type="button" class="qx-btn-submit-tasting" id="qx_btn_submit_tasting_booking">
+                🍷 Confirmar Reserva & Agendar Masterclass VIP
+              </button>
+            </form>
+
+            <div style="text-align:center; margin-top:12px;">
+              <button type="button" id="qx_btn_open_existing_session" style="background:none; border:none; color:#c084fc; font-size:12px; cursor:pointer; text-decoration:underline;">
+                ¿Ya tienes un código de sesión? Ingresar a Sala en Vivo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Live Tasting Room & Synchronized Scent Canvas -->
+      <div class="qx-tasting-view-live" id="qx_tasting_view_live" style="display:none;">
+        <!-- Identity & Status Bar -->
+        <div class="qx-live-id-bar">
+          <div class="qx-live-id-item">
+            <span class="lbl">ASISTENTE:</span>
+            <span class="val" id="qx_live_client_name">Alexander von Humboldt</span>
+          </div>
+          <div class="qx-live-id-item">
+            <span class="lbl">CÓDIGO DE CATA:</span>
+            <span class="val code" id="qx_live_session_code">TASTE-2026-VIP</span>
+          </div>
+          <div class="qx-live-id-item">
+            <span class="lbl">ESTUCHE DISCOVERY:</span>
+            <span class="val gold" id="qx_live_box_status">Entregado 📦</span>
+          </div>
+          <div class="qx-live-id-item">
+            <span class="lbl">BONIFICACIÓN DISPONIBLE:</span>
+            <span class="val gold" id="qx_live_voucher_val">$ 499.00 MXN</span>
+          </div>
+        </div>
+
+        <!-- Dual Viewport -->
+        <div class="qx-tasting-dual-viewport">
+          <!-- Left: Live Sommelier Stream -->
+          <div class="qx-somm-stream-card">
+            <div class="qx-video-frame">
+              <div class="qx-live-badge">
+                <span class="qx-live-red-dot"></span>
+                <span>● EN DIRECTO</span>
+              </div>
+              <div class="qx-somm-avatar-circle" id="qx_somm_avatar_circle">
+                👨🏻‍💼
+              </div>
+              <canvas class="qx-audio-visualizer-canvas" id="qx_somm_audio_canvas"></canvas>
+            </div>
+
+            <div class="qx-somm-meta-box">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div class="qx-somm-name">Jean-Luc Moreau</div>
+                  <div class="qx-somm-role">Master Perfumer & Chief Sommelier</div>
+                </div>
+                <span style="font-size:11px; color:#10b981; font-weight:800;">🎙️ Audio HD Activo</span>
+              </div>
+
+              <div class="qx-video-controls">
+                <button type="button" class="qx-vctrl-btn active" id="qx_vctrl_mic">🎤 Micrófono</button>
+                <button type="button" class="qx-vctrl-btn active" id="qx_vctrl_cam">📹 Cámara</button>
+                <button type="button" class="qx-vctrl-btn" id="qx_vctrl_switch_view">🔄 Cambiar Vista</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Synchronized Scent Canvas -->
+          <div class="qx-synced-canvas-card" id="qx_synced_canvas">
+            <div>
+              <div class="qx-canvas-header">
+                <div class="qx-canvas-tag">
+                  <span>📡</span>
+                  <span>Lienzo Olfativo Sincronizado en Tiempo Real</span>
+                </div>
+                <span style="font-size:11px; color:#94a3b8; font-family:monospace;" id="qx_synced_event_id">EVT #01</span>
+              </div>
+
+              <div class="qx-canvas-body">
+                <div class="qx-canvas-flacon-box">
+                  <img class="qx-canvas-flacon-img" id="qx_synced_flacon_img" src="" alt="Frasco Proyectado">
+                </div>
+                <div class="qx-canvas-info">
+                  <h3 class="qx-canvas-title" id="qx_synced_title">Rasasi Hawas for Him Eau de Parfum</h3>
+                  <div class="qx-canvas-note-strip" id="qx_synced_notes_wrap">
+                    <span class="qx-cnote-pill">🍏 Manzana Italiana</span>
+                    <span class="qx-cnote-pill">🌊 Acorde Marino</span>
+                    <span class="qx-cnote-pill">🪵 Ámbar Gris</span>
+                  </div>
+                  <p style="font-size:12px; color:#cbd5e1; line-height:1.4;" id="qx_synced_desc">
+                    Fragancia fresca y magnética con proyección molecular de alto impacto en climas cálidos y templados.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Sommelier Live Commentary Note -->
+              <div class="qx-somm-commentary-card">
+                <div class="qx-scomm-lbl">Comentario en Vivo del Sommelier:</div>
+                <div class="qx-scomm-txt" id="qx_synced_somm_note">
+                  "Presta atención al secado amaderado tras los primeros 15 minutos en tu piel."
+                </div>
+              </div>
+
+              <!-- Synchronized Interactive Triggers -->
+              <div class="qx-canvas-interactive-bar">
+                <button type="button" class="qx-btn-canvas-action" id="qx_btn_synced_radar">
+                  📊 Proyectar Radar Hexagonal
+                </button>
+                <button type="button" class="qx-btn-canvas-action" id="qx_btn_synced_layering">
+                  🧪 Probar Alquimia de Capas
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Room Footer Actions -->
+            <div class="qx-live-footer-actions">
+              <button type="button" class="qx-btn-upgrade-voucher" id="qx_btn_live_upgrade_bottle">
+                🏆 Adquirir Frasco 100ml (-$499.00 BONIFICADO)
+              </button>
+              <a href="#" target="_blank" class="qx-btn-wa-live" id="qx_btn_live_wa_link">
+                💬 WhatsApp Concierge
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="qx-toast" id="qx_toast"></div>
 
@@ -1095,6 +1327,10 @@ $tenant = StorefrontTenant::resolve();
     <button type="button" class="qx-dock-item active" id="qx_dock_home" aria-label="Inicio">
       <span class="qx-dock-icon">🏠</span>
       <span class="qx-dock-label">Inicio</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_tasting" aria-label="Cata Virtual">
+      <span class="qx-dock-icon">🍷</span>
+      <span class="qx-dock-label">Cata VIP</span>
     </button>
     <button type="button" class="qx-dock-item" id="qx_dock_vault" aria-label="Bóveda VIP">
       <span class="qx-dock-icon">👑</span>

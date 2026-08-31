@@ -6206,3 +6206,684 @@ body {
   border-radius: 4px;
   margin-top: 4px;
 }
+
+/* ==========================================================================
+   FEATURE 7: THE PRIVATE TASTING ROOM & LIVE VIRTUAL SOMMELIER ATELIER
+   ========================================================================== */
+
+.qx-tasting-nav-btn {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(225, 29, 72, 0.15) 100%);
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.qx-tasting-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(225, 29, 72, 0.25) 100%);
+  border-color: #c084fc;
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.35);
+  transform: translateY(-1px);
+}
+
+.qx-tasting-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: qxPulseLive 2s infinite ease-in-out;
+}
+
+@keyframes qxPulseLive {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Modal Backdrops & Window */
+.qx-tasting-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.qx-tasting-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.qx-tasting-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: 95vw;
+  max-width: 1050px;
+  max-height: 90vh;
+  background: linear-gradient(145deg, #0b0f19 0%, #110d1e 50%, #080b12 100%);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(168, 85, 247, 0.15);
+  z-index: 10001;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.qx-tasting-modal.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.qx-tasting-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.qx-tasting-emblem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-tasting-emblem-icon {
+  font-size: 26px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+}
+
+.qx-tasting-sup {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #c084fc;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.qx-tasting-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.qx-tasting-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qx-somm-badge-tag {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.qx-tasting-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.qx-tasting-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: rotate(90deg);
+}
+
+.qx-tasting-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* View 1: Booking Flow */
+.qx-tasting-banner {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%);
+  border: 1px solid rgba(192, 132, 252, 0.3);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-tbanner-icon { font-size: 28px; }
+.qx-tbanner-text strong { display: block; color: #fff; font-size: 14px; margin-bottom: 2px; }
+.qx-tbanner-text p { font-size: 12.5px; color: #94a3b8; }
+
+.qx-tbooking-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.qx-tstep-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.qx-tstep-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #c084fc;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-slots-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.qx-slot-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-slot-pill:hover:not(.booked) {
+  border-color: #c084fc;
+  color: #fff;
+  background: rgba(192, 132, 252, 0.15);
+}
+
+.qx-slot-pill.selected {
+  background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+  border-color: #c084fc;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+}
+
+.qx-slot-pill.booked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.qx-box-preview-card {
+  background: rgba(251, 191, 36, 0.04);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.qx-box-prev-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.qx-box-prev-title { font-size: 13px; font-weight: 800; color: #fff; }
+.qx-box-prev-price { font-size: 14px; font-weight: 900; color: #fbbf24; font-family: monospace; }
+
+.qx-box-cashback-badge {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.qx-channel-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.qx-channel-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.qx-channel-pill.selected {
+  border-color: #c084fc;
+  background: rgba(192, 132, 252, 0.15);
+}
+
+.qx-channel-pill strong { display: block; color: #fff; font-size: 12px; }
+.qx-channel-pill span { font-size: 10.5px; color: #94a3b8; }
+
+.qx-tform-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.qx-tform-input {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.qx-tform-input:focus {
+  border-color: #c084fc;
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.25);
+}
+
+.qx-btn-submit-tasting {
+  width: 100%;
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  border: none;
+  color: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4);
+  transition: all 0.25s ease;
+  margin-top: 16px;
+}
+
+.qx-btn-submit-tasting:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(168, 85, 247, 0.6);
+}
+
+/* View 2: Live Room & Synchronized Scent Canvas */
+.qx-live-id-bar {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.qx-live-id-item {
+  font-size: 12px;
+}
+
+.qx-live-id-item .lbl { color: #94a3b8; margin-right: 6px; }
+.qx-live-id-item .val { font-weight: 800; color: #fff; }
+.qx-live-id-item .val.code { color: #c084fc; font-family: monospace; }
+.qx-live-id-item .val.gold { color: #fbbf24; }
+
+.qx-tasting-dual-viewport {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 20px;
+  min-height: 440px;
+}
+
+/* Left: Sommelier Video & Audio Suite */
+.qx-somm-stream-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.qx-video-frame {
+  height: 280px;
+  background: radial-gradient(circle at center, #1e1b4b 0%, #030712 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.qx-somm-avatar-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid #c084fc;
+  box-shadow: 0 0 30px rgba(192, 132, 252, 0.4);
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  position: relative;
+  z-index: 2;
+}
+
+.qx-audio-visualizer-canvas {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+.qx-live-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+}
+
+.qx-live-red-dot {
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: qxPulseLive 1.5s infinite;
+}
+
+.qx-somm-meta-box {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-somm-name { font-size: 14px; font-weight: 800; color: #fff; }
+.qx-somm-role { font-size: 11.5px; color: #c084fc; }
+
+.qx-video-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.qx-vctrl-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-vctrl-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.qx-vctrl-btn.active { background: #10b981; border-color: #10b981; }
+
+/* Right: Synchronized Scent Canvas */
+.qx-synced-canvas-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(192, 132, 252, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.qx-canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.qx-canvas-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #c084fc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qx-canvas-body {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.qx-canvas-flacon-box {
+  width: 140px;
+  height: 170px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qx-canvas-flacon-img {
+  max-width: 110px;
+  max-height: 140px;
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.6));
+  transition: transform 0.3s ease;
+}
+
+.qx-canvas-info {
+  flex: 1;
+}
+
+.qx-canvas-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.qx-canvas-note-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.qx-cnote-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.qx-somm-commentary-card {
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(192, 132, 252, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.qx-scomm-lbl {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #c084fc;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.qx-scomm-txt {
+  font-size: 13px;
+  color: #f1f5f9;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.qx-canvas-interactive-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.qx-btn-canvas-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qx-btn-canvas-action:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: #c084fc;
+}
+
+.qx-live-footer-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-btn-upgrade-voucher {
+  flex: 2;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border: none;
+  color: #030712;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(251, 191, 36, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.qx-btn-upgrade-voucher:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(251, 191, 36, 0.5);
+}
+
+.qx-btn-wa-live {
+  flex: 1;
+  background: #25D366;
+  border: none;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.qx-btn-wa-live:hover {
+  background: #22c35e;
+}
+
+@media (max-width: 860px) {
+  .qx-tbooking-grid { grid-template-columns: 1fr; }
+  .qx-tasting-dual-viewport { grid-template-columns: 1fr; }
+  .qx-live-footer-actions { flex-direction: column; }
+}
+

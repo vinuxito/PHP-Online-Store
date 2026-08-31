@@ -894,10 +894,386 @@
     }
   }
 
+  class TastingRoomEngine {
+    constructor(storefront) {
+      this.storefront = storefront;
+      this.sessionCode = 'TASTE-2026-VIP';
+      this.activeSession = null;
+      this.availableSlots = [];
+      this.selectedSlot = '17:00';
+      this.selectedChannel = 'WEBRTC';
+      this.currentView = 'booking'; // 'booking' | 'live'
+      this.pollTimer = null;
+      this.lastEventId = 0;
+      this.audioAnimId = null;
+      this.currentProjectedProduct = null;
+    }
+
+    async init() {
+      await this.loadSlots();
+      this.bindEvents();
+    }
+
+    async loadSlots(dateStr) {
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const date = dateStr || new Date().toISOString().split('T')[0];
+        const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=get_available_slots&date=${date}`);
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.availableSlots = data.Slots || [];
+          this.renderSlotsUI();
+        }
+      } catch (err) {
+        console.warn('TastingRoomEngine loadSlots error:', err);
+      }
+    }
+
+    renderSlotsUI() {
+      const $wrap = $('#qx_tasting_slots_container');
+      $wrap.empty();
+      if (!this.availableSlots.length) {
+        $wrap.html('<div style="color:#94a3b8; font-size:12px;">No hay horarios disponibles hoy.</div>');
+        return;
+      }
+
+      this.availableSlots.forEach(slot => {
+        const isSelected = (slot.time === this.selectedSlot);
+        const $pill = $(`
+          <div class="qx-slot-pill ${slot.isAvailable ? '' : 'booked'} ${isSelected ? 'selected' : ''}" data-time="${slot.time}">
+            ${slot.time} hrs
+          </div>
+        `);
+        $wrap.append($pill);
+      });
+    }
+
+    bindEvents() {
+      const self = this;
+
+      $('#qx_btn_nav_tasting, #qx_dock_tasting').on('click', function(e) {
+        e.preventDefault();
+        self.openTastingModal();
+      });
+
+      $('#qx_tasting_close, #qx_tasting_backdrop').on('click', function(e) {
+        e.preventDefault();
+        self.closeTastingModal();
+      });
+
+      // Slot selection
+      $(document).on('click', '.qx-slot-pill:not(.booked)', function() {
+        $('.qx-slot-pill').removeClass('selected');
+        $(this).addClass('selected');
+        self.selectedSlot = $(this).data('time');
+      });
+
+      // Channel selection
+      $('#qx_lbl_chan_webrtc').on('click', function() {
+        $('#qx_lbl_chan_webrtc').addClass('selected');
+        $('#qx_lbl_chan_wa').removeClass('selected');
+        self.selectedChannel = 'WEBRTC';
+      });
+
+      $('#qx_lbl_chan_wa').on('click', function() {
+        $('#qx_lbl_chan_wa').addClass('selected');
+        $('#qx_lbl_chan_webrtc').removeClass('selected');
+        self.selectedChannel = 'WHATSAPP';
+      });
+
+      // Form Booking Submit
+      $('#qx_btn_submit_tasting_booking').on('click', async function(e) {
+        e.preventDefault();
+        await self.submitBooking();
+      });
+
+      // Existing Session Login Trigger
+      $('#qx_btn_open_existing_session').on('click', function() {
+        self.switchView('live');
+        self.startLiveSession(self.sessionCode);
+      });
+
+      // Interactive Canvas Triggers inside Live Room
+      $('#qx_btn_synced_radar').on('click', function() {
+        const prod = self.currentProjectedProduct || self.storefront.products[0];
+        if (prod) {
+          self.storefront.openProductModal(prod.id);
+          self.storefront.radar?.renderRadarSVG(prod);
+          self.storefront.showToast('📊 Proyectando Radar Olfativo Hexagonal en vivo');
+        }
+      });
+
+      $('#qx_btn_synced_layering').on('click', function() {
+        self.storefront.openLayeringModal();
+        self.storefront.showToast('🧪 Iniciando Crisol de Alquimia de Capas');
+      });
+
+      // Upgrade Full Bottle with Cash-Back Voucher
+      $('#qx_btn_live_upgrade_bottle').on('click', function() {
+        self.upgradeToFullBottle();
+      });
+    }
+
+    async submitBooking() {
+      const name = $('#qx_tform_name').val().trim();
+      const phone = $('#qx_tform_phone').val().trim();
+      const email = $('#qx_tform_email').val().trim();
+      const city = $('#qx_tform_city').val().trim() || 'Guadalajara, JAL';
+      const notes = $('#qx_tform_notes').val().trim();
+
+      if (!name || !email || !phone) {
+        this.storefront.showToast('⚠️ Por favor completa tus datos de contacto');
+        return;
+      }
+
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=book_session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: name,
+            clientPhone: phone,
+            clientEmail: email,
+            clientCity: city,
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: this.selectedSlot,
+            channel: this.selectedChannel,
+            notes: notes
+          })
+        });
+
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.sessionCode = data.Session.bookingCode;
+          this.activeSession = data.Session;
+          this.storefront.showToast('🍷 ¡Cita VIP agendada! Conectando a Sala de Cata...');
+          this.switchView('live');
+          this.startLiveSession(this.sessionCode);
+        } else {
+          this.storefront.showToast(`⚠️ ${data.Error || 'Error al agendar cita'}`);
+        }
+      } catch (err) {
+        console.error('Booking submission error:', err);
+        this.storefront.showToast('⚠️ Error de conexión al agendar');
+      }
+    }
+
+    async openTastingModal(sessionCode) {
+      if (sessionCode) {
+        this.sessionCode = sessionCode;
+        this.switchView('live');
+        this.startLiveSession(this.sessionCode);
+      } else {
+        this.switchView('booking');
+        await this.loadSlots();
+      }
+
+      $('#qx_tasting_backdrop').addClass('active');
+      $('#qx_tasting_modal').addClass('active');
+      $('body').css('overflow', 'hidden');
+    }
+
+    closeTastingModal() {
+      $('#qx_tasting_backdrop').removeClass('active');
+      $('#qx_tasting_modal').removeClass('active');
+      $('body').css('overflow', '');
+      this.stopPolling();
+      this.stopAudioVisualizer();
+    }
+
+    switchView(viewName) {
+      this.currentView = viewName;
+      if (viewName === 'live') {
+        $('#qx_tasting_view_booking').hide();
+        $('#qx_tasting_view_live').fadeIn(200);
+      } else {
+        $('#qx_tasting_view_live').hide();
+        $('#qx_tasting_view_booking').fadeIn(200);
+      }
+    }
+
+    async startLiveSession(code) {
+      const targetCode = code || this.sessionCode;
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=get_session_status&code=${encodeURIComponent(targetCode)}`);
+        const data = await res.json();
+
+        if (data.Status === 'OK') {
+          this.activeSession = data.Session;
+          this.renderLiveRoomUI(data);
+          this.startAudioVisualizer();
+          this.startPolling(data.Session.sessionId);
+        }
+      } catch (err) {
+        console.warn('startLiveSession error:', err);
+      }
+    }
+
+    renderLiveRoomUI(data) {
+      const sess = data.Session;
+      $('#qx_live_client_name').text(sess.clientName || 'Alexander von Humboldt');
+      $('#qx_live_session_code').text(sess.bookingCode || 'TASTE-2026-VIP');
+      $('#qx_live_box_status').text(sess.discoveryBoxStatus === 'DELIVERED' ? 'Entregado 📦' : 'En Camino 🚚');
+      $('#qx_live_voucher_val').text(`$ ${Number(sess.cashBackAmount || 499).toFixed(2)} MXN`);
+
+      // WhatsApp link setup
+      const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+      $('#qx_btn_live_wa_link').attr('href', `api/tasting_room.php?tenant=${tenantId}&action=generate_wa_session_link&code=${encodeURIComponent(sess.bookingCode)}`);
+
+      // Render Active Canvas Projection
+      if (data.ActiveCanvas && data.ActiveCanvas.payload) {
+        this.renderCanvasPayload(data.ActiveCanvas.payload);
+      } else if (this.storefront.products && this.storefront.products.length > 0) {
+        const first = this.storefront.products[0];
+        this.renderCanvasProduct(first);
+      }
+    }
+
+    renderCanvasPayload(payload) {
+      const prodId = payload.productId;
+      const product = this.storefront.products.find(p => p.id === prodId) || this.storefront.products[0];
+      if (product) {
+        this.currentProjectedProduct = product;
+        this.renderCanvasProduct(product, payload.sommelierNote);
+      }
+    }
+
+    renderCanvasProduct(prod, note) {
+      this.currentProjectedProduct = prod;
+      $('#qx_synced_title').text(prod.name);
+      $('#qx_synced_desc').text(prod.description || 'Fragancia exclusiva con proyección molecular y longevidad excepcional.');
+      $('#qx_synced_flacon_img').attr('src', prod.cover || 'assets/bottle_placeholder.png');
+
+      if (note) {
+        $('#qx_synced_somm_note').text(`"${note}"`);
+      }
+
+      // Notes pills
+      const $notesWrap = $('#qx_synced_notes_wrap');
+      $notesWrap.empty();
+      const top = prod.notes?.top || 'Manzana y Bergamota';
+      const heart = prod.notes?.heart || 'Acorde Marino Especiado';
+      const base = prod.notes?.base || 'Ámbar Gris y Almizcle';
+
+      $notesWrap.append(`<span class="qx-cnote-pill">🍏 ${top}</span>`);
+      $notesWrap.append(`<span class="qx-cnote-pill">🌊 ${heart}</span>`);
+      $notesWrap.append(`<span class="qx-cnote-pill">🪵 ${base}</span>`);
+    }
+
+    startAudioVisualizer() {
+      const canvas = document.getElementById('qx_somm_audio_canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth || 400;
+      canvas.height = 60;
+
+      let tick = 0;
+      const self = this;
+
+      function renderWave() {
+        tick++;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const bars = 32;
+        const barWidth = canvas.width / bars;
+
+        for (let i = 0; i < bars; i++) {
+          const height = Math.abs(Math.sin(tick * 0.08 + i * 0.35) * 35) + 6;
+          const x = i * barWidth;
+          const y = canvas.height - height;
+
+          const grad = ctx.createLinearGradient(0, y, 0, canvas.height);
+          grad.addColorStop(0, '#c084fc');
+          grad.addColorStop(1, '#ec4899');
+
+          ctx.fillStyle = grad;
+          ctx.fillRect(x + 2, y, barWidth - 4, height);
+        }
+
+        self.audioAnimId = requestAnimationFrame(renderWave);
+      }
+
+      this.audioAnimId = requestAnimationFrame(renderWave);
+    }
+
+    stopAudioVisualizer() {
+      if (this.audioAnimId) {
+        cancelAnimationFrame(this.audioAnimId);
+        this.audioAnimId = null;
+      }
+    }
+
+    startPolling(sessionId) {
+      this.stopPolling();
+      const self = this;
+      this.pollTimer = setInterval(async () => {
+        if (!self.currentView || self.currentView !== 'live') return;
+        try {
+          const tenantId = self.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+          const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=poll_canvas_events&sessionId=${sessionId}&lastEventId=${self.lastEventId}`);
+          const data = await res.json();
+          if (data.Status === 'OK' && data.NewEvents && data.NewEvents.length > 0) {
+            data.NewEvents.forEach(ev => {
+              self.lastEventId = Math.max(self.lastEventId, ev.eventId);
+              self.handleCanvasEvent(ev);
+            });
+          }
+        } catch (e) {
+          // Silent poll fail
+        }
+      }, 1500);
+    }
+
+    stopPolling() {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+    }
+
+    handleCanvasEvent(event) {
+      $('#qx_synced_event_id').text(`EVT #${event.eventId}`);
+      if (event.actionType === 'PROJECT_PRODUCT') {
+        this.renderCanvasPayload(event.payload);
+        this.storefront.showToast(`📡 Sommelier proyectó: ${event.payload?.title || 'Fragancia'}`);
+      } else if (event.actionType === 'SHOW_RADAR') {
+        this.storefront.radar?.renderRadarSVG(this.currentProjectedProduct);
+        this.storefront.showToast('📊 Sommelier activó Radar Hexagonal');
+      } else if (event.actionType === 'SHOW_LAYERING') {
+        this.storefront.openLayeringModal();
+        this.storefront.showToast('🧪 Sommelier activó Alquimia de Capas');
+      }
+    }
+
+    upgradeToFullBottle() {
+      const prod = this.currentProjectedProduct || this.storefront.products[0];
+      if (!prod) return;
+
+      const voucherCode = this.activeSession?.cashBackVoucher || 'TASTEVOUCH-2026-AVH';
+      
+      // Add full bottle (100ml) to cart
+      this.storefront.addToCart(prod.id, 1, false);
+
+      // Apply $499 credit voucher
+      this.storefront.appliedVoucher = {
+        code: voucherCode,
+        amount: 499.00,
+        formattedAmount: '$ 499.00 MXN'
+      };
+      this.storefront.renderCartUI();
+
+      this.closeTastingModal();
+      this.storefront.openCart();
+      this.storefront.showToast(`🏆 ¡Frasco de 100ml añadido con $499.00 de bono de cata aplicado!`);
+    }
+  }
+
   window.WeatherEngine = WeatherEngine;
   window.ScentRadarEngine = ScentRadarEngine;
   window.DecantPassportEngine = DecantPassportEngine;
   window.LoyaltyVaultEngine = LoyaltyVaultEngine;
+  window.TastingRoomEngine = TastingRoomEngine;
 
   class QuantixStorefront {
     constructor() {
@@ -906,6 +1282,7 @@
       this.radarEngine = new ScentRadarEngine();
       this.passportEngine = new DecantPassportEngine(this);
       this.loyalty = new LoyaltyVaultEngine(this);
+      this.tasting = new TastingRoomEngine(this);
       this.appliedVoucher = null;
       this.tenant = null;
       this.products = [];
@@ -959,6 +1336,7 @@
       this.renderCartUI();
       this.passportEngine.loadPassport();
       this.loyalty.init();
+      this.tasting.init();
       
       const savedView = localStorage.getItem('qx_catalog_view') || '2col';
       this.setCatalogView(savedView);
@@ -1843,6 +2221,7 @@
     isModalOrDrawerOpen() {
       return $('#qx_product_modal').hasClass('active') ||
              $('#qx_vault_modal').hasClass('active') ||
+             $('#qx_tasting_modal').hasClass('active') ||
              $('#qx_passport_modal').hasClass('active') ||
              $('#qx_radar_compare_modal').hasClass('active') ||
              $('#qx_layering_modal').hasClass('active') ||
