@@ -432,12 +432,16 @@
       const initialPhoto = photos[0].thumb || photos[0].url;
 
       // Media Stage
+      const cardImg = $(`<img class="qx-card-img" src="${self.esc(initialPhoto)}" alt="${self.esc(p.name)}">`);
+      self.autoFitImage(cardImg[0]);
+      cardImg.on('load', function() { self.autoFitImage(this); });
+
       const media = $(`
         <div class="qx-card-media" title="Haz clic para ver detalles y fotos">
-          <img class="qx-card-img" src="${self.esc(initialPhoto)}" alt="${self.esc(p.name)}">
           <div class="qx-card-zoom-badge">✨ Ver Ficha</div>
         </div>
       `);
+      media.prepend(cardImg);
 
       // Hover-Scrub Filmstrip Dots
       if (photos.length > 1) {
@@ -448,7 +452,9 @@
             e.stopPropagation();
             scrubBar.find('.qx-scrub-dot').removeClass('active');
             $(this).addClass('active');
-            media.find('.qx-card-img').attr('src', photo.thumb || photo.url);
+            const imgEl = media.find('.qx-card-img');
+            imgEl.attr('src', photo.thumb || photo.url);
+            self.autoFitImage(imgEl[0]);
           });
           scrubBar.append(dot);
         });
@@ -714,6 +720,9 @@
 
       photos.forEach((photo, idx) => {
         const slide = $(`<div class="qx-pmodal-swipe-slide" data-idx="${idx}"><img src="${self.esc(photo.url || photo.thumb)}" alt="${self.esc(product.name)}"></div>`);
+        const slideImg = slide.find('img');
+        self.autoFitImage(slideImg[0]);
+        slideImg.on('load', function() { self.autoFitImage(this); });
         swipeTrack.append(slide);
 
         const dot = $(`<div class="qx-pmodal-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>`);
@@ -1648,6 +1657,47 @@
 
       $('#qx_quiz_results').fadeIn(200);
       this.playAudioSynth('cart');
+    }
+
+    autoFitImage(imgEl) {
+      if (!imgEl) return;
+      const applyFit = () => {
+        const nw = imgEl.naturalWidth || imgEl.width;
+        const nh = imgEl.naturalHeight || imgEl.height;
+        if (!nw || !nh) return;
+
+        imgEl.style.objectFit = 'contain';
+        imgEl.style.objectPosition = 'center';
+        imgEl.style.display = 'block';
+        imgEl.style.margin = 'auto';
+
+        // Proportional scale: ensure complete product visibility with generous breathing room
+        if (nh > nw * 1.15) {
+          // Tall bottle
+          imgEl.style.maxHeight = '88%';
+          imgEl.style.maxWidth = '86%';
+          imgEl.style.width = 'auto';
+          imgEl.style.height = 'auto';
+        } else if (nw > nh * 1.15) {
+          // Wide packaging
+          imgEl.style.maxWidth = '88%';
+          imgEl.style.maxHeight = '86%';
+          imgEl.style.width = 'auto';
+          imgEl.style.height = 'auto';
+        } else {
+          // Square or balanced
+          imgEl.style.maxWidth = '88%';
+          imgEl.style.maxHeight = '88%';
+          imgEl.style.width = 'auto';
+          imgEl.style.height = 'auto';
+        }
+      };
+
+      if (imgEl.complete && imgEl.naturalWidth) {
+        applyFit();
+      } else {
+        imgEl.onload = applyFit;
+      }
     }
 
     esc(str) {

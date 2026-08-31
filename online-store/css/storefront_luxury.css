@@ -287,23 +287,30 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #0b1120;
+  background: #ffffff;
+  border-radius: var(--qx-radius-md) var(--qx-radius-md) 0 0;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  padding: 12px;
 }
 
 .qx-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: 90%;
+  max-height: 90%;
+  width: auto;
+  height: auto;
+  object-fit: contain !important;
+  object-position: center;
+  display: block;
+  margin: auto;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
 }
 
 .qx-card:hover .qx-card-img {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 /* Quick Zoom Pill */
@@ -1759,8 +1766,10 @@ body {
     border-radius: var(--qx-radius-md);
   }
   .qx-grid.view-2col .qx-card-media {
-    height: 165px;
-    padding: 8px;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    padding: 10px;
+    background: #ffffff;
   }
   .qx-grid.view-2col .qx-card-body {
     padding: 10px 12px 14px 12px;
