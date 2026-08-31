@@ -6887,3 +6887,803 @@ body {
   .qx-live-footer-actions { flex-direction: column; }
 }
 
+/* ==========================================================================
+   FEATURE 8: THE ROYAL CONCIERGE AGENDA & ATELIER BOOKING SUITE
+   ========================================================================== */
+
+.qx-agenda-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.qx-agenda-nav-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.4) 100%);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+  border-color: #fbbf24;
+}
+
+.qx-agenda-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 10px #f59e0b;
+  animation: qxPulse 2s infinite ease-in-out;
+}
+
+.qx-agenda-modal {
+  max-width: 960px;
+  width: 94%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: radial-gradient(circle at top right, #1f1627 0%, #0c0f18 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.15);
+  border-radius: 24px;
+  padding: 28px;
+}
+
+.qx-agenda-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.qx-agenda-brand-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-agenda-crest {
+  font-size: 32px;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));
+}
+
+.qx-agenda-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.qx-agenda-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+/* Stepper Rail */
+.qx-agenda-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 24px;
+}
+
+.qx-astep-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-astep-item.active {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.qx-astep-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.qx-astep-item.active .qx-astep-num {
+  background: #f59e0b;
+  color: #000;
+  font-weight: 900;
+}
+
+/* View 1: 3D Keycard */
+.qx-keycard-hero-wrap {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.qx-keycard-container {
+  width: 100%;
+  height: 200px;
+  perspective: 1000px;
+}
+
+.qx-keycard-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 16px;
+}
+
+.qx-keycard-container.flipped .qx-keycard-inner {
+  transform: rotateY(180deg);
+}
+
+.qx-keycard-front, .qx-keycard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 16px;
+  padding: 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.qx-keycard-front {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  background-image: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.15) 0%, transparent 60%);
+}
+
+.qx-keycard-back {
+  background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+  transform: rotateY(180deg);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.qx-kcard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.5px;
+}
+
+.qx-kcard-chip {
+  width: 28px;
+  height: 20px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.4);
+}
+
+.qx-kcard-monogram {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fef08a;
+  text-shadow: 0 2px 8px rgba(245, 158, 11, 0.5);
+  font-family: serif;
+}
+
+.qx-kcard-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.qx-kcard-signature {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.qx-kcard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.qx-kcard-tier {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.qx-kcard-status {
+  color: #10b981;
+}
+
+/* Scanner Box */
+.qx-scanner-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.qx-scan-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.qx-scan-input {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.qx-scan-input:focus {
+  border-color: #f59e0b;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+}
+
+.qx-btn-scan-keycard {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-btn-scan-keycard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+}
+
+.qx-scan-status-pill {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qx-btn-agenda-next {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-btn-agenda-next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+}
+
+/* View 2: Chronos & Scent Horizon */
+.qx-chronos-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.qx-exp-selector-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.qx-exp-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-exp-card.selected {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.qx-exp-icon { font-size: 24px; }
+.qx-exp-name { font-size: 13px; font-weight: 800; color: #fff; }
+.qx-exp-sub { font-size: 11px; color: #94a3b8; }
+
+.qx-chrono-bands-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qx-chrono-band-card {
+  background: rgba(18, 24, 38, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s;
+}
+
+.qx-chrono-band-card:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(18, 24, 38, 0.85);
+}
+
+.qx-cband-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.qx-cband-icon { font-size: 28px; }
+.qx-cband-title { font-size: 14px; font-weight: 800; color: #fff; }
+.qx-cband-time { font-size: 12px; color: #f59e0b; font-weight: 700; }
+.qx-cband-desc { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+.qx-cband-somm-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.qx-cband-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.qx-cslot-chip {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-cslot-chip:hover:not(.booked) {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.qx-cslot-chip.selected {
+  background: #f59e0b;
+  color: #000;
+  border-color: #f59e0b;
+  font-weight: 800;
+}
+
+.qx-cslot-chip.booked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.qx-chronos-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-channel-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-chan-pill {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.qx-chan-pill.selected {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+/* View 3: Olfactory Intake Briefing */
+.qx-intake-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.qx-intake-section {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+.qx-intake-lbl {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.qx-occasion-pills, .qx-proj-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.qx-occ-pill, .qx-proj-pill {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.qx-occ-pill.selected, .qx-proj-pill.selected {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.qx-dial-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-dial-val-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.qx-intake-dial-slider {
+  flex: 1;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+.qx-intake-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+  resize: vertical;
+}
+
+.qx-btn-agenda-back {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.qx-btn-agenda-submit {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+}
+
+.qx-btn-agenda-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.5);
+}
+
+/* View 4: Luxury Boarding Pass & Pre-Session Lounge */
+.qx-boarding-pass-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+}
+
+.qx-boarding-pass-card {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.qx-bpass-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(245, 158, 11, 0.3);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.qx-bpass-brand {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.qx-bpass-seal {
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.qx-bpass-code-tag {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qx-bpass-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.qx-bpass-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+.qx-bpass-val { font-size: 13px; color: #fff; font-weight: 800; margin-top: 2px; }
+
+.qx-bpass-qr-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.qx-bpass-qr-mock {
+  width: 70px;
+  height: 70px;
+  background: #f8fafc;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qx-qr-pattern {
+  width: 44px;
+  height: 44px;
+  background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 10px 10px;
+  border-radius: 4px;
+}
+
+.qx-bpass-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qx-btn-bpass-ics {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.qx-btn-bpass-ics:hover {
+  background: rgba(245, 158, 11, 0.25);
+}
+
+.qx-btn-bpass-wa {
+  background: #25D366;
+  color: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+/* Pre-Session Lounge Card */
+.qx-pre-lounge-card {
+  background: rgba(18, 24, 38, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.qx-lounge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.qx-lounge-live-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.qx-lounge-somm-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px;
+  border-radius: 12px;
+  margin: 14px 0;
+}
+
+.qx-lounge-somm-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #f59e0b;
+}
+
+.qx-lounge-countdown-box {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+  padding: 16px;
+  border-radius: 14px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.qx-lounge-time {
+  font-size: 32px;
+  font-weight: 900;
+  color: #f59e0b;
+  font-family: monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+}
+
+.qx-lounge-sub {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.qx-btn-enter-private-room {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+}
+
+.qx-btn-enter-private-room:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5);
+}
+
+@media (max-width: 860px) {
+  .qx-keycard-hero-wrap { grid-template-columns: 1fr; }
+  .qx-exp-selector-bar { grid-template-columns: 1fr; }
+  .qx-chrono-band-card { flex-direction: column; align-items: flex-start; }
+  .qx-boarding-pass-layout { grid-template-columns: 1fr; }
+  .qx-agenda-stepper { grid-template-columns: repeat(2, 1fr); }
+}
+
+

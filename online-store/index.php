@@ -68,7 +68,11 @@ $tenant = StorefrontTenant::resolve();
         <input type="text" id="qx_search_input" class="qx-search-input" placeholder="Buscar por nombre, código o SKU... (⌘K)" autocomplete="off">
       </div>
 
-      <div class="qx-nav-actions">
+        <button type="button" class="qx-agenda-nav-btn" id="qx_btn_nav_agenda" title="Agenda VIP & Concierge Privado">
+          <span class="qx-agenda-sparkle">🗓️</span>
+          <span>Agenda VIP</span>
+          <span class="qx-agenda-live-dot" title="Concierge Disponible"></span>
+        </button>
         <button type="button" class="qx-tasting-nav-btn" id="qx_btn_nav_tasting" title="Masterclass VIP & Sala Privada de Cata 1-a-1">
           <span class="qx-tasting-sparkle">🍷</span>
           <span>Cata Virtual</span>
@@ -1303,6 +1307,288 @@ $tenant = StorefrontTenant::resolve();
     </div>
   </div>
 
+  <!-- Feature 8: The Royal Concierge Agenda & Haute Parfumerie Atelier Booking Suite -->
+  <div class="qx-modal-backdrop" id="qx_agenda_backdrop"></div>
+  <div class="qx-modal qx-agenda-modal" id="qx_agenda_modal">
+    <div class="qx-agenda-container">
+      <!-- Modal Header -->
+      <div class="qx-agenda-header">
+        <div class="qx-agenda-brand-strip">
+          <span class="qx-agenda-crest">👑</span>
+          <div>
+            <div class="qx-agenda-badge">CONSERJERÍA DE ALTA PERFUMERÍA</div>
+            <h2 class="qx-agenda-title">The Royal Concierge Agenda & Atelier Booking</h2>
+          </div>
+        </div>
+        <button type="button" class="qx-modal-close" id="qx_agenda_close" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <!-- Stepper Navigation Rail -->
+      <div class="qx-agenda-stepper">
+        <div class="qx-astep-item active" id="qx_astep_btn_1" data-step="1">
+          <span class="qx-astep-num">1</span>
+          <span class="qx-astep-txt">Llave VIP</span>
+        </div>
+        <div class="qx-astep-item" id="qx_astep_btn_2" data-step="2">
+          <span class="qx-astep-num">2</span>
+          <span class="qx-astep-txt">Horizontes Chronos</span>
+        </div>
+        <div class="qx-astep-item" id="qx_astep_btn_3" data-step="3">
+          <span class="qx-astep-num">3</span>
+          <span class="qx-astep-txt">Intake Olfativo</span>
+        </div>
+        <div class="qx-astep-item" id="qx_astep_btn_4" data-step="4">
+          <span class="qx-astep-num">4</span>
+          <span class="qx-astep-txt">Pase de Gala</span>
+        </div>
+      </div>
+
+      <div class="qx-agenda-content-body">
+        <!-- VIEW 1: ROYAL KEYCARD INTAKE -->
+        <div class="qx-agenda-view" id="qx_agenda_view_keycard">
+          <div class="qx-keycard-hero-wrap">
+            <!-- 3D Flipping Obsidian Keycard -->
+            <div class="qx-keycard-container" id="qx_keycard_container">
+              <div class="qx-keycard-inner" id="qx_keycard_inner">
+                <div class="qx-keycard-front">
+                  <div class="qx-kcard-header">
+                    <span class="qx-kcard-emblem">👑 MAISON QUANTIX</span>
+                    <span class="qx-kcard-chip"></span>
+                  </div>
+                  <div class="qx-kcard-body">
+                    <div class="qx-kcard-monogram" id="qx_keycard_monogram">AVH</div>
+                    <div class="qx-kcard-name" id="qx_keycard_name">Alexander von Humboldt</div>
+                    <div class="qx-kcard-signature" id="qx_keycard_signature">Signature: Rasasi Hawas / Oud Royal</div>
+                  </div>
+                  <div class="qx-kcard-footer">
+                    <span class="qx-kcard-tier" id="qx_keycard_tier">MASTER PERFUMER</span>
+                    <span class="qx-kcard-status">● LLAVE ACTIVA</span>
+                  </div>
+                </div>
+                <div class="qx-keycard-back">
+                  <div class="qx-kcard-back-mag"></div>
+                  <div class="qx-kcard-back-barcode">||| | |||| | ||| |||| | ||</div>
+                  <div class="qx-kcard-back-txt">Acceso exclusivo a catas privadas, barricas numeradas y asesoría directa de alta perfumería.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Soft-Gate Scanner Box -->
+            <div class="qx-scanner-box">
+              <h3 style="font-size:16px; font-weight:800; color:#fff; margin-bottom:6px;">Ingreso a la Conserjería Privada</h3>
+              <p style="font-size:12px; color:#94a3b8; margin-bottom:16px; line-height:1.4;">
+                Ingresa tu Email o Teléfono WhatsApp para autenticar tu Llave de Bóveda y acceder a la agenda prioritaria.
+              </p>
+              
+              <div class="qx-scan-input-row">
+                <input type="text" class="qx-scan-input" id="qx_agenda_keycard_input" value="alexander@humboldt-expeditions.org" placeholder="tu-email@ejemplo.com o +52...">
+                <button type="button" class="qx-btn-scan-keycard" id="qx_btn_scan_keycard">
+                  🔍 Escanear Llave
+                </button>
+              </div>
+
+              <div class="qx-scan-status-pill" id="qx_scan_status_pill">
+                ✨ Llave VIP Reconocida: Alexander von Humboldt (Master Perfumer)
+              </div>
+
+              <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button type="button" class="qx-btn-agenda-next" id="qx_btn_proceed_to_chronos">
+                  Continuar a Selección de Horario ➔
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: CHRONOS & SCENT HORIZON -->
+        <div class="qx-agenda-view" id="qx_agenda_view_chronos" style="display:none;">
+          <div class="qx-chronos-layout">
+            <!-- Experience Selector -->
+            <div class="qx-exp-selector-bar">
+              <div class="qx-exp-card selected" data-exp="TASTING_MASTERCLASS">
+                <span class="qx-exp-icon">🍷</span>
+                <div>
+                  <div class="qx-exp-name">Cata Virtual 1-a-1</div>
+                  <div class="qx-exp-sub">Coffret 4x5ml + 100% Bonificable</div>
+                </div>
+              </div>
+              <div class="qx-exp-card" data-exp="SIGNATURE_SCENT">
+                <span class="qx-exp-icon">🎩</span>
+                <div>
+                  <div class="qx-exp-name">Signature Scent</div>
+                  <div class="qx-exp-sub">Asesoría de Evento & Bodas</div>
+                </div>
+              </div>
+              <div class="qx-exp-card" data-exp="LAYERING_ALCHEMY">
+                <span class="qx-exp-icon">🧪</span>
+                <div>
+                  <div class="qx-exp-name">Alquimia de Capas</div>
+                  <div class="qx-exp-sub">Combinaciones de Autor a Medida</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Atmospheric Bands Container -->
+            <div class="qx-chrono-bands-container" id="qx_chrono_bands_container">
+              <!-- Rendered dynamically by JS -->
+            </div>
+
+            <!-- Channel Preference & Proceed -->
+            <div class="qx-chronos-footer">
+              <div class="qx-channel-pills">
+                <span style="font-size:12px; color:#cbd5e1; font-weight:700; margin-right:8px;">Canal:</span>
+                <button type="button" class="qx-chan-pill selected" id="qx_chan_btn_webrtc">💻 Sala In-App HD</button>
+                <button type="button" class="qx-chan-pill" id="qx_chan_btn_wa">📱 WhatsApp Video VIP</button>
+              </div>
+              <button type="button" class="qx-btn-agenda-next" id="qx_btn_proceed_to_intake">
+                Definir Intake Olfativo ➔
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 3: OLFACTORY INTAKE BRIEFING -->
+        <div class="qx-agenda-view" id="qx_agenda_view_intake" style="display:none;">
+          <div class="qx-intake-layout">
+            <div class="qx-intake-section">
+              <label class="qx-intake-lbl">1. ¿Para qué ocasión buscas tu fragancia?</label>
+              <div class="qx-occasion-pills" id="qx_occasion_pills">
+                <button type="button" class="qx-occ-pill selected" data-occ="Presencia Ejecutiva & Seducción">💼 Presencia Ejecutiva & Seducción</button>
+                <button type="button" class="qx-occ-pill" data-occ="Boda Real & Evento de Gala">💍 Boda Real & Evento de Gala</button>
+                <button type="button" class="qx-occ-pill" data-occ="Signature Diario & Oficina">☀️ Signature Diario & Oficina</button>
+                <button type="button" class="qx-occ-pill" data-occ="Alquimia Personal & Colección">🧪 Alquimia Personal & Colección</button>
+              </div>
+            </div>
+
+            <div class="qx-intake-section">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label class="qx-intake-lbl">2. Dial Analógico de Intensidad Olfativa</label>
+                <span class="qx-dial-val-badge" id="qx_intake_dial_label">65% — Opulencia Amaderada</span>
+              </div>
+              <div class="qx-dial-slider-wrap">
+                <span style="font-size:11px; color:#38bdf8;">🍋 Fresco Cítrico (-100)</span>
+                <input type="range" min="-100" max="100" value="65" class="qx-intake-dial-slider" id="qx_intake_intensity_dial">
+                <span style="font-size:11px; color:#f59e0b;">🪵 Ámbar Oriental (+100)</span>
+              </div>
+            </div>
+
+            <div class="qx-intake-section">
+              <label class="qx-intake-lbl">3. Modo de Proyección Deseado</label>
+              <div class="qx-proj-pills" id="qx_proj_pills">
+                <button type="button" class="qx-proj-pill" data-proj="INTIMATE">Sutil / Íntimo (1 spray)</button>
+                <button type="button" class="qx-proj-pill" data-proj="MODERATE">Elegante / Versátil (3 sprays)</button>
+                <button type="button" class="qx-proj-pill selected" data-proj="BEAST_MODE">👑 Beast-Mode Nuclear (6+ sprays)</button>
+              </div>
+            </div>
+
+            <div class="qx-intake-section">
+              <label class="qx-intake-lbl">4. Perfumes que usas o notas favoritas (Opcional)</label>
+              <textarea class="qx-intake-textarea" id="qx_intake_notes" rows="2" placeholder="Ej: Rasasi Hawas, acordes marinos, piña, cuero, vainilla bourbon...">Rasasi Hawas, Afnan 9AM Dive, notas especiadas y secado de ámbar gris.</textarea>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+              <button type="button" class="qx-btn-agenda-back" id="qx_btn_back_to_chronos">← Volver a Horarios</button>
+              <button type="button" class="qx-btn-agenda-submit" id="qx_btn_submit_royal_agenda">
+                👑 Confirmar Cita & Emitir Pase de Gala
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 4: DIGITAL BOARDING PASS & PRE-SESSION LOUNGE -->
+        <div class="qx-agenda-view" id="qx_agenda_view_pass" style="display:none;">
+          <div class="qx-boarding-pass-layout">
+            <!-- Luxury Boarding Pass Ticket -->
+            <div class="qx-boarding-pass-card" id="qx_boarding_pass_card">
+              <div class="qx-bpass-top">
+                <div class="qx-bpass-brand">
+                  <span>👑 MAISON QUANTIX</span>
+                  <span class="qx-bpass-seal">ROYAL BOARDING PASS</span>
+                </div>
+                <div class="qx-bpass-code-tag" id="qx_bpass_code">AGENDA-2026-VIP</div>
+              </div>
+
+              <div class="qx-bpass-body">
+                <div class="qx-bpass-grid">
+                  <div>
+                    <div class="qx-bpass-lbl">ASISTENTE VIP</div>
+                    <div class="qx-bpass-val" id="qx_bpass_client_name">Alexander von Humboldt</div>
+                  </div>
+                  <div>
+                    <div class="qx-bpass-lbl">FECHA DE CATA</div>
+                    <div class="qx-bpass-val" id="qx_bpass_date">Hoy, 31 de Agosto</div>
+                  </div>
+                  <div>
+                    <div class="qx-bpass-lbl">HORA (20 MIN)</div>
+                    <div class="qx-bpass-val" id="qx_bpass_time">15:45 hrs</div>
+                  </div>
+                  <div>
+                    <div class="qx-bpass-lbl">MAESTRO ASIGNADO</div>
+                    <div class="qx-bpass-val" id="qx_bpass_sommelier">Jean-Luc Moreau</div>
+                  </div>
+                  <div>
+                    <div class="qx-bpass-lbl">HORIZONTE ATMOSFÉRICO</div>
+                    <div class="qx-bpass-val" id="qx_bpass_band">The Golden Hour Atelier</div>
+                  </div>
+                  <div>
+                    <div class="qx-bpass-lbl">BONIFICACIÓN DISPONIBLE</div>
+                    <div class="qx-bpass-val" style="color:#10b981;" id="qx_bpass_voucher_val">$ 499.00 MXN</div>
+                  </div>
+                </div>
+
+                <div class="qx-bpass-qr-box">
+                  <div class="qx-bpass-qr-mock">
+                    <div class="qx-qr-pattern"></div>
+                    <span style="font-size:10px; font-weight:800; color:#1e1b4b; margin-top:4px;">PASS QR</span>
+                  </div>
+                  <div style="font-size:11px; color:#cbd5e1; text-align:center; margin-top:6px;">
+                    Presenta este código en tu sesión o accede directamente.
+                  </div>
+                </div>
+              </div>
+
+              <div class="qx-bpass-actions">
+                <a href="#" class="qx-btn-bpass-ics" id="qx_btn_download_ics" download="Maison-Tasting-AGENDA-2026-VIP.ics">
+                  📅 Guardar en Apple / Google Calendar (.ics)
+                </a>
+                <a href="#" target="_blank" class="qx-btn-bpass-wa" id="qx_btn_wa_agenda_link">
+                  💬 Confirmar en WhatsApp VIP
+                </a>
+              </div>
+            </div>
+
+            <!-- VIP Pre-Session Lounge Container -->
+            <div class="qx-pre-lounge-card" id="qx_lounge_panel">
+              <div class="qx-lounge-header">
+                <span style="color:#f59e0b;">🍸 SALA DE ESPERA VIP (PRE-SESSION LOUNGE)</span>
+                <span class="qx-lounge-live-badge">● Sala Abierta</span>
+              </div>
+
+              <div class="qx-lounge-somm-status">
+                <img src="assets/sommelier_avatar.png" alt="Sommelier" class="qx-lounge-somm-avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'%23f59e0b\'><circle cx=\'12\' cy=\'8\' r=\'4\'/><path d=\'M12 14c-6 0-8 3-8 6h16c0-3-2-6-8-6z\'/></svg>'">
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:#fff;" id="qx_lounge_somm_msg">Jean-Luc Moreau está preparando tu set de catas...</div>
+                  <div style="font-size:11px; color:#94a3b8;">Frascos 3D, pirámides y decants cargados en el atelier.</div>
+                </div>
+              </div>
+
+              <div class="qx-lounge-countdown-box">
+                <div class="qx-lounge-cring">
+                  <div class="qx-lounge-time" id="qx_lounge_countdown">00:14:59</div>
+                  <div class="qx-lounge-sub">TIEMPO PARA EL INICIO</div>
+                </div>
+              </div>
+
+              <button type="button" class="qx-btn-enter-private-room" id="qx_btn_lounge_enter_room">
+                🍷 Entrar a la Sala Privada con Jean-Luc Moreau
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="qx-toast" id="qx_toast"></div>
 
@@ -1327,6 +1613,10 @@ $tenant = StorefrontTenant::resolve();
     <button type="button" class="qx-dock-item active" id="qx_dock_home" aria-label="Inicio">
       <span class="qx-dock-icon">🏠</span>
       <span class="qx-dock-label">Inicio</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_agenda" aria-label="Agenda VIP">
+      <span class="qx-dock-icon">🗓️</span>
+      <span class="qx-dock-label">Agenda</span>
     </button>
     <button type="button" class="qx-dock-item" id="qx_dock_tasting" aria-label="Cata Virtual">
       <span class="qx-dock-icon">🍷</span>

@@ -1269,11 +1269,368 @@
     }
   }
 
+  class RoyalConciergeAgendaEngine {
+    constructor(storefront) {
+      this.storefront = storefront;
+      this.currentStep = 1;
+      this.scannedMember = null;
+      this.selectedExperience = 'TASTING_MASTERCLASS';
+      this.selectedBand = 'GOLDEN_HOUR';
+      this.selectedSlot = '15:45';
+      this.selectedChannel = 'WEBRTC';
+      this.selectedOccasion = 'Presencia Ejecutiva & Seducción';
+      this.intensityDial = 65;
+      this.projectionMode = 'BEAST_MODE';
+      this.activeAppointment = null;
+      this.loungeTimer = null;
+      this.loungeSecondsLeft = 899; // 14:59
+      this.bandsData = [];
+    }
+
+    async init() {
+      await this.loadAtmosphericSlots();
+      this.bindEvents();
+    }
+
+    async scanKeycard(inputStr) {
+      const input = inputStr || $('#qx_agenda_keycard_input').val().trim();
+      if (!input) {
+        this.storefront.showToast('⚠️ Ingresa tu email o teléfono');
+        return;
+      }
+
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=quick_scan_keycard&input=${encodeURIComponent(input)}`);
+        const data = await res.json();
+
+        if (data.Status === 'OK') {
+          this.scannedMember = data.Member;
+          this.renderKeycardUI(data.Member);
+          this.flipKeycard();
+          this.storefront.playHaptic('success');
+          this.storefront.showToast(`👑 Llave autenticada: ${data.Member.name} (${data.Member.tierLabel})`);
+        }
+      } catch (err) {
+        console.warn('scanKeycard error:', err);
+      }
+    }
+
+    renderKeycardUI(member) {
+      $('#qx_keycard_monogram').text(member.initials || 'AVH');
+      $('#qx_keycard_name').text(member.name || 'Alexander von Humboldt');
+      $('#qx_keycard_tier').text(member.tier ? member.tier.replace(/_/g, ' ') : 'MASTER PERFUMER');
+      $('#qx_keycard_signature').text(`Signature: ${member.signatureScent || 'Rasasi Hawas / Oud Royal'}`);
+      
+      const statusTxt = (member.tier === 'MASTER_PERFUMER')
+        ? `✨ Llave VIP Reconocida: ${member.name} (${member.tierLabel})`
+        : `✨ Pase de Invitado Activo: ${member.name} (50 PTS)`;
+      $('#qx_scan_status_pill').text(statusTxt);
+    }
+
+    flipKeycard() {
+      const $card = $('#qx_keycard_container');
+      $card.addClass('flipped');
+      setTimeout(() => {
+        $card.removeClass('flipped');
+      }, 1800);
+    }
+
+    async loadAtmosphericSlots(dateStr) {
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const date = dateStr || new Date().toISOString().split('T')[0];
+        const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=get_atmospheric_slots&date=${date}`);
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.bandsData = data.Bands || [];
+          this.renderBandsUI();
+        }
+      } catch (err) {
+        console.warn('loadAtmosphericSlots error:', err);
+      }
+    }
+
+    renderBandsUI() {
+      const $wrap = $('#qx_chrono_bands_container');
+      $wrap.empty();
+
+      this.bandsData.forEach(band => {
+        const isBandSelected = (band.id === this.selectedBand);
+        const $card = $(`
+          <div class="qx-chrono-band-card ${isBandSelected ? 'selected' : ''}" data-band-id="${band.id}">
+            <div class="qx-cband-meta">
+              <span class="qx-cband-icon">${band.icon}</span>
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="qx-cband-title">${band.name}</span>
+                  <span class="qx-cband-time">${band.timeRange}</span>
+                </div>
+                <div class="qx-cband-desc">${band.atmosphere}</div>
+              </div>
+            </div>
+            <div class="qx-cband-somm-badge">
+              <span>🍷</span>
+              <span>${band.sommelier.name}</span>
+            </div>
+            <div class="qx-cband-slots" id="qx_slots_for_${band.id}">
+            </div>
+          </div>
+        `);
+
+        const $slotsWrap = $card.find(`#qx_slots_for_${band.id}`);
+        band.slots.forEach(s => {
+          const isSlotSelected = (s.time === this.selectedSlot);
+          $slotsWrap.append(`
+            <button type="button" class="qx-cslot-chip ${s.isAvailable ? '' : 'booked'} ${isSlotSelected ? 'selected' : ''}" data-band="${band.id}" data-time="${s.time}">
+              ${s.time}
+            </button>
+          `);
+        });
+
+        $wrap.append($card);
+      });
+    }
+
+    goToStep(stepNum) {
+      this.currentStep = stepNum;
+      $('.qx-astep-item').removeClass('active');
+      $(`#qx_astep_btn_${stepNum}`).addClass('active');
+
+      $('.qx-agenda-view').hide();
+      if (stepNum === 1) $('#qx_agenda_view_keycard').fadeIn(200);
+      else if (stepNum === 2) $('#qx_agenda_view_chronos').fadeIn(200);
+      else if (stepNum === 3) $('#qx_agenda_view_intake').fadeIn(200);
+      else if (stepNum === 4) $('#qx_agenda_view_pass').fadeIn(200);
+    }
+
+    bindEvents() {
+      const self = this;
+
+      // Nav triggers
+      $('#qx_btn_nav_agenda, #qx_dock_agenda').on('click', function(e) {
+        e.preventDefault();
+        self.openAgendaModal();
+      });
+
+      $('#qx_agenda_close, #qx_agenda_backdrop').on('click', function(e) {
+        e.preventDefault();
+        self.closeAgendaModal();
+      });
+
+      // Stepper clicks
+      $('.qx-astep-item').on('click', function() {
+        const step = parseInt($(this).data('step'), 10);
+        self.goToStep(step);
+      });
+
+      // Keycard Scanner
+      $('#qx_btn_scan_keycard').on('click', function() {
+        self.scanKeycard();
+      });
+
+      $('#qx_btn_proceed_to_chronos').on('click', function() {
+        self.goToStep(2);
+      });
+
+      // Experience Selector
+      $(document).on('click', '.qx-exp-card', function() {
+        $('.qx-exp-card').removeClass('selected');
+        $(this).addClass('selected');
+        self.selectedExperience = $(this).data('exp');
+        self.storefront.playHaptic('light');
+      });
+
+      // Slot Click
+      $(document).on('click', '.qx-cslot-chip:not(.booked)', function(e) {
+        e.stopPropagation();
+        $('.qx-cslot-chip').removeClass('selected');
+        $(this).addClass('selected');
+        self.selectedBand = $(this).data('band');
+        self.selectedSlot = $(this).data('time');
+        self.storefront.playHaptic('medium');
+      });
+
+      // Channel Click
+      $('#qx_chan_btn_webrtc').on('click', function() {
+        $('#qx_chan_btn_webrtc').addClass('selected');
+        $('#qx_chan_btn_wa').removeClass('selected');
+        self.selectedChannel = 'WEBRTC';
+      });
+
+      $('#qx_chan_btn_wa').on('click', function() {
+        $('#qx_chan_btn_wa').addClass('selected');
+        $('#qx_chan_btn_webrtc').removeClass('selected');
+        self.selectedChannel = 'WHATSAPP';
+      });
+
+      $('#qx_btn_proceed_to_intake').on('click', function() {
+        self.goToStep(3);
+      });
+
+      $('#qx_btn_back_to_chronos').on('click', function() {
+        self.goToStep(2);
+      });
+
+      // Occasion Pills
+      $('.qx-occ-pill').on('click', function() {
+        $('.qx-occ-pill').removeClass('selected');
+        $(this).addClass('selected');
+        self.selectedOccasion = $(this).data('occ');
+        self.storefront.playHaptic('light');
+      });
+
+      // Projection Mode Pills
+      $('.qx-proj-pill').on('click', function() {
+        $('.qx-proj-pill').removeClass('selected');
+        $(this).addClass('selected');
+        self.projectionMode = $(this).data('proj');
+        self.storefront.playHaptic('light');
+      });
+
+      // Intensity Dial Slider
+      $('#qx_intake_intensity_dial').on('input', function() {
+        const val = parseInt($(this).val(), 10);
+        self.intensityDial = val;
+        let label = `${val}% — `;
+        if (val < -30) label += 'Frescura Cítrica Marina';
+        else if (val >= -30 && val <= 30) label += 'Equilibrio Versátil Elegante';
+        else label += 'Opulencia Amaderada & Estela Magnética';
+        $('#qx_intake_dial_label').text(label);
+      });
+
+      // Submit Appointment
+      $('#qx_btn_submit_royal_agenda').on('click', async function(e) {
+        e.preventDefault();
+        await self.submitAppointment();
+      });
+
+      // Lounge Room Entrance
+      $('#qx_btn_lounge_enter_room').on('click', function() {
+        self.closeAgendaModal();
+        if (self.storefront.tasting) {
+          self.storefront.tasting.openTastingModal(self.activeAppointment?.code || 'AGENDA-2026-VIP');
+        }
+      });
+    }
+
+    async submitAppointment() {
+      const clientName = this.scannedMember?.name || 'Alexander von Humboldt';
+      const clientEmail = this.scannedMember?.email || $('#qx_agenda_keycard_input').val().trim();
+      const clientPhone = this.scannedMember?.phone || '+523318259000';
+      const clientTier = this.scannedMember?.tier || 'MASTER_PERFUMER';
+      const notes = $('#qx_intake_notes').val().trim();
+
+      try {
+        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=submit_appointment_request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientName: clientName,
+            clientEmail: clientEmail,
+            clientPhone: clientPhone,
+            clientTier: clientTier,
+            experienceType: this.selectedExperience,
+            atmosphericBand: this.selectedBand,
+            scheduledDate: new Date().toISOString().split('T')[0],
+            scheduledTime: this.selectedSlot,
+            channel: this.selectedChannel,
+            occasionMood: this.selectedOccasion,
+            intensityDial: this.intensityDial,
+            projectionMode: this.projectionMode,
+            referenceFragrances: 'Rasasi Hawas, Afnan 9AM Dive',
+            clientNotes: notes
+          })
+        });
+
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.activeAppointment = data.Appointment;
+          this.renderBoardingPassUI(data.Appointment);
+          this.goToStep(4);
+          this.startLoungeCountdown();
+          this.storefront.playHaptic('success');
+          this.storefront.showToast('🎟️ ¡Pase de Gala emitido! Cita agendada exitosamente.');
+        } else {
+          this.storefront.showToast(`⚠️ ${data.Error || 'Error al agendar cita'}`);
+        }
+      } catch (err) {
+        console.error('submitAppointment error:', err);
+      }
+    }
+
+    renderBoardingPassUI(app) {
+      $('#qx_bpass_code').text(app.code || 'AGENDA-2026-VIP');
+      $('#qx_bpass_client_name').text(app.clientName || 'Alexander von Humboldt');
+      $('#qx_bpass_date').text(app.scheduledDate || 'Hoy, 31 de Agosto');
+      $('#qx_bpass_time').text(`${app.scheduledTime} hrs`);
+      $('#qx_bpass_sommelier').text(app.sommelierName || 'Jean-Luc Moreau');
+      
+      const bandNames = {
+        'SOLARIUM': 'The Daylight Solarium',
+        'GOLDEN_HOUR': 'The Golden Hour Atelier',
+        'MIDNIGHT': 'The Midnight Salon'
+      };
+      $('#qx_bpass_band').text(bandNames[app.atmosphericBand] || 'The Golden Hour Atelier');
+      $('#qx_bpass_voucher_val').text(`$ ${Number(app.cashBackAmount || 499).toFixed(2)} MXN`);
+
+      const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+      $('#qx_btn_download_ics').attr('href', `api/concierge_agenda.php?tenant=${tenantId}&action=generate_ics_calendar&code=${encodeURIComponent(app.code)}`);
+      $('#qx_btn_wa_agenda_link').attr('href', `api/concierge_agenda.php?tenant=${tenantId}&action=generate_wa_concierge_link&code=${encodeURIComponent(app.code)}`);
+
+      $('#qx_lounge_somm_msg').text(`${app.sommelierName || 'Jean-Luc Moreau'} está preparando tu set de catas...`);
+      $('#qx_btn_lounge_enter_room').text(`🍷 Entrar a la Sala Privada con ${app.sommelierName || 'Jean-Luc Moreau'}`);
+    }
+
+    startLoungeCountdown() {
+      this.stopLoungeCountdown();
+      this.loungeSecondsLeft = 899; // 14:59
+      const self = this;
+
+      this.loungeTimer = setInterval(() => {
+        self.loungeSecondsLeft--;
+        if (self.loungeSecondsLeft <= 0) {
+          self.stopLoungeCountdown();
+          $('#qx_lounge_countdown').text('00:00:00');
+          return;
+        }
+        const m = Math.floor(self.loungeSecondsLeft / 60);
+        const s = self.loungeSecondsLeft % 60;
+        const formatted = `00:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        $('#qx_lounge_countdown').text(formatted);
+      }, 1000);
+    }
+
+    stopLoungeCountdown() {
+      if (this.loungeTimer) {
+        clearInterval(this.loungeTimer);
+        this.loungeTimer = null;
+      }
+    }
+
+    openAgendaModal() {
+      this.goToStep(1);
+      this.scanKeycard('alexander@humboldt-expeditions.org');
+      $('#qx_agenda_backdrop').addClass('active');
+      $('#qx_agenda_modal').addClass('active');
+      $('body').css('overflow', 'hidden');
+    }
+
+    closeAgendaModal() {
+      $('#qx_agenda_backdrop').removeClass('active');
+      $('#qx_agenda_modal').removeClass('active');
+      $('body').css('overflow', '');
+      this.stopLoungeCountdown();
+    }
+  }
+
   window.WeatherEngine = WeatherEngine;
   window.ScentRadarEngine = ScentRadarEngine;
   window.DecantPassportEngine = DecantPassportEngine;
   window.LoyaltyVaultEngine = LoyaltyVaultEngine;
   window.TastingRoomEngine = TastingRoomEngine;
+  window.RoyalConciergeAgendaEngine = RoyalConciergeAgendaEngine;
 
   class QuantixStorefront {
     constructor() {
@@ -1283,6 +1640,7 @@
       this.passportEngine = new DecantPassportEngine(this);
       this.loyalty = new LoyaltyVaultEngine(this);
       this.tasting = new TastingRoomEngine(this);
+      this.royalAgenda = new RoyalConciergeAgendaEngine(this);
       this.appliedVoucher = null;
       this.tenant = null;
       this.products = [];
@@ -1337,6 +1695,7 @@
       this.passportEngine.loadPassport();
       this.loyalty.init();
       this.tasting.init();
+      this.royalAgenda.init();
       
       const savedView = localStorage.getItem('qx_catalog_view') || '2col';
       this.setCatalogView(savedView);
@@ -2222,6 +2581,7 @@
       return $('#qx_product_modal').hasClass('active') ||
              $('#qx_vault_modal').hasClass('active') ||
              $('#qx_tasting_modal').hasClass('active') ||
+             $('#qx_agenda_modal').hasClass('active') ||
              $('#qx_passport_modal').hasClass('active') ||
              $('#qx_radar_compare_modal').hasClass('active') ||
              $('#qx_layering_modal').hasClass('active') ||
