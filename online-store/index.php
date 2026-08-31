@@ -69,6 +69,10 @@ $tenant = StorefrontTenant::resolve();
       </div>
 
       <div class="qx-nav-actions">
+        <button type="button" class="qx-somm-nav-btn" id="qx_btn_sommelier_trigger" title="Asesor Sensorial Aura AI Sommelier">
+          <span class="qx-somm-sparkle">✨</span>
+          <span>Aura Sommelier</span>
+        </button>
         <button type="button" class="qx-cart-btn" id="qx_cart_btn">
           <span>🛍️</span>
           <span>Carrito</span>
@@ -439,6 +443,45 @@ $tenant = StorefrontTenant::resolve();
       <span><kbd>↑</kbd> <kbd>↓</kbd> Navegar</span>
       <span><kbd>↵</kbd> Ver Ficha</span>
       <span><kbd>ESC</kbd> Cerrar</span>
+    </div>
+  </div>
+
+  <!-- Aura AI Sommelier Modal (Sensory Natural Language Matchmaker) -->
+  <div class="qx-sommelier-backdrop" id="qx_sommelier_backdrop"></div>
+  <div class="qx-sommelier-modal" id="qx_sommelier_modal" role="dialog" aria-modal="true" aria-labelledby="qx_somm_title">
+    <div class="qx-somm-modal-header">
+      <div class="qx-somm-badge"><span>🧠</span> Aura AI Sensory Engine</div>
+      <h2 class="qx-somm-title" id="qx_somm_title">Aura AI Sommelier</h2>
+      <p class="qx-somm-subtitle">Describe lo que buscas por ocasión, clima, acordes o sensación deseada.</p>
+      <button type="button" class="qx-somm-close" id="qx_somm_close" aria-label="Cerrar Sommelier">&times;</button>
+    </div>
+
+    <div class="qx-somm-modal-body">
+      <!-- Conversational Search Wrap -->
+      <div class="qx-somm-search-wrap">
+        <span class="qx-somm-search-icon">✨</span>
+        <input type="text" id="qx_somm_input" class="qx-somm-input" placeholder="Ej. 'Algo fresco para la playa y clima de calor' o 'Dulce con vainilla para cita'..." autocomplete="off">
+        <button type="button" class="qx-somm-voice-btn" id="qx_somm_voice_btn" title="Búsqueda por voz (Web Speech)">🎙️</button>
+      </div>
+
+      <!-- Quick Occasion Chips -->
+      <div class="qx-somm-chips-row" id="qx_somm_chips">
+        <button type="button" class="qx-somm-chip" data-prompt="algo fresco para la playa y clima de calor">🏖️ Boda / Playa</button>
+        <button type="button" class="qx-somm-chip" data-prompt="dulce con vainilla para cita de noche en invierno">🌙 Cita Romántica</button>
+        <button type="button" class="qx-somm-chip" data-prompt="elegante y formal para oficina">💼 Oficina & Elegancia</button>
+        <button type="button" class="qx-somm-chip" data-prompt="calido especiado con canela y ambar">🪵 Especiado & Ámbar</button>
+        <button type="button" class="qx-somm-chip" data-prompt="fragancia duradera potente con alta estela modo bestia">🔥 Modo Bestia</button>
+        <button type="button" class="qx-somm-chip" data-prompt="floral sofisticado femenino para regalo de mujer">🌸 Floral Dama</button>
+      </div>
+
+      <!-- Sommelier Results -->
+      <div class="qx-somm-results-grid" id="qx_somm_results">
+        <div style="text-align:center; padding:32px 16px; color:var(--qx-text-muted);">
+          <div style="font-size:36px; margin-bottom:10px;">✨</div>
+          <div style="font-size:15px; font-weight:700; color:#fff;">Escribe o selecciona una ocasión</div>
+          <div style="font-size:13px; margin-top:4px;">Tu Sommelier personal analizará la pirámide olfativa y estela de cada pieza.</div>
+        </div>
+      </div>
     </div>
   </div>
 

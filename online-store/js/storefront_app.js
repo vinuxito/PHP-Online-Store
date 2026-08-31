@@ -172,11 +172,45 @@
       });
       $('#qx_dock_concierge').on('click', function() {
         self.playHaptic('medium');
-        self.openQuiz();
+        self.openSommelier();
+      });
+      $('#qx_dock_sommelier').on('click', function() {
+        self.playHaptic('medium');
+        self.openSommelier();
+      });
+      $('#qx_btn_sommelier_trigger').on('click', function(e) {
+        e.preventDefault();
+        self.playHaptic('medium');
+        self.openSommelier();
       });
       $('#qx_dock_cart').on('click', function() {
         self.playHaptic('medium');
         self.openCart();
+      });
+
+      // Aura AI Sommelier Modal Events
+      $('#qx_somm_close, #qx_sommelier_backdrop').on('click', () => self.closeSommelier());
+
+      $('#qx_somm_chips .qx-somm-chip').on('click', function() {
+        self.playHaptic('light');
+        $('#qx_somm_chips .qx-somm-chip').removeClass('active');
+        $(this).addClass('active');
+        const prompt = $(this).data('prompt');
+        $('#qx_somm_input').val(prompt);
+        self.querySommelier(prompt);
+      });
+
+      let sommDebounce = null;
+      $('#qx_somm_input').on('input', function() {
+        const val = $(this).val().trim();
+        clearTimeout(sommDebounce);
+        sommDebounce = setTimeout(() => {
+          self.querySommelier(val);
+        }, 300);
+      });
+
+      $('#qx_somm_voice_btn').on('click', function() {
+        self.toggleVoiceSearch();
       });
 
       // Cart Drawer Toggle
@@ -1704,6 +1738,211 @@
       } else {
         imgEl.onload = applyFit;
       }
+    }
+
+    openSommelier(initialPrompt) {
+      this.playHaptic('medium');
+      $('#qx_mobile_dock').addClass('hidden');
+      $('#qx_sommelier_backdrop').addClass('active');
+      $('#qx_sommelier_modal').addClass('active');
+      const input = $('#qx_somm_input');
+      if (initialPrompt) {
+        input.val(initialPrompt);
+        this.querySommelier(initialPrompt);
+      } else if (!input.val()) {
+        const defaultPrompt = 'algo fresco para la playa y clima de calor';
+        $('#qx_somm_chips .qx-somm-chip').first().addClass('active');
+        input.val(defaultPrompt);
+        this.querySommelier(defaultPrompt);
+      }
+      setTimeout(() => input.focus(), 150);
+    }
+
+    closeSommelier() {
+      $('#qx_sommelier_backdrop').removeClass('active');
+      $('#qx_sommelier_modal').removeClass('active');
+      if (!this.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
+      if (this.speechRecognition) {
+        try { this.speechRecognition.stop(); } catch(e) {}
+        $('#qx_somm_voice_btn').removeClass('recording');
+      }
+    }
+
+    toggleVoiceSearch() {
+      const self = this;
+      const btn = $('#qx_somm_voice_btn');
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRec) {
+        this.showToast('Reconocimiento de voz no disponible en este navegador. Escribe tu búsqueda.');
+        return;
+      }
+
+      if (btn.hasClass('recording')) {
+        if (this.speechRecognition) {
+          try { this.speechRecognition.stop(); } catch(e) {}
+        }
+        btn.removeClass('recording');
+        return;
+      }
+
+      try {
+        const rec = new SpeechRec();
+        rec.lang = 'es-MX';
+        rec.continuous = false;
+        rec.interimResults = false;
+
+        rec.onstart = function() {
+          btn.addClass('recording');
+          self.playHaptic('medium');
+          self.showToast('🎙️ Escuchando... Habla ahora');
+        };
+
+        rec.onresult = function(event) {
+          btn.removeClass('recording');
+          const transcript = event.results[0][0].transcript;
+          if (transcript) {
+            $('#qx_somm_input').val(transcript);
+            self.querySommelier(transcript);
+          }
+        };
+
+        rec.onerror = function() {
+          btn.removeClass('recording');
+        };
+
+        rec.onend = function() {
+          btn.removeClass('recording');
+        };
+
+        this.speechRecognition = rec;
+        rec.start();
+      } catch (e) {
+        btn.removeClass('recording');
+      }
+    }
+
+    querySommelier(queryStr) {
+      const self = this;
+      const resultsContainer = $('#qx_somm_results');
+      
+      if (!queryStr || queryStr.trim().length === 0) {
+        resultsContainer.html(`
+          <div style="text-align:center; padding:32px 16px; color:var(--qx-text-muted);">
+            <div style="font-size:36px; margin-bottom:10px;">✨</div>
+            <div style="font-size:15px; font-weight:700; color:#fff;">Escribe o selecciona una ocasión</div>
+            <div style="margin-top:4px; font-size:13px;">Tu Sommelier personal analizará la pirámide olfativa y estela de cada pieza.</div>
+          </div>
+        `);
+        return;
+      }
+
+      resultsContainer.html(`
+        <div style="text-align:center; padding:40px 16px; color:var(--qx-text-muted);">
+          <div class="qx-spinner" style="width:32px; height:32px; margin:0 auto 12px; border:3px solid rgba(236,72,153,0.2); border-top-color:#ec4899; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+          <div style="font-size:14px; font-weight:700; color:#fff;">El Sommelier está analizando el catálogo...</div>
+          <div style="font-size:12px; margin-top:4px; color:#a78bfa;">Cruzando notas de salida, corazón, fondo y ocasión</div>
+        </div>
+      `);
+
+      const tenantParam = (this.tenant && this.tenant.emisorId) ? this.tenant.emisorId : '00163e311ce9a3e711f1591962781ba6';
+
+      $.ajax({
+        url: 'api/sommelier.php',
+        method: 'GET',
+        data: { q: queryStr, tenant: tenantParam, limit: 6 },
+        dataType: 'json',
+        success: function(resp) {
+          if (resp.status === 'OK' && resp.matches && resp.matches.length > 0) {
+            self.renderSommelierMatches(resp.matches);
+          } else {
+            resultsContainer.html(`
+              <div style="text-align:center; padding:32px 16px; color:var(--qx-text-muted);">
+                <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+                <div style="font-size:14px; font-weight:700; color:#fff;">No encontramos un match exacto</div>
+                <div style="margin-top:4px; font-size:12.5px;">Intenta con palabras como 'fresco', 'playa', 'dulce', 'cita' o 'formal'.</div>
+              </div>
+            `);
+          }
+        },
+        error: function() {
+          resultsContainer.html(`
+            <div style="text-align:center; padding:24px 16px; color:#ef4444;">
+              <div style="font-size:14px; font-weight:700;">No fue posible conectar con el motor Sommelier.</div>
+            </div>
+          `);
+        }
+      });
+    }
+
+    renderSommelierMatches(matches) {
+      const self = this;
+      const container = $('#qx_somm_results').empty();
+
+      matches.forEach((m) => {
+        const accordsBadges = (m.accords || []).slice(0, 3).map(a => `<span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:999px; font-size:11px; color:#cbd5e1;">${self.esc(a)}</span>`).join(' ');
+
+        const card = $(`
+          <div class="qx-somm-card" data-id="${self.esc(m.id)}">
+            <div class="qx-somm-card-thumb-wrap">
+              <img class="qx-somm-card-thumb" src="${self.esc(m.image)}" alt="${self.esc(m.name)}" loading="lazy">
+            </div>
+            <div class="qx-somm-card-main">
+              <div class="qx-somm-card-top">
+                <span class="qx-somm-card-family">💎 ${self.esc(m.family)}</span>
+                <span class="qx-somm-affinity-badge">✨ ${m.affinity}% Afinidad</span>
+              </div>
+              <h3 class="qx-somm-card-title">${self.esc(m.name)}</h3>
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin:2px 0;">${accordsBadges}</div>
+              <div class="qx-somm-card-note">
+                <strong>Nota del Sommelier:</strong> "${self.esc(m.sommelierNote)}"
+              </div>
+              <div class="qx-somm-card-actions">
+                <div class="qx-somm-card-price">$ ${self.formatMoney(m.finalPrice)} MXN</div>
+                <div class="qx-somm-btn-group">
+                  <button type="button" class="qx-somm-btn-view" data-id="${self.esc(m.id)}">Ver Ficha</button>
+                  <button type="button" class="qx-somm-btn-buy" data-id="${self.esc(m.id)}">⚡ Comprar Ahora</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+
+        // Image auto-fit
+        const imgEl = card.find('.qx-somm-card-thumb')[0];
+        if (imgEl) self.autoFitImage(imgEl);
+
+        // View Ficha button
+        card.find('.qx-somm-btn-view').on('click', function(e) {
+          e.stopPropagation();
+          self.closeSommelier();
+          const prod = self.products.find(p => p.id === m.id);
+          if (prod) self.openProductModal(prod);
+        });
+
+        // 1-Click Buy button
+        card.find('.qx-somm-btn-buy').on('click', function(e) {
+          e.stopPropagation();
+          self.playHaptic('success');
+          self.addToCart(m.id, 1);
+          self.closeSommelier();
+          self.openCart();
+          self.showToast(`✨ ${m.name} agregado a tu bolsa de compras.`);
+        });
+
+        // Clicking card opens modal
+        card.on('click', function(e) {
+          if (!$(e.target).closest('button').length) {
+            self.closeSommelier();
+            const prod = self.products.find(p => p.id === m.id);
+            if (prod) self.openProductModal(prod);
+          }
+        });
+
+        container.append(card);
+      });
     }
 
     esc(str) {
