@@ -103,15 +103,41 @@ class StorefrontTenant {
                 $tenant->logo = '';
             }
 
-            // Check QUANTIXFRONTSTORE in emisoresde
-            $tenant->quantixFrontStore = 'NO';
-            $stmtDe = $db->prepare("SELECT Valor FROM emisoresde WHERE EmisorID = ? AND Variable = 'QUANTIXFRONTSTORE' LIMIT 1");
-            $stmtDe->execute([$tenant->emisorId]);
-            $rowDe = $stmtDe->fetch();
-            if ($rowDe && strtoupper(trim($rowDe['Valor'])) === 'SI') {
-                $tenant->quantixFrontStore = 'SI';
+            // Load all STORE_* settings from emisoresde
+            $stmtDeAll = $db->prepare("SELECT Variable, Valor FROM emisoresde WHERE EmisorID = ? AND (Variable = 'QUANTIXFRONTSTORE' OR Variable LIKE 'STORE_%')");
+            $stmtDeAll->execute([$tenant->emisorId]);
+            $deMap = [];
+            while ($r = $stmtDeAll->fetch()) {
+                $deMap[$r['Variable']] = $r['Valor'];
             }
+
+            // Gating
+            $tenant->quantixFrontStore = (isset($deMap['QUANTIXFRONTSTORE']) && strtoupper(trim($deMap['QUANTIXFRONTSTORE'])) === 'SI') ? 'SI' : 'NO';
             $tenant->isStoreActive = ($tenant->quantixFrontStore === 'SI');
+
+            // Dynamic Maître D' customizations
+            if (!empty($deMap['STORE_TITLE'])) {
+                $tenant->brandName = $deMap['STORE_TITLE'];
+            }
+            if (!empty($deMap['STORE_TAGLINE'])) {
+                $tenant->description = $deMap['STORE_TAGLINE'];
+            }
+            if (!empty($deMap['STORE_THEME'])) {
+                $tenant->theme = $deMap['STORE_THEME'];
+            }
+            if (!empty($deMap['STORE_PRIMARY_COLOR'])) {
+                $tenant->primaryColor = $deMap['STORE_PRIMARY_COLOR'];
+            }
+            if (!empty($deMap['STORE_LOGO_URL'])) {
+                $tenant->logo = $deMap['STORE_LOGO_URL'];
+            }
+            $tenant->heroBg = $deMap['STORE_HERO_BG'] ?? 'obsidian';
+            $tenant->whatsappPhone = $deMap['STORE_WHATSAPP_PHONE'] ?? '';
+            $tenant->whatsappGreeting = $deMap['STORE_WHATSAPP_GREETING'] ?? '¡Hola! Deseo información para comprar.';
+            $tenant->showWhatsapp = (!isset($deMap['STORE_SHOW_WHATSAPP']) || $deMap['STORE_SHOW_WHATSAPP'] === 'SI') && !empty($tenant->whatsappPhone);
+            $tenant->speiBank = $deMap['STORE_SPEI_BANK'] ?? '';
+            $tenant->speiClabe = $deMap['STORE_SPEI_CLABE'] ?? '';
+            $tenant->speiBeneficiary = $deMap['STORE_SPEI_BENEFICIARY'] ?? $tenant->brandName;
         }
 
         return $tenant;

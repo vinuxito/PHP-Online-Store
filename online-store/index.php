@@ -15,6 +15,11 @@ $tenant = StorefrontTenant::resolve();
   <title><?php echo htmlspecialchars($tenant->brandName); ?> — Boutique Oficial</title>
   <meta name="description" content="<?php echo htmlspecialchars($tenant->description); ?>">
   <link rel="stylesheet" href="css/storefront_luxury.css?v=20260830_01">
+  <style>
+    :root {
+      --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
+    }
+  </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
@@ -243,6 +248,16 @@ $tenant = StorefrontTenant::resolve();
     <div>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($tenant->brandName); ?>. Todos los derechos reservados.</div>
     <div style="margin-top:4px;">Powered by <strong>Quantix Storefront Showroom</strong> & <strong>Evinux Engine</strong></div>
   </footer>
+
+  <!-- WhatsApp Concierge Float Button -->
+  <?php if ($tenant->showWhatsapp && !empty($tenant->whatsappPhone)): ?>
+    <?php
+      $waUrl = "https://wa.me/" . urlencode(preg_replace('/[^0-9]/', '', $tenant->whatsappPhone)) . "?text=" . urlencode($tenant->whatsappGreeting);
+    ?>
+    <a href="<?php echo htmlspecialchars($waUrl); ?>" target="_blank" class="qx-whatsapp-float" title="Atención VIP WhatsApp" style="position:fixed; bottom:24px; left:24px; background:#25D366; color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 8px 24px rgba(37,211,102,0.4); z-index:9999; text-decoration:none; transition:transform 0.2s ease;">
+      💬
+    </a>
+  <?php endif; ?>
 
   <script src="js/storefront_app.js?v=20260830_01"></script>
 </body>
