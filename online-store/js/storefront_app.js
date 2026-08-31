@@ -593,6 +593,23 @@
         self.addToCart(p, 1, card.find('.qx-card-img'));
       });
 
+      // 3D Parallax Micro-Tilt on Card Hover (Desktop)
+      card.on('mousemove', function(e) {
+        if (window.innerWidth <= 768) return;
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const rx = ((y - cy) / cy) * -8;
+        const ry = ((x - cx) / cx) * 10;
+        card.css('transform', `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale3d(1.025, 1.025, 1.025)`);
+      });
+
+      card.on('mouseleave', function() {
+        card.css('transform', '');
+      });
+
       card.append(media).append(body);
       return card;
     }
@@ -976,8 +993,26 @@
       // Render Adaptive Specs & Metric Bars
       this.renderAdaptiveSpecs(product);
 
+      // Set dynamic aura colors
+      const auraColor = product.auraColor || 'cyan';
+      const auraGlowMap = {
+        cyan: { bg: 'rgba(56, 189, 248, 0.18)', core: 'rgba(56, 189, 248, 0.45)', halo: 'rgba(56, 189, 248, 0.35)' },
+        gold: { bg: 'rgba(251, 191, 36, 0.18)', core: 'rgba(251, 191, 36, 0.45)', halo: 'rgba(251, 191, 36, 0.35)' },
+        amber: { bg: 'rgba(249, 115, 22, 0.18)', core: 'rgba(249, 115, 22, 0.45)', halo: 'rgba(249, 115, 22, 0.35)' },
+        emerald: { bg: 'rgba(52, 211, 153, 0.18)', core: 'rgba(52, 211, 153, 0.45)', halo: 'rgba(52, 211, 153, 0.35)' },
+        rose: { bg: 'rgba(244, 114, 182, 0.18)', core: 'rgba(244, 114, 182, 0.45)', halo: 'rgba(244, 114, 182, 0.35)' },
+        violet: { bg: 'rgba(167, 139, 250, 0.18)', core: 'rgba(167, 139, 250, 0.45)', halo: 'rgba(167, 139, 250, 0.35)' }
+      };
+      const glow = auraGlowMap[auraColor] || auraGlowMap.cyan;
+      $('#qx_pmodal_stage').css({
+        '--qx-aura-glow-bg': glow.bg,
+        '--qx-aura-core': glow.core,
+        '--qx-aura-halo': glow.halo
+      });
+      $('#qx_pmodal_swipe_track').addClass('qx-living-float');
+
       // Start Scent Aura Particle Canvas
-      this.startScentAura(product.auraColor || 'cyan', product.auraParticles || 'breeze');
+      this.startScentAura(auraColor, product.auraParticles || 'breeze');
 
       // Open Modal
       $('#qx_product_modal_backdrop').addClass('active');
@@ -996,19 +1031,21 @@
         $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(decPrice)}`);
         $('#qx_pmodal_btn_add span').text('🧪 Agregar Decant (5ml)');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Decant Ahora');
+        if (navigator.vibrate) navigator.vibrate([15]);
       } else {
         $('#qx_format_full').addClass('active');
         $('#qx_format_decant').removeClass('active');
         $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(product.priceWithTax)}`);
         $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
+        if (navigator.vibrate) navigator.vibrate([15]);
       }
     }
 
     closeProductModal(syncHistory = true) {
       this.stopScentAura();
-      $('#qx_pmodal_swipe_track').css({ '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
-      $('#qx_pmodal_glass_sheen').css('--sheen-x', '-120%');
+      $('#qx_pmodal_swipe_track').removeClass('qx-living-float').css({ '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
+      $('#qx_pmodal_glass_sheen').css('--sheen-x', '-140%');
 
       $('#qx_product_modal_backdrop').removeClass('active');
       $('#qx_product_modal').removeClass('active');
@@ -2091,18 +2128,39 @@
       const stage = $('#qx_pmodal_stage');
       const target = $('#qx_pmodal_swipe_track');
       const sheen = $('#qx_pmodal_glass_sheen');
+      let idleTimer = null;
 
-      // Mousemove parallax for desktop
+      function resumeIdle() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          if (!self.activeProductModal) return;
+          target.addClass('qx-living-float');
+          target.css({
+            '--tilt-rx': '0deg',
+            '--tilt-ry': '0deg'
+          });
+          sheen.css('--sheen-x', '-140%');
+        }, 1200);
+      }
+
+      // Mousemove parallax for desktop with high-responsiveness
+      stage.on('mouseenter touchstart', function() {
+        clearTimeout(idleTimer);
+        target.removeClass('qx-living-float');
+      });
+
       stage.on('mousemove', function(e) {
+        clearTimeout(idleTimer);
+        target.removeClass('qx-living-float');
         const rect = this.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const cx = rect.width / 2;
         const cy = rect.height / 2;
 
-        const rx = ((y - cy) / cy) * -12;
-        const ry = ((x - cx) / cx) * 14;
-        const sheenX = ((x / rect.width) * 200) - 50;
+        const rx = ((y - cy) / cy) * -18;
+        const ry = ((x - cx) / cx) * 22;
+        const sheenX = ((x / rect.width) * 220) - 60;
 
         target.css({
           '--tilt-rx': `${rx.toFixed(2)}deg`,
@@ -2112,16 +2170,14 @@
       });
 
       stage.on('mouseleave', function() {
-        target.css({
-          '--tilt-rx': '0deg',
-          '--tilt-ry': '0deg'
-        });
-        sheen.css('--sheen-x', '-120%');
+        resumeIdle();
       });
 
       // Touchmove for mobile 3D tilt
       stage.on('touchmove', function(e) {
         if (!e.touches || !e.touches[0]) return;
+        clearTimeout(idleTimer);
+        target.removeClass('qx-living-float');
         const rect = this.getBoundingClientRect();
         const touch = e.touches[0];
         const x = touch.clientX - rect.left;
@@ -2129,9 +2185,9 @@
         const cx = rect.width / 2;
         const cy = rect.height / 2;
 
-        const rx = ((y - cy) / cy) * -10;
-        const ry = ((x - cx) / cx) * 12;
-        const sheenX = ((x / rect.width) * 200) - 50;
+        const rx = ((y - cy) / cy) * -16;
+        const ry = ((x - cx) / cx) * 20;
+        const sheenX = ((x / rect.width) * 220) - 60;
 
         target.css({
           '--tilt-rx': `${rx.toFixed(2)}deg`,
@@ -2141,24 +2197,26 @@
       });
 
       stage.on('touchend', function() {
-        target.css({
-          '--tilt-rx': '0deg',
-          '--tilt-ry': '0deg'
-        });
-        sheen.css('--sheen-x', '-120%');
+        resumeIdle();
       });
 
-      // Mobile DeviceOrientation Gyroscope
+      // Interactive Click/Tap Scent Spark Burst
+      stage.on('click', function(e) {
+        self.triggerScentBurst(e);
+      });
+
+      // Mobile DeviceOrientation Gyroscope with enhanced damping
       if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', function(e) {
           if (!self.activeProductModal) return;
           const gamma = e.gamma || 0; // Left-Right [-90,90]
           const beta = e.beta || 0;   // Front-Back [-180,180]
 
-          const clampedRy = Math.max(-18, Math.min(18, gamma * 0.4));
-          const clampedRx = Math.max(-14, Math.min(14, (beta - 45) * 0.3));
-          const sheenX = ((gamma + 45) / 90) * 150 - 25;
+          const clampedRy = Math.max(-22, Math.min(22, gamma * 0.5));
+          const clampedRx = Math.max(-18, Math.min(18, (beta - 45) * 0.4));
+          const sheenX = ((gamma + 45) / 90) * 180 - 40;
 
+          target.removeClass('qx-living-float');
           target.css({
             '--tilt-rx': `${clampedRx.toFixed(2)}deg`,
             '--tilt-ry': `${clampedRy.toFixed(2)}deg`
@@ -2175,66 +2233,119 @@
       if (!ctx) return;
 
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width || 380;
-      canvas.height = rect.height || 420;
+      canvas.width = rect.width || 420;
+      canvas.height = rect.height || 460;
 
       const colorPalette = {
-        cyan: ['#38bdf8', '#06b6d4', '#e0f2fe'],
-        gold: ['#fbbf24', '#f59e0b', '#fef3c7'],
-        amber: ['#f97316', '#d97706', '#ffedd5'],
-        emerald: ['#34d399', '#10b981', '#d1fae5'],
-        rose: ['#f472b6', '#ec4899', '#fce7f3'],
-        violet: ['#a78bfa', '#8b5cf6', '#ede9fe']
-      }[colorName] || ['#38bdf8', '#06b6d4', '#e0f2fe'];
+        cyan: ['#38bdf8', '#00e5ff', '#67e8f9', '#ffffff'],
+        gold: ['#fbbf24', '#f59e0b', '#fde047', '#ffffff'],
+        amber: ['#f97316', '#fb923c', '#fdba74', '#ffffff'],
+        emerald: ['#34d399', '#10b981', '#6ee7b7', '#ffffff'],
+        rose: ['#f472b6', '#ec4899', '#f9a8d4', '#ffffff'],
+        violet: ['#a78bfa', '#8b5cf6', '#c084fc', '#ffffff']
+      }[colorName] || ['#38bdf8', '#00e5ff', '#67e8f9', '#ffffff'];
 
       this.stopScentAura();
       this.auraParticles = [];
-      const count = 30;
+      const count = 70;
 
       for (let i = 0; i < count; i++) {
+        const isStar = Math.random() < 0.25;
         this.auraParticles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          radius: Math.random() * 2.2 + 1.0,
+          radius: Math.random() * 3.4 + 1.2,
           color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: -(Math.random() * 0.7 + 0.3),
-          alpha: Math.random() * 0.7 + 0.2,
-          decay: Math.random() * 0.005 + 0.003
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: -(Math.random() * 1.1 + 0.4),
+          alpha: Math.random() * 0.85 + 0.2,
+          decay: Math.random() * 0.006 + 0.002,
+          isStar: isStar,
+          angle: Math.random() * Math.PI * 2,
+          vAngle: (Math.random() - 0.5) * 0.06
         });
       }
 
       const self = this;
       function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
 
         self.auraParticles.forEach(p => {
-          p.x += p.vx;
+          p.x += p.vx + Math.sin(p.y * 0.02) * 0.45;
           p.y += p.vy;
           p.alpha -= p.decay;
+          p.angle += p.vAngle;
 
-          if (p.alpha <= 0 || p.y < -10 || p.x < -10 || p.x > canvas.width + 10) {
+          if (p.alpha <= 0 || p.y < -20 || p.x < -20 || p.x > canvas.width + 20) {
             p.x = Math.random() * canvas.width;
-            p.y = canvas.height + 5;
-            p.alpha = Math.random() * 0.7 + 0.3;
-            p.radius = Math.random() * 2.2 + 1.0;
+            p.y = canvas.height + 15;
+            p.alpha = Math.random() * 0.85 + 0.25;
+            p.radius = Math.random() * 3.4 + 1.2;
           }
 
           ctx.save();
           ctx.globalAlpha = Math.max(0, p.alpha);
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = 14;
           ctx.shadowColor = p.color;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-          ctx.fill();
+
+          if (p.isStar) {
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.beginPath();
+            const r = p.radius * 1.8;
+            for (let s = 0; s < 4; s++) {
+              ctx.lineTo(Math.cos(s * Math.PI / 2) * r, Math.sin(s * Math.PI / 2) * r);
+              ctx.lineTo(Math.cos((s + 0.5) * Math.PI / 2) * (r * 0.25), Math.sin((s + 0.5) * Math.PI / 2) * (r * 0.25));
+            }
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
           ctx.restore();
         });
 
+        ctx.restore();
         self.auraAnimId = requestAnimationFrame(animate);
       }
 
       this.auraAnimId = requestAnimationFrame(animate);
+    }
+
+    triggerScentBurst(e) {
+      const canvas = document.getElementById('qx_pmodal_aura_canvas');
+      if (!canvas || !this.auraParticles) return;
+      const rect = canvas.getBoundingClientRect();
+      const originX = (e && e.clientX) ? (e.clientX - rect.left) : (canvas.width / 2);
+      const originY = (e && e.clientY) ? (e.clientY - rect.top) : (canvas.height * 0.35);
+
+      const colorPalette = ['#ffffff', '#00e5ff', '#fbbf24', '#f472b6', '#a78bfa', '#34d399'];
+      for (let i = 0; i < 30; i++) {
+        const speed = Math.random() * 4.5 + 1.8;
+        const angle = Math.random() * Math.PI * 2;
+        this.auraParticles.push({
+          x: originX,
+          y: originY,
+          radius: Math.random() * 4.2 + 1.5,
+          color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1.0,
+          decay: Math.random() * 0.025 + 0.015,
+          isStar: Math.random() < 0.4,
+          angle: Math.random() * Math.PI * 2,
+          vAngle: (Math.random() - 0.5) * 0.1
+        });
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate([20]);
+      }
     }
 
     stopScentAura() {
@@ -2349,6 +2460,44 @@
 
     swapLayeringFlacons() {
       if (!this.layeringBaseProd || !this.layeringAccentProd) return;
+
+      // 3D crossover animations
+      $('#qx_layering_base_card').addClass('qx-swapping-left');
+      $('#qx_layering_accent_card').addClass('qx-swapping-right');
+      setTimeout(() => {
+        $('#qx_layering_base_card').removeClass('qx-swapping-left');
+        $('#qx_layering_accent_card').removeClass('qx-swapping-right');
+      }, 600);
+
+      // Trigger burst in fusion canvas
+      if (this.fusionParticles) {
+        const midX = ($('#qx_layering_fusion_canvas').width() || 850) / 2;
+        const midY = ($('#qx_layering_fusion_canvas').height() || 280) / 2;
+        const blastColors = ['#00e5ff', '#fbbf24', '#ec4899', '#ffffff', '#38bdf8'];
+        for (let s = 0; s < 40; s++) {
+          const speed = Math.random() * 5.5 + 2.0;
+          const angle = Math.random() * Math.PI * 2;
+          this.fusionParticles.push({
+            fromLeft: Math.random() < 0.5,
+            x: midX,
+            y: midY,
+            targetX: midX + Math.cos(angle) * 140,
+            targetY: midY + Math.sin(angle) * 140,
+            radius: Math.random() * 3.8 + 1.5,
+            color: blastColors[Math.floor(Math.random() * blastColors.length)],
+            orbitRadius: Math.random() * 50,
+            orbitAngle: angle,
+            orbitSpeed: 0.06,
+            speed: 0.08,
+            alpha: 1.0
+          });
+        }
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate([25, 40, 25]);
+      }
+
       const temp = this.layeringBaseProd;
       this.layeringBaseProd = this.layeringAccentProd;
       this.layeringAccentProd = temp;
@@ -2423,60 +2572,85 @@
       if (!canvas) return;
 
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width || 800;
-      canvas.height = rect.height || 260;
+      canvas.width = rect.width || 850;
+      canvas.height = rect.height || 280;
       const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
       const palette = {
-        cyan: '#00e5ff',
-        gold: '#fbbf24',
-        amber: '#f59e0b',
-        emerald: '#10b981',
-        rose: '#ec4899',
-        violet: '#8b5cf6'
+        cyan: ['#00e5ff', '#38bdf8', '#e0f2fe', '#ffffff'],
+        gold: ['#fbbf24', '#f59e0b', '#fef3c7', '#ffffff'],
+        amber: ['#f97316', '#fb923c', '#ffedd5', '#ffffff'],
+        emerald: ['#10b981', '#34d399', '#d1fae5', '#ffffff'],
+        rose: ['#ec4899', '#f472b6', '#fce7f3', '#ffffff'],
+        violet: ['#8b5cf6', '#a78bfa', '#ede9fe', '#ffffff']
       };
 
-      const c1 = palette[color1] || '#00e5ff';
-      const c2 = palette[color2] || '#fbbf24';
+      const c1Arr = palette[color1] || palette.cyan;
+      const c2Arr = palette[color2] || palette.gold;
 
       this.fusionParticles = [];
-      const count = 36;
+      const count = 120;
       const midX = canvas.width / 2;
       const midY = canvas.height / 2;
 
       for (let i = 0; i < count; i++) {
-        const fromLeft = i % 2 === 0;
+        const fromLeft = (i % 2 === 0);
+        const paletteChoice = fromLeft ? c1Arr : c2Arr;
         this.fusionParticles.push({
           fromLeft: fromLeft,
-          x: fromLeft ? Math.random() * (canvas.width * 0.35) : canvas.width - Math.random() * (canvas.width * 0.35),
+          x: fromLeft ? Math.random() * (canvas.width * 0.3) : canvas.width - Math.random() * (canvas.width * 0.3),
           y: Math.random() * canvas.height,
-          targetX: midX + (Math.random() * 40 - 20),
-          targetY: midY + (Math.random() * 40 - 20),
-          radius: Math.random() * 2.2 + 1.2,
-          color: fromLeft ? c1 : c2,
-          speed: Math.random() * 0.02 + 0.015,
-          alpha: Math.random() * 0.7 + 0.3
+          targetX: midX,
+          targetY: midY,
+          radius: Math.random() * 3.4 + 1.2,
+          color: paletteChoice[Math.floor(Math.random() * paletteChoice.length)],
+          orbitRadius: Math.random() * 60 + 15,
+          orbitAngle: Math.random() * Math.PI * 2,
+          orbitSpeed: (Math.random() * 0.045 + 0.02) * (fromLeft ? 1 : -1),
+          speed: Math.random() * 0.025 + 0.012,
+          alpha: Math.random() * 0.85 + 0.25
         });
       }
 
       const self = this;
+      let frame = 0;
       function animate() {
+        frame++;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        // Draw central alchemical vortex pulsing core
+        const corePulse = Math.sin(frame * 0.05) * 10 + 26;
+        const grad = ctx.createRadialGradient(midX, midY, 0, midX, midY, corePulse * 2.2);
+        grad.addColorStop(0, 'rgba(251, 191, 36, 0.45)');
+        grad.addColorStop(0.4, 'rgba(168, 85, 247, 0.25)');
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(midX, midY, corePulse * 2.2, 0, Math.PI * 2);
+        ctx.fill();
 
         self.fusionParticles.forEach(p => {
-          p.x += (p.targetX - p.x) * p.speed;
-          p.y += (p.targetY - p.y) * p.speed;
+          p.orbitAngle += p.orbitSpeed;
+          const targetWithOrbitX = midX + Math.cos(p.orbitAngle) * p.orbitRadius;
+          const targetWithOrbitY = midY + Math.sin(p.orbitAngle) * p.orbitRadius;
 
-          const dist = Math.hypot(p.targetX - p.x, p.targetY - p.y);
-          if (dist < 15) {
-            p.x = p.fromLeft ? Math.random() * (canvas.width * 0.35) : canvas.width - Math.random() * (canvas.width * 0.35);
+          p.x += (targetWithOrbitX - p.x) * p.speed;
+          p.y += (targetWithOrbitY - p.y) * p.speed;
+
+          const dist = Math.hypot(midX - p.x, midY - p.y);
+          if (dist < 20) {
+            p.x = p.fromLeft ? Math.random() * (canvas.width * 0.3) : canvas.width - Math.random() * (canvas.width * 0.3);
             p.y = Math.random() * canvas.height;
+            p.alpha = Math.random() * 0.85 + 0.25;
           }
 
           ctx.save();
           ctx.globalAlpha = p.alpha;
           ctx.fillStyle = p.color;
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 14;
           ctx.shadowColor = p.color;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -2484,6 +2658,7 @@
           ctx.restore();
         });
 
+        ctx.restore();
         self.fusionAnimId = requestAnimationFrame(animate);
       }
 
