@@ -265,7 +265,7 @@
           <div class="qx-card-footer">
             <div class="qx-card-price-block">
               <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
-              <span class="qx-card-tax">+ IVA 16% incluido</span>
+              <span class="qx-card-tax">IVA 16% incluido</span>
             </div>
             <button type="button" class="qx-btn-add-cart">
               <span>+</span> Agregar
