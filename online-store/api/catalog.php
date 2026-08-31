@@ -30,7 +30,7 @@ try {
                pa.RutaMiniatura as CoverMiniatura
         FROM productos p
         LEFT JOIN productos_archivos pa ON p.ProductoID = pa.ProductoID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1
-        WHERE p.EmisorID = ?
+        WHERE p.EmisorID = ? AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL)
         ORDER BY p.descripcion ASC
     ");
     $stmt->execute([$tenant->emisorId]);
