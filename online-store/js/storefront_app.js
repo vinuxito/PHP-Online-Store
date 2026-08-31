@@ -320,14 +320,274 @@
     }
   }
 
+  // =========================================================================
+  // DIGITAL DECANT PASSPORT & BLIND-BUY SHIELD ENGINE (Feature 5)
+  // =========================================================================
+  class DecantPassportEngine {
+    constructor(storefront) {
+      this.storefront = storefront;
+      this.passportData = null;
+    }
+
+    async loadPassport(code = 'PASS-2026-VIP') {
+      try {
+        const tenant = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/passport.php?tenant=${encodeURIComponent(tenant)}&code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (data.Status === 'OK') {
+          this.passportData = data;
+          this.renderPassportUI(data);
+        }
+      } catch (err) {
+        console.error('Error loading passport:', err);
+      }
+    }
+
+    renderPassportUI(data) {
+      if (!data || !data.Passport) return;
+
+      const p = data.Passport;
+      const stats = data.Stats || { total: 0, stamped: 0, pending: 0, totalCredit: 0 };
+
+      $('#qx_pass_client_name').text(p.clientName || 'Alexander von Humboldt');
+      $('#qx_pass_access_code').text(p.code || 'PASS-2026-VIP');
+      $('#qx_pass_total_credit').text(`$ ${this.storefront.formatMoney(stats.totalCredit)} MXN`);
+
+      $('#qx_pass_stat_total').text(stats.total);
+      $('#qx_pass_stat_stamped').text(stats.stamped);
+      $('#qx_pass_stat_pending').text(stats.pending);
+
+      if (stats.pending > 0) {
+        $('#qx_passport_badge').text(stats.pending).show();
+      } else {
+        $('#qx_passport_badge').hide();
+      }
+
+      const container = $('#qx_passport_entries_container');
+      container.empty();
+
+      if (!data.Entries || data.Entries.length === 0) {
+        container.html(`
+          <div style="text-align:center; padding:30px; color:var(--qx-text-muted);">
+            <div style="font-size:36px; margin-bottom:10px;">🧪</div>
+            <div style="font-weight:700; color:#fff; margin-bottom:4px;">No tienes decants registrados aún</div>
+            <div style="font-size:12px;">Adquiere una muestra de cata de 5ml para activar tu Pasaporte y garantía Blind-Buy Shield.</div>
+          </div>
+        `);
+        return;
+      }
+
+      const self = this;
+
+      data.Entries.forEach(entry => {
+        const isStamped = entry.isStamped;
+        const flaconImg = entry.photo ? (entry.photo.startsWith('http') ? entry.photo : entry.photo) : 'images/placeholder_flacon.png';
+
+        let bodyHtml = '';
+
+        if (isStamped) {
+          // Stamped Review & Active Voucher
+          let voucherHtml = '';
+          if (entry.voucher && !entry.voucher.isRedeemed) {
+            voucherHtml = `
+              <div class="qx-cashback-voucher-card">
+                <div class="qx-voucher-code-block">
+                  <div style="font-size:10px; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:0.5px;">CUPÓN 100% CASH-BACK DESBLOQUEADO</div>
+                  <div class="qx-voucher-code-val">${self.storefront.esc(entry.voucher.code)}</div>
+                  <div class="qx-voucher-amount-val">✨ Crédito Bonificable: $ ${self.storefront.formatMoney(entry.voucher.amount)} MXN</div>
+                  <div class="qx-voucher-expiry-chip">⏳ Válido por ${entry.voucher.daysRemaining} días más</div>
+                </div>
+                <button type="button" class="qx-btn-upgrade-full" data-prod-id="${entry.productId}" data-voucher-code="${entry.voucher.code}">
+                  <span>🏆 Ascender a Botella 100ml</span>
+                </button>
+              </div>
+            `;
+          }
+
+          bodyHtml = `
+            <div style="display:flex; flex-direction:column; gap:10px; background:rgba(0,0,0,0.3); border-radius:12px; padding:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="color:#fbbf24; font-size:15px;">${'★'.repeat(entry.rating || 5)}${'☆'.repeat(5 - (entry.rating || 5))}</div>
+                <div style="font-size:11px; color:#38bdf8; font-weight:700;">⏳ Longevidad en piel: ${entry.longevity || 8.0}h</div>
+                <div style="font-size:11px; background:rgba(251,191,36,0.15); color:#fbbf24; padding:2px 8px; border-radius:6px; font-weight:700;">${self.storefront.esc(entry.compliments || 'Imán de Cumplidos')}</div>
+              </div>
+              ${entry.journalNote ? `<div style="font-size:12px; color:#e2e8f0; font-style:italic; border-left:2px solid #fbbf24; padding-left:10px;">"${self.storefront.esc(entry.journalNote)}"</div>` : ''}
+            </div>
+            ${voucherHtml}
+          `;
+        } else {
+          // Interactive Tasting Form
+          bodyHtml = `
+            <form class="qx-pass-form" data-entry-id="${entry.entryId}">
+              <div class="qx-form-row-eval">
+                <div class="qx-eval-group">
+                  <span class="qx-eval-label">Calificación Global</span>
+                  <div class="qx-stars-selector" data-stars="5">
+                    <button type="button" class="qx-star-btn active" data-val="1">★</button>
+                    <button type="button" class="qx-star-btn active" data-val="2">★</button>
+                    <button type="button" class="qx-star-btn active" data-val="3">★</button>
+                    <button type="button" class="qx-star-btn active" data-val="4">★</button>
+                    <button type="button" class="qx-star-btn active" data-val="5">★</button>
+                  </div>
+                </div>
+                <div class="qx-eval-group">
+                  <span class="qx-eval-label">Longevidad Percibida en Piel</span>
+                  <div class="qx-longevity-slider-wrap">
+                    <input type="range" class="qx-longevity-slider" min="3" max="16" step="0.5" value="8.5">
+                    <span class="qx-longevity-display">8.5 h</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="qx-eval-group">
+                <span class="qx-eval-label">Factor de Cumplidos</span>
+                <div class="qx-compliment-pills">
+                  <button type="button" class="qx-compliment-pill active" data-val="Imán de Cumplidos">👑 Imán de Cumplidos</button>
+                  <button type="button" class="qx-compliment-pill" data-val="Elogios Ocasionales">✨ Elogios Ocasionales</button>
+                  <button type="button" class="qx-compliment-pill" data-val="Aroma Íntimo / Discreto">🌿 Aroma Íntimo / Discreto</button>
+                </div>
+              </div>
+
+              <div class="qx-eval-group">
+                <span class="qx-eval-label">Notas del Diario de Cata (Opcional)</span>
+                <textarea class="qx-journal-textarea" placeholder="Describe cómo evolucionó en tu piel, ocasión recomendada o notas destacadas..."></textarea>
+              </div>
+
+              <button type="submit" class="qx-btn-submit-tasting">
+                <span>✨ Estampar Sello de Cata & Desbloquear Cupón 100% Cash-Back ($ ${self.storefront.formatMoney(entry.decantPrice)})</span>
+              </button>
+            </form>
+          `;
+        }
+
+        const card = $(`
+          <div class="qx-pass-entry-card ${isStamped ? 'stamped' : ''}">
+            <div class="qx-pass-entry-top">
+              <div class="qx-pass-flacon-box">
+                <img class="qx-pass-flacon-img" src="${flaconImg}" alt="${self.storefront.esc(entry.productName)}">
+              </div>
+              <div class="qx-pass-info-box">
+                <div class="qx-pass-prod-name">${self.storefront.esc(entry.productName)}</div>
+                <div class="qx-pass-meta-row">
+                  <span class="qx-pass-family-pill">${self.storefront.esc(entry.family)}</span>
+                  <span class="qx-pass-date">Muestra 5ml • Adquirido: ${entry.purchaseDate.split(' ')[0]}</span>
+                  ${isStamped ? `<span class="qx-passport-seal">🎖️ Visado de Cata Aprobado</span>` : `<span style="color:#fbbf24; font-weight:700; font-size:11px;">⏳ Cata Pendiente</span>`}
+                </div>
+              </div>
+            </div>
+            ${bodyHtml}
+          </div>
+        `);
+
+        // Bind interactive elements for unstamped entries
+        if (!isStamped) {
+          // Stars selection
+          card.find('.qx-star-btn').on('click', function() {
+            const val = parseInt($(this).data('val'), 10);
+            const parent = $(this).closest('.qx-stars-selector');
+            parent.data('stars', val);
+            parent.find('.qx-star-btn').each(function() {
+              const bVal = parseInt($(this).data('val'), 10);
+              if (bVal <= val) $(this).addClass('active');
+              else $(this).removeClass('active');
+            });
+          });
+
+          // Longevity slider
+          card.find('.qx-longevity-slider').on('input', function() {
+            const val = parseFloat($(this).val());
+            card.find('.qx-longevity-display').text(`${val.toFixed(1)} h`);
+          });
+
+          // Compliments pills
+          card.find('.qx-compliment-pill').on('click', function() {
+            card.find('.qx-compliment-pill').removeClass('active');
+            $(this).addClass('active');
+          });
+
+          // Submit tasting review
+          card.find('.qx-pass-form').on('submit', async function(e) {
+            e.preventDefault();
+            const rating = parseInt(card.find('.qx-stars-selector').data('stars') || 5, 10);
+            const longevity = parseFloat(card.find('.qx-longevity-slider').val() || 8.5);
+            const compliments = card.find('.qx-compliment-pill.active').data('val') || 'Imán de Cumplidos';
+            const journal = card.find('.qx-journal-textarea').val();
+
+            try {
+              const tenant = self.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+              const fd = new URLSearchParams();
+              fd.append('action', 'submit_tasting_review');
+              fd.append('tenant', tenant);
+              fd.append('entryId', entry.entryId);
+              fd.append('rating', rating);
+              fd.append('longevity', longevity);
+              fd.append('compliments', compliments);
+              fd.append('journal', journal);
+
+              const subRes = await fetch('api/passport.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: fd.toString()
+              });
+              const subData = await subRes.json();
+              if (subData.Status === 'OK') {
+                self.storefront.playHaptic('success');
+                self.storefront.showToast('🎖️ ¡Sello de Cata Estampado y Cupón 100% Desbloqueado!');
+                await self.loadPassport(self.passportData.Passport.code);
+              } else {
+                self.storefront.showToast(subData.Error || 'Error al guardar cata');
+              }
+            } catch (err) {
+              console.error('Error submitting tasting:', err);
+            }
+          });
+        } else {
+          // Upgrade button (100ml purchase with auto-voucher)
+          card.find('.qx-btn-upgrade-full').on('click', async function() {
+            const pId = $(this).data('prod-id');
+            const vCode = $(this).data('voucher-code');
+            const product = self.storefront.products.find(p => p.id === pId) || self.storefront.products[0];
+            if (product) {
+              self.storefront.addToCart(product, 1, null, 'full');
+              await self.storefront.applyVoucher(vCode);
+              self.storefront.closePassportModal();
+              self.storefront.openCart();
+              self.storefront.showToast(`🛡️ Botella 100ml agregada y Cupón ${vCode} bonificado`);
+            }
+          });
+        }
+
+        container.append(card);
+      });
+    }
+
+    openPassportModal() {
+      this.loadPassport();
+      $('#qx_mobile_dock').addClass('hidden');
+      $('#qx_passport_backdrop').addClass('active');
+      $('#qx_passport_modal').addClass('active');
+    }
+
+    closePassportModal() {
+      $('#qx_passport_backdrop').removeClass('active');
+      $('#qx_passport_modal').removeClass('active');
+      if (!this.storefront.isModalOrDrawerOpen()) {
+        $('#qx_mobile_dock').removeClass('hidden');
+      }
+    }
+  }
+
   window.WeatherEngine = WeatherEngine;
   window.ScentRadarEngine = ScentRadarEngine;
+  window.DecantPassportEngine = DecantPassportEngine;
 
   class QuantixStorefront {
     constructor() {
       this.flaconEngine = new FloatingFlaconEngine();
       this.weatherEngine = new WeatherEngine();
       this.radarEngine = new ScentRadarEngine();
+      this.passportEngine = new DecantPassportEngine(this);
+      this.appliedVoucher = null;
       this.tenant = null;
       this.products = [];
       this.filteredProducts = [];
@@ -378,6 +638,7 @@
       this.initSensoryAtelier();
       this.loadCatalog();
       this.renderCartUI();
+      this.passportEngine.loadPassport();
       
       const savedView = localStorage.getItem('qx_catalog_view') || '2col';
       this.setCatalogView(savedView);
@@ -545,6 +806,23 @@
       // Cart Drawer Toggle
       $('#qx_cart_btn').on('click', () => self.openCart());
       $('#qx_cart_close, #qx_cart_backdrop').on('click', () => self.closeCart());
+
+      // Digital Decant Passport Toggle
+      $('#qx_btn_nav_passport, #qx_dock_passport').on('click', () => self.openPassportModal());
+      $('#qx_passport_close, #qx_passport_backdrop').on('click', () => self.closePassportModal());
+
+      // Cart Voucher Apply & Remove
+      $('#qx_btn_apply_voucher').on('click', () => {
+        const code = $('#qx_voucher_input').val().trim();
+        self.applyVoucher(code);
+      });
+      $('#qx_btn_remove_voucher').on('click', () => self.removeVoucher());
+      $('#qx_voucher_input').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          self.applyVoucher($(this).val().trim());
+        }
+      });
 
       // Checkout Drawer Toggle
       $('#qx_btn_proceed_checkout').on('click', () => {
@@ -890,6 +1168,7 @@
       const media = $(`
         <div class="qx-card-media" title="Haz clic para ver detalles y fotos">
           <div class="qx-card-zoom-badge">✨ Ver Ficha</div>
+          ${p.hasDecant !== false ? `<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>` : ''}
         </div>
       `);
       media.prepend(cardImg);
@@ -1096,15 +1375,64 @@
         } else {
           $('#qx_cart_upsell').hide();
         }
-      } else {
-        $('#qx_cart_upsell').hide();
       }
 
-      const grandTotal = subtotal + totalIva;
+      // Handle Decant Passport Cash-Back Voucher Discount
+      let discountAmount = 0;
+      if (this.appliedVoucher) {
+        discountAmount = Math.min(subtotal + totalIva, this.appliedVoucher.amount);
+        $('#qx_cart_discount_row').show();
+        $('#qx_cart_discount_amount').text(`- $ ${self.formatMoney(discountAmount)}`);
+        $('#qx_voucher_applied_pill').show();
+        $('#qx_voucher_applied_label').text(`🛡️ ${this.appliedVoucher.code} (-$${self.formatMoney(discountAmount)})`);
+        $('#qx_voucher_input').hide();
+        $('#qx_btn_apply_voucher').hide();
+      } else {
+        $('#qx_cart_discount_row').hide();
+        $('#qx_voucher_applied_pill').hide();
+        $('#qx_voucher_input').show().val('');
+        $('#qx_btn_apply_voucher').show();
+      }
+
+      const grandTotal = Math.max(0, subtotal + totalIva - discountAmount);
       $('#qx_cart_subtotal').text(`$ ${self.formatMoney(subtotal)}`);
       $('#qx_cart_iva').text(`$ ${self.formatMoney(totalIva)}`);
       $('#qx_cart_total').text(`$ ${self.formatMoney(grandTotal)}`);
       $('#qx_btn_proceed_checkout').prop('disabled', false).css('opacity', '1');
+    }
+
+    async applyVoucher(code) {
+      if (!code) return;
+      try {
+        const tenant = this.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const res = await fetch(`api/passport.php?action=apply_voucher&tenant=${encodeURIComponent(tenant)}&code=${encodeURIComponent(code)}`);
+        const data = await res.json();
+        if (data.Status === 'OK' && data.Valid) {
+          this.appliedVoucher = data.Voucher;
+          this.playHaptic('success');
+          this.showToast(`🛡️ Cupón ${data.Voucher.code} aplicado (-$${this.formatMoney(data.Voucher.amount)})`);
+          this.renderCartUI();
+        } else {
+          this.showToast(data.Error || 'Cupón inválido o expirado');
+        }
+      } catch (err) {
+        console.error('Error applying voucher:', err);
+      }
+    }
+
+    removeVoucher() {
+      this.appliedVoucher = null;
+      this.playHaptic('light');
+      this.showToast('Cupón removido');
+      this.renderCartUI();
+    }
+
+    openPassportModal() {
+      this.passportEngine.openPassportModal();
+    }
+
+    closePassportModal() {
+      this.passportEngine.closePassportModal();
     }
 
     openCart() {
@@ -1141,6 +1469,9 @@
 
     isModalOrDrawerOpen() {
       return $('#qx_product_modal').hasClass('active') ||
+             $('#qx_passport_modal').hasClass('active') ||
+             $('#qx_radar_compare_modal').hasClass('active') ||
+             $('#qx_layering_modal').hasClass('active') ||
              $('#qx_spotlight_modal').hasClass('active') ||
              $('#qx_quiz_modal').hasClass('active') ||
              $('#qx_story_viewer').is(':visible') ||

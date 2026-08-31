@@ -4796,4 +4796,667 @@ body {
   box-shadow: 0 12px 30px rgba(236, 72, 153, 0.5);
 }
 
+/* ==========================================================================
+   FEATURE 5: THE BLIND-BUY SHIELD & DIGITAL DECANT PASSPORT
+   ========================================================================== */
+
+.qx-passport-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+  padding: 8px 14px;
+  border-radius: var(--qx-radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.qx-passport-nav-btn:hover {
+  background: rgba(251, 191, 36, 0.18);
+  border-color: #fbbf24;
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.35);
+  transform: translateY(-1px);
+}
+
+.qx-passport-sparkle {
+  font-size: 15px;
+}
+
+.qx-passport-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 999px;
+  margin-left: 2px;
+}
+
+/* Blind-Buy Shield Badge on Catalog Product Cards */
+.qx-shield-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(13, 18, 31, 0.9);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 10px rgba(251, 191, 36, 0.2);
+  z-index: 5;
+}
+
+/* Blind-Buy Shield Guarantee Card in Product Modal */
+.qx-shield-guarantee-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(56, 189, 248, 0.04) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.qx-shield-guarantee-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #fbbf24, #38bdf8);
+}
+
+.qx-shield-card-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.4));
+}
+
+.qx-shield-card-body {
+  flex: 1;
+}
+
+.qx-shield-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 2px;
+}
+
+.qx-shield-card-desc {
+  font-size: 11px;
+  color: var(--qx-text-muted);
+  line-height: 1.4;
+}
+
+.qx-shield-card-badge {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Digital Decant Passport Modal */
+.qx-passport-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(18px);
+  z-index: 98000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.qx-passport-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qx-passport-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  width: 94%;
+  max-width: 820px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #090d18;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 24px;
+  padding: 28px;
+  z-index: 98001;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9), 0 0 45px rgba(251, 191, 36, 0.18);
+}
+
+.qx-passport-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.qx-passport-booklet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+}
+
+.qx-passport-emblem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.qx-passport-emblem-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
+}
+
+.qx-passport-sup {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.qx-passport-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.qx-passport-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qx-passport-tag {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.qx-passport-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: var(--qx-text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.qx-passport-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Traveler ID Bar */
+.qx-passport-id-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+
+.qx-pass-id-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.qx-pass-id-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--qx-text-muted);
+  text-transform: uppercase;
+}
+
+.qx-pass-id-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.qx-pass-id-val.code {
+  font-family: monospace;
+  color: #38bdf8;
+  letter-spacing: 1px;
+}
+
+.qx-pass-id-val.gold {
+  color: #fbbf24;
+}
+
+/* Stats Strip */
+.qx-passport-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.qx-pass-stat-item {
+  background: rgba(18, 26, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.qx-pass-stat-num {
+  font-size: 24px;
+  font-weight: 900;
+  color: #fff;
+  display: block;
+}
+
+.qx-pass-stat-num.green { color: #10b981; }
+.qx-pass-stat-num.amber { color: #fbbf24; }
+
+.qx-pass-stat-txt {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--qx-text-muted);
+}
+
+/* Passport Tasting Entry Cards */
+.qx-passport-entries-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.qx-pass-entry-card {
+  background: rgba(18, 26, 47, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.qx-pass-entry-card.stamped {
+  border-color: rgba(251, 191, 36, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 25px rgba(251, 191, 36, 0.04);
+}
+
+.qx-pass-entry-top {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.qx-pass-flacon-box {
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, rgba(0,0,0,0.5) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qx-pass-flacon-img {
+  max-width: 65px;
+  max-height: 65px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+}
+
+.qx-pass-info-box {
+  flex: 1;
+}
+
+.qx-pass-prod-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.qx-pass-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+
+.qx-pass-family-pill {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.qx-pass-date {
+  color: var(--qx-text-muted);
+}
+
+/* Stamped Seal Badge */
+.qx-passport-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #000;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.4);
+  transform: rotate(-2deg);
+}
+
+/* Interactive Tasting Form */
+.qx-pass-form {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qx-form-row-eval {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.qx-eval-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.qx-eval-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--qx-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.qx-stars-selector {
+  display: flex;
+  gap: 6px;
+}
+
+.qx-star-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-star-btn.active,
+.qx-star-btn:hover {
+  color: #fbbf24;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+}
+
+.qx-longevity-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qx-longevity-slider {
+  flex: 1;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.qx-longevity-display {
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+  min-width: 40px;
+}
+
+.qx-compliment-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qx-compliment-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--qx-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-compliment-pill.active,
+.qx-compliment-pill:hover {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.qx-journal-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
+.qx-btn-submit-tasting {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #000;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.35);
+}
+
+.qx-btn-submit-tasting:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.5);
+}
+
+/* Active 100% Cash-Back Voucher Card inside Stamped Entry */
+.qx-cashback-voucher-card {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 1px dashed rgba(251, 191, 36, 0.5);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.qx-voucher-code-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qx-voucher-code-val {
+  font-family: monospace;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: 1px;
+}
+
+.qx-voucher-amount-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: #10b981;
+}
+
+.qx-voucher-expiry-chip {
+  font-size: 11px;
+  color: var(--qx-text-muted);
+}
+
+.qx-btn-upgrade-full {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+.qx-btn-upgrade-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+}
+
+/* Cart Voucher Input Box */
+.qx-voucher-apply-box {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.qx-voucher-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.qx-voucher-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.qx-btn-apply-voucher {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fbbf24;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-apply-voucher:hover {
+  background: rgba(251, 191, 36, 0.25);
+  color: #fff;
+}
+
+.qx-voucher-applied-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: #fbbf24;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.qx-btn-remove-voucher {
+  background: none;
+  border: none;
+  color: var(--qx-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.qx-btn-remove-voucher:hover {
+  color: #ef4444;
+}
+
+
 

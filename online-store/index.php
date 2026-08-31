@@ -69,6 +69,11 @@ $tenant = StorefrontTenant::resolve();
       </div>
 
       <div class="qx-nav-actions">
+        <button type="button" class="qx-passport-nav-btn" id="qx_btn_nav_passport" title="Pasaporte Digital de Cata & Blind-Buy Shield">
+          <span class="qx-passport-sparkle">🛡️</span>
+          <span>Pasaporte</span>
+          <span class="qx-passport-badge" id="qx_passport_badge" style="display:none">0</span>
+        </button>
         <button type="button" class="qx-layering-nav-btn" id="qx_btn_nav_layering" title="Atelier de Alquimia de Capas & Layering">
           <span class="qx-layering-sparkle">🧪</span>
           <span>Alquimia</span>
@@ -152,9 +157,25 @@ $tenant = StorefrontTenant::resolve();
     </div>
 
     <div class="qx-cart-footer">
+      <!-- Decant Passport Cash-Back Voucher Row -->
+      <div class="qx-voucher-apply-box" id="qx_cart_voucher_box">
+        <div class="qx-voucher-input-wrap">
+          <input type="text" id="qx_voucher_input" class="qx-voucher-input" placeholder="🛡️ Código Cupón Pasaporte (ej. SHIELD-...)">
+          <button type="button" id="qx_btn_apply_voucher" class="qx-btn-apply-voucher">Aplicar</button>
+        </div>
+        <div class="qx-voucher-applied-pill" id="qx_voucher_applied_pill" style="display:none;">
+          <span id="qx_voucher_applied_label">🛡️ Bono Blind-Buy Shield (-$150.00)</span>
+          <button type="button" id="qx_btn_remove_voucher" class="qx-btn-remove-voucher" title="Quitar cupón">✕</button>
+        </div>
+      </div>
+
       <div class="qx-summary-row">
         <span>Subtotal</span>
         <span id="qx_cart_subtotal">$ 0.00</span>
+      </div>
+      <div class="qx-summary-row discount" id="qx_cart_discount_row" style="display:none;">
+        <span style="color:#fbbf24; font-weight:700;">🛡️ Bono Decant Passport</span>
+        <span id="qx_cart_discount_amount" style="color:#fbbf24; font-weight:700;">- $ 0.00</span>
       </div>
       <div class="qx-summary-row">
         <span>IVA Trasladado (16%)</span>
@@ -372,6 +393,16 @@ $tenant = StorefrontTenant::resolve();
               <div class="qx-format-card-price" id="qx_format_price_decant">$ 180.00</div>
             </button>
           </div>
+        </div>
+
+        <!-- Blind-Buy Shield Guarantee Card -->
+        <div class="qx-shield-guarantee-card" id="qx_shield_guarantee_card">
+          <div class="qx-shield-card-icon">🛡️</div>
+          <div class="qx-shield-card-body">
+            <div class="qx-shield-card-title">Garantía Blind-Buy Shield (100% Bonificable)</div>
+            <div class="qx-shield-card-desc">Prueba el Decant de 5ml sin riesgo. Si te enamora, el 100% de su valor se abona automáticamente a tu botella completa de 100ml.</div>
+          </div>
+          <div class="qx-shield-card-badge">Cero Riesgo</div>
         </div>
 
         <!-- Adaptive Spec Matrix & Performance Indicators -->
@@ -866,6 +897,59 @@ $tenant = StorefrontTenant::resolve();
     </div>
   </div>
 
+  <!-- Digital Decant Passport Modal (Feature 5: Blind-Buy Shield) -->
+  <div class="qx-passport-backdrop" id="qx_passport_backdrop"></div>
+  <div class="qx-passport-modal" id="qx_passport_modal" role="dialog" aria-modal="true" aria-labelledby="qx_passport_title">
+    <div class="qx-passport-booklet-header">
+      <div class="qx-passport-emblem">
+        <span class="qx-passport-emblem-icon">🛡️</span>
+        <div>
+          <div class="qx-passport-sup">PASAPORTE DIGITAL DE CATA</div>
+          <h2 class="qx-passport-title" id="qx_passport_title">Blind-Buy Shield Discovery</h2>
+        </div>
+      </div>
+      <div class="qx-passport-header-right">
+        <div class="qx-passport-tag">Coleccionista VIP</div>
+        <button type="button" class="qx-passport-close" id="qx_passport_close" aria-label="Cerrar Pasaporte">&times;</button>
+      </div>
+    </div>
+
+    <!-- Traveler Identity Bar -->
+    <div class="qx-passport-id-bar">
+      <div class="qx-pass-id-col">
+        <span class="qx-pass-id-lbl">TITULAR</span>
+        <span class="qx-pass-id-val" id="qx_pass_client_name">Alexander von Humboldt</span>
+      </div>
+      <div class="qx-pass-id-col">
+        <span class="qx-pass-id-lbl">CÓDIGO DE ACCESO</span>
+        <span class="qx-pass-id-val code" id="qx_pass_access_code">PASS-2026-VIP</span>
+      </div>
+      <div class="qx-pass-id-col">
+        <span class="qx-pass-id-lbl">CRÉDITO VOUCHERS DISPONIBLE</span>
+        <span class="qx-pass-id-val gold" id="qx_pass_total_credit">$ 150.00 MXN</span>
+      </div>
+    </div>
+
+    <!-- Passport Stats Strip -->
+    <div class="qx-passport-stats-strip">
+      <div class="qx-pass-stat-item">
+        <span class="qx-pass-stat-num" id="qx_pass_stat_total">2</span>
+        <span class="qx-pass-stat-txt">Decants en Colección</span>
+      </div>
+      <div class="qx-pass-stat-item">
+        <span class="qx-pass-stat-num green" id="qx_pass_stat_stamped">1</span>
+        <span class="qx-pass-stat-txt">Sellos Estampados</span>
+      </div>
+      <div class="qx-pass-stat-item">
+        <span class="qx-pass-stat-num amber" id="qx_pass_stat_pending">1</span>
+        <span class="qx-pass-stat-txt">Catas Pendientes</span>
+      </div>
+    </div>
+
+    <!-- Passport Tasting Entries Container -->
+    <div class="qx-passport-entries-wrap" id="qx_passport_entries_container"></div>
+  </div>
+
   <!-- Toast Notification -->
   <div class="qx-toast" id="qx_toast"></div>
 
@@ -894,6 +978,10 @@ $tenant = StorefrontTenant::resolve();
     <button type="button" class="qx-dock-item" id="qx_dock_search" aria-label="Buscar">
       <span class="qx-dock-icon">🔍</span>
       <span class="qx-dock-label">Buscar</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_passport" aria-label="Pasaporte de Cata">
+      <span class="qx-dock-icon">🛡️</span>
+      <span class="qx-dock-label">Pasaporte</span>
     </button>
     <button type="button" class="qx-dock-item highlight" id="qx_dock_concierge" aria-label="Concierge Quiz">
       <span class="qx-dock-icon">✨</span>
