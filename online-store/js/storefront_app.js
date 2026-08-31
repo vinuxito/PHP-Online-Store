@@ -29,6 +29,19 @@
       this.activeProductModal = null;
       this.pmodalQty = 1;
 
+      // Spotlight State
+      this.spotlightActiveIdx = 0;
+
+      // Stories State
+      this.stories = [];
+      this.activeStory = null;
+      this.activeSlideIdx = 0;
+      this.storyTimer = null;
+
+      // Quiz State
+      this.quizAnswers = {};
+      this.quizStep = 1;
+
       this.init();
     }
 
@@ -57,21 +70,54 @@
     bindGlobalEvents() {
       const self = this;
 
-      // Omnibox Search
-      $('#qx_search_input').on('input', function() {
-        self.searchQuery = $(this).val().toLowerCase().trim();
-        self.applyFilters();
+      // Omnibox Search Trigger & Spotlight
+      $('#qx_search_input, #qx_nav_search_trigger').on('click focus', function(e) {
+        e.preventDefault();
+        self.openSpotlight();
       });
 
-      // Keyboard Shortcut ⌘K / Ctrl+K
+      // Spotlight Input
+      $('#qx_spotlight_input').on('input', function() {
+        self.spotlightActiveIdx = 0;
+        self.renderSpotlightResults($(this).val());
+      });
+
+      $('#qx_spotlight_backdrop').on('click', () => self.closeSpotlight());
+
+      // Keyboard Shortcut ⌘K / Ctrl+K & Spotlight Arrow Navigation
       $(document).on('keydown', function(e) {
+        const isSpotlightActive = $('#qx_spotlight_modal').hasClass('active');
+
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
-          $('#qx_search_input').focus().select();
+          if (isSpotlightActive) {
+            self.closeSpotlight();
+          } else {
+            self.openSpotlight();
+          }
         } else if (e.key === 'Escape') {
           self.closeAllDrawers();
           self.closeLightbox();
           self.closeProductModal();
+          self.closeSpotlight();
+          self.closeStory();
+          self.closeQuiz();
+        } else if (isSpotlightActive) {
+          const items = $('#qx_spotlight_results .qx-spotlight-item');
+          if (items.length === 0) return;
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            self.spotlightActiveIdx = (self.spotlightActiveIdx + 1) % items.length;
+            items.removeClass('active').eq(self.spotlightActiveIdx).addClass('active');
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            self.spotlightActiveIdx = (self.spotlightActiveIdx - 1 + items.length) % items.length;
+            items.removeClass('active').eq(self.spotlightActiveIdx).addClass('active');
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            items.eq(self.spotlightActiveIdx).trigger('click');
+          }
         }
       });
 
@@ -101,7 +147,7 @@
 
       $('#qx_pmodal_btn_add').on('click', function() {
         if (self.activeProductModal) {
-          self.addToCart(self.activeProductModal, self.pmodalQty || 1);
+          self.addToCart(self.activeProductModal, self.pmodalQty || 1, $('#qx_pmodal_main_img'));
           self.closeProductModal();
         }
       });
@@ -127,6 +173,30 @@
       $('#qx_checkout_form').on('submit', function(e) {
         e.preventDefault();
         self.submitOrder();
+      });
+
+      // Fiscal Intelligence & SPEI bindings
+      this.bindFiscalIntelligence();
+
+      // Story Viewer Close & Click handlers
+      $('#qx_story_close').on('click', () => self.closeStory());
+      $('#qx_story_media').on('click', function(e) {
+        const width = $(this).width();
+        const clickX = e.offsetX;
+        if (clickX < width / 3) {
+          self.prevStorySlide();
+        } else {
+          self.nextStorySlide();
+        }
+      });
+
+      // Concierge Quiz Button & Modal Handlers
+      $('#qx_concierge_btn').on('click', () => self.openQuiz());
+      $('#qx_quiz_close, #qx_quiz_backdrop').on('click', () => self.closeQuiz());
+      $('#qx_quiz_restart').on('click', () => self.openQuiz());
+      $('.qx-quiz-opt').on('click', function() {
+        const val = $(this).data('val');
+        self.handleQuizSelection(val);
       });
 
       // Lightbox Controls
@@ -158,6 +228,7 @@
             self.renderHero3DCarousel(resp.Featured || []);
             self.renderCategories(resp.Categories || []);
             self.applyFilters();
+            self.initStories();
           } else {
             $('#qx_product_grid').html(`<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error: ${resp.Error || 'No se pudo cargar el catálogo'}</div>`);
           }
@@ -280,14 +351,14 @@
 
       body.find('.qx-btn-add-cart').on('click', (e) => {
         e.stopPropagation();
-        self.addToCart(p);
+        self.addToCart(p, 1, card.find('.qx-card-img'));
       });
 
       card.append(media).append(body);
       return card;
     }
 
-    addToCart(productOrId, qty = 1) {
+    addToCart(productOrId, qty = 1, originEl = null) {
       let product = productOrId;
       if (typeof productOrId === 'string' || typeof productOrId === 'number') {
         product = this.products.find(p => p.id == productOrId);
@@ -312,6 +383,11 @@
       }
       this.saveCart();
       this.showToast(`✔ ${product.name} agregado al carrito`);
+      if (originEl && originEl.length) {
+        this.animateFlyToCart(originEl, product.cover);
+      } else {
+        this.playAudioSynth('cart');
+      }
       this.openCart();
     }
 
@@ -405,6 +481,9 @@
       $('#qx_checkout_backdrop').addClass('active');
       $('#qx_checkout_drawer').addClass('active');
       this.renderCheckoutSummary();
+      if ($('input[name="qx_payment_method"]:checked').val() === 'SPEI') {
+        $('#qx_spei_voucher').show();
+      }
     }
 
     closeCheckout() {
@@ -498,6 +577,9 @@
       } else {
         $('#qx_pmodal_btn_wa').hide();
       }
+
+      // Render Adaptive Specs & Metric Bars
+      this.renderAdaptiveSpecs(product);
 
       // Open Modal
       $('#qx_product_modal_backdrop').addClass('active');
@@ -818,6 +900,503 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
+    }
+
+    playAudioSynth(type = 'click') {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!this.audioCtx) {
+          this.audioCtx = new AudioCtx();
+        }
+        if (this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume();
+        }
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+
+        const now = this.audioCtx.currentTime;
+        if (type === 'cart') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'pop') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(1046.5, now); // C6
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        }
+      } catch (e) {}
+    }
+
+    animateFlyToCart(originEl, thumbUrl) {
+      if (!originEl || !originEl.length) return;
+      const originRect = originEl[0].getBoundingClientRect();
+      const cartBtn = document.getElementById('qx_cart_btn');
+      if (!cartBtn) return;
+      const targetRect = cartBtn.getBoundingClientRect();
+
+      const orb = $('<div class="qx-fly-orb"></div>');
+      orb.css({
+        top: `${originRect.top + originRect.height / 2 - 22}px`,
+        left: `${originRect.left + originRect.width / 2 - 22}px`,
+        backgroundImage: `url('${thumbUrl}')`
+      });
+      $('body').append(orb);
+
+      requestAnimationFrame(() => {
+        const deltaX = (targetRect.left + targetRect.width / 2) - (originRect.left + originRect.width / 2);
+        const deltaY = (targetRect.top + targetRect.height / 2) - (originRect.top + originRect.height / 2);
+        orb.css({
+          transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(0.25)`,
+          opacity: 0.2
+        });
+      });
+
+      setTimeout(() => {
+        orb.remove();
+        const badge = $('#qx_cart_badge');
+        badge.addClass('pulse-bounce');
+        setTimeout(() => badge.removeClass('pulse-bounce'), 450);
+        this.playAudioSynth('cart');
+      }, 650);
+    }
+
+    openSpotlight() {
+      $('#qx_spotlight_backdrop').addClass('active');
+      $('#qx_spotlight_modal').addClass('active');
+      $('#qx_spotlight_input').val('').focus();
+      this.spotlightActiveIdx = 0;
+      this.renderSpotlightResults('');
+    }
+
+    closeSpotlight() {
+      $('#qx_spotlight_backdrop').removeClass('active');
+      $('#qx_spotlight_modal').removeClass('active');
+    }
+
+    renderSpotlightResults(query) {
+      const container = $('#qx_spotlight_results').empty();
+      const q = (query || '').toLowerCase().trim();
+      let matches = this.products;
+
+      if (q) {
+        matches = this.products.filter(p => {
+          const matchName = (p.name || '').toLowerCase().includes(q);
+          const matchSku = (p.sku || '').toLowerCase().includes(q);
+          const matchCode = (p.code || '').toLowerCase().includes(q);
+          const matchCat = (p.category || '').toLowerCase().includes(q);
+          const matchSat = (p.satKey || '').toLowerCase().includes(q);
+          const matchNotes = (p.notes || '').toLowerCase().includes(q);
+          return matchName || matchSku || matchCode || matchCat || matchSat || matchNotes;
+        });
+      }
+
+      if (matches.length === 0) {
+        container.html('<div style="padding:24px; text-align:center; color:var(--qx-text-muted); font-size:13px;">No se encontraron artículos para esta búsqueda.</div>');
+        return;
+      }
+
+      const displayList = matches.slice(0, 7);
+      const self = this;
+
+      displayList.forEach((p, idx) => {
+        const item = $(`
+          <div class="qx-spotlight-item ${idx === self.spotlightActiveIdx ? 'active' : ''}" data-idx="${idx}">
+            <img class="qx-spotlight-thumb" src="${self.esc(p.cover)}" alt="">
+            <div class="qx-spotlight-info">
+              <div class="qx-spotlight-name">${self.esc(p.name)}</div>
+              <div class="qx-spotlight-meta">
+                <span>${self.esc(p.category || 'General')}</span>
+                ${p.sku ? `<span>· SKU: ${self.esc(p.sku)}</span>` : ''}
+                ${p.satKey ? `<span>· SAT: ${self.esc(p.satKey)}</span>` : ''}
+              </div>
+            </div>
+            <div class="qx-spotlight-price">$ ${self.formatMoney(p.priceWithTax)}</div>
+          </div>
+        `);
+
+        item.on('click', () => {
+          self.closeSpotlight();
+          self.openProductModal(p);
+        });
+
+        item.on('mouseenter', function() {
+          container.find('.qx-spotlight-item').removeClass('active');
+          $(this).addClass('active');
+          self.spotlightActiveIdx = idx;
+        });
+
+        container.append(item);
+      });
+    }
+
+    renderAdaptiveSpecs(product) {
+      const container = $('#qx_pmodal_adaptive_specs').empty();
+      const rawNotes = product.notes || '';
+
+      // 1. Check for Olfactory Pyramid (Salida, Corazón, Fondo)
+      if (/salida|coraz[oó]n|fondo/i.test(rawNotes)) {
+        const lines = rawNotes.split(/\n|\r|\.|;/).map(s => s.trim()).filter(Boolean);
+        let salida = '', corazon = '', fondo = '';
+
+        lines.forEach(l => {
+          if (/salida/i.test(l)) salida = l.replace(/.*salida[:\s-]*/i, '').trim();
+          else if (/coraz[oó]n/i.test(l)) corazon = l.replace(/.*coraz[oó]n[:\s-]*/i, '').trim();
+          else if (/fondo/i.test(l)) fondo = l.replace(/.*fondo[:\s-]*/i, '').trim();
+        });
+
+        if (salida || corazon || fondo) {
+          const pyramid = $(`
+            <div class="qx-pyramid-container" style="margin-bottom:8px;">
+              ${salida ? `<div class="qx-pyramid-tier"><div class="qx-pyramid-tier-icon">🌿</div><div><div class="qx-pyramid-tier-title">Notas de Salida</div><div class="qx-pyramid-tier-notes">${this.esc(salida)}</div></div></div>` : ''}
+              ${corazon ? `<div class="qx-pyramid-tier"><div class="qx-pyramid-tier-icon">🌸</div><div><div class="qx-pyramid-tier-title">Notas de Corazón</div><div class="qx-pyramid-tier-notes">${this.esc(corazon)}</div></div></div>` : ''}
+              ${fondo ? `<div class="qx-pyramid-tier"><div class="qx-pyramid-tier-icon">🪵</div><div><div class="qx-pyramid-tier-title">Notas de Fondo</div><div class="qx-pyramid-tier-notes">${this.esc(fondo)}</div></div></div>` : ''}
+            </div>
+          `);
+          container.append(pyramid);
+        }
+      }
+      // 2. Check for Key:Value specs (e.g. CPU: i7 | RAM: 16GB)
+      else if (rawNotes.includes(':') || rawNotes.includes('|')) {
+        const pairs = rawNotes.split(/\||\n|\r/).map(s => s.trim()).filter(Boolean);
+        const grid = $('<div class="qx-specs-grid" style="margin-bottom:8px;"></div>');
+        pairs.forEach(p => {
+          const parts = p.split(':');
+          if (parts.length >= 2) {
+            grid.append(`
+              <div class="qx-spec-card">
+                <div class="qx-spec-key">${this.esc(parts[0].trim())}</div>
+                <div class="qx-spec-val">${this.esc(parts.slice(1).join(':').trim())}</div>
+              </div>
+            `);
+          }
+        });
+        if (grid.children().length > 0) {
+          container.append(grid);
+        }
+      }
+
+      // Metric Bars Animation
+      const hash = String(product.id || product.name).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const intensity = 75 + (hash % 24); // 75% - 98%
+      const longevity = 78 + ((hash * 3) % 21); // 78% - 98%
+      const quality = 88 + ((hash * 7) % 11); // 88% - 98%
+
+      $('#qx_metric_val_1').text(`${intensity}%`);
+      $('#qx_metric_val_2').text(`${longevity}%`);
+      $('#qx_metric_val_3').text(`${quality}%`);
+
+      setTimeout(() => {
+        $('#qx_metric_bar_1').css('width', `${intensity}%`);
+        $('#qx_metric_bar_2').css('width', `${longevity}%`);
+        $('#qx_metric_bar_3').css('width', `${quality}%`);
+      }, 50);
+    }
+
+    bindFiscalIntelligence() {
+      const self = this;
+      const rfcInput = $('#qx_cfdi_rfc');
+      const regimenSelect = $('#qx_cfdi_regimen');
+      const usoSelect = $('#qx_cfdi_uso');
+
+      rfcInput.on('input', function() {
+        const rfc = $(this).val().toUpperCase().trim();
+        $(this).val(rfc);
+
+        if (rfc.length === 12) {
+          // Persona Moral
+          $('#qx_rfc_type_badge').text('🏢 Persona Moral').show();
+          regimenSelect.html(`
+            <option value="601" selected>601 — General de Ley Personas Morales</option>
+            <option value="626">626 — Régimen Simplificado de Confianza (RESICO)</option>
+            <option value="603">603 — Personas Morales con Fines no Lucrativos</option>
+          `);
+          usoSelect.html(`
+            <option value="G01" selected>G01 — Adquisición de mercancías</option>
+            <option value="G03">G03 — Gastos en general</option>
+            <option value="S01">S01 — Sin efectos fiscales</option>
+          `);
+        } else if (rfc.length === 13) {
+          // Persona Física
+          $('#qx_rfc_type_badge').text('👤 Persona Física').show();
+          regimenSelect.html(`
+            <option value="612" selected>612 — Personas Físicas con Actividades Empresariales</option>
+            <option value="626">626 — Régimen Simplificado de Confianza (RESICO)</option>
+            <option value="605">605 — Sueldos y Salarios e Ingresos Asimilados</option>
+            <option value="616">616 — Sin obligaciones fiscales</option>
+          `);
+          usoSelect.html(`
+            <option value="G01">G01 — Adquisición de mercancías</option>
+            <option value="G03" selected>G03 — Gastos en general</option>
+            <option value="S01">S01 — Sin efectos fiscales</option>
+          `);
+        } else {
+          $('#qx_rfc_type_badge').hide();
+        }
+      });
+
+      // SPEI vs other payment methods toggle
+      $('input[name="qx_payment_method"]').on('change', function() {
+        if ($(this).val() === 'SPEI') {
+          $('#qx_spei_voucher').slideDown(200);
+        } else {
+          $('#qx_spei_voucher').slideUp(200);
+        }
+      });
+
+      // Copy CLABE button
+      $('#qx_btn_copy_clabe').on('click', function() {
+        const clabe = $('#qx_spei_clabe_val').val();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(clabe).catch(() => {
+            const input = document.getElementById('qx_spei_clabe_val');
+            if (input) {
+              input.select();
+              try { document.execCommand('copy'); } catch (e) {}
+            }
+          });
+        }
+        self.showToast('✔ CLABE copiada al portapapeles');
+        self.playAudioSynth('pop');
+      });
+
+      // WhatsApp VIP checkout button
+      if (self.tenant && self.tenant.showWhatsapp && self.tenant.whatsappPhone) {
+        $('#qx_btn_checkout_wa').show();
+      }
+      $('#qx_btn_checkout_wa').on('click', function() {
+        if (!self.tenant || !self.tenant.whatsappPhone) return;
+        const rawPhone = String(self.tenant.whatsappPhone).replace(/[^0-9]/g, '');
+        const itemsText = self.cart.items.map(i => `• ${i.qty}x ${i.name} ($${self.formatMoney(i.priceWithTax)})`).join('\n');
+        const grandTotal = $('#qx_cart_total').text() || '$0.00';
+        const msg = `✨ *NUEVO PEDIDO BOUTIQUE ONLINE*\n━━━━━━━━━━━━━━━━━━━━\n👤 *Cliente:* ${$('#qx_cust_name').val() || 'Cliente VIP'}\n📍 *Dirección:* ${$('#qx_cust_address').val() || 'Por definir'}\n\n🛍️ *PRODUCTOS:*\n${itemsText}\n\n💰 *TOTAL A PAGAR:* ${grandTotal} MXN\n🧾 *Requiere Factura:* ${$('#qx_require_cfdi').is(':checked') ? 'SÍ (' + ($('#qx_cfdi_rfc').val() || 'RFC pendiente') + ')' : 'NO'}\n━━━━━━━━━━━━━━━━━━━━\n¡Hola! Deseo confirmar este pedido.`;
+        window.open(`https://wa.me/${encodeURIComponent(rawPhone)}?text=${encodeURIComponent(msg)}`, '_blank');
+      });
+    }
+
+    initStories() {
+      const topItems = this.products.slice(0, 6);
+      if (topItems.length === 0) return;
+
+      this.stories = [
+        { id: 'top_arabes', label: '👑 Top Ventas', title: 'Top Fragancias Más Vendidas', slides: topItems.slice(0, 3).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
+        { id: 'novedades', label: '✨ Novedades', title: 'Colección Reciente', slides: topItems.slice(3, 6).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
+        { id: 'garantia', label: '🛡️ Garantía SAT', title: 'Calidad y Facturación SAT 4.0', slides: [{ mediaUrl: topItems[0].cover, productId: topItems[0].id }] }
+      ];
+
+      this.renderStoriesBar();
+    }
+
+    renderStoriesBar() {
+      const container = $('#qx_stories_container').empty();
+      const self = this;
+
+      this.stories.forEach(story => {
+        const firstThumb = story.slides[0] ? story.slides[0].mediaUrl : 'images/logo.png';
+        const avatar = $(`
+          <div class="qx-story-avatar-wrap" data-id="${story.id}">
+            <div class="qx-story-ring">
+              <img class="qx-story-avatar-img" src="${self.esc(firstThumb)}" alt="${self.esc(story.title)}">
+            </div>
+            <div class="qx-story-avatar-label">${self.esc(story.label)}</div>
+          </div>
+        `);
+
+        avatar.on('click', () => {
+          self.openStory(story.id, 0);
+        });
+
+        container.append(avatar);
+      });
+    }
+
+    openStory(storyId, slideIdx = 0) {
+      const story = this.stories.find(s => s.id === storyId);
+      if (!story || !story.slides.length) return;
+
+      this.activeStory = story;
+      this.activeSlideIdx = slideIdx;
+      this.renderStorySlide();
+      $('#qx_story_viewer').fadeIn(200);
+      this.startStoryTimer();
+    }
+
+    closeStory() {
+      $('#qx_story_viewer').fadeOut(200);
+      if (this.storyTimer) {
+        clearInterval(this.storyTimer);
+        this.storyTimer = null;
+      }
+      this.activeStory = null;
+    }
+
+    renderStorySlide() {
+      if (!this.activeStory) return;
+      const self = this;
+      const slide = this.activeStory.slides[this.activeSlideIdx];
+
+      // Render progress bar segments
+      const progressBar = $('#qx_story_progress').empty();
+      this.activeStory.slides.forEach((s, idx) => {
+        const seg = $(`
+          <div class="qx-story-progress-segment">
+            <div class="qx-story-progress-fill" style="width: ${idx < self.activeSlideIdx ? '100%' : (idx === self.activeSlideIdx ? '0%' : '0%')};"></div>
+          </div>
+        `);
+        progressBar.append(seg);
+      });
+
+      $('#qx_story_img').attr('src', slide.mediaUrl);
+      $('#qx_story_title').text(this.activeStory.title);
+
+      if (slide.productId) {
+        const prod = this.products.find(p => p.id === slide.productId);
+        if (prod) {
+          $('#qx_story_prod_thumb').attr('src', prod.cover);
+          $('#qx_story_prod_name').text(prod.name);
+          $('#qx_story_prod_price').text(`$ ${this.formatMoney(prod.priceWithTax)} MXN`);
+          $('#qx_story_product_tag').show();
+          $('#qx_story_btn_buy').off('click').on('click', () => {
+            self.closeStory();
+            self.openProductModal(prod);
+          });
+        } else {
+          $('#qx_story_product_tag').hide();
+        }
+      } else {
+        $('#qx_story_product_tag').hide();
+      }
+    }
+
+    startStoryTimer() {
+      if (this.storyTimer) clearInterval(this.storyTimer);
+      let progress = 0;
+      const self = this;
+      this.storyTimer = setInterval(() => {
+        progress += 2;
+        const currentSeg = $('#qx_story_progress .qx-story-progress-segment').eq(self.activeSlideIdx);
+        currentSeg.find('.qx-story-progress-fill').css('width', `${progress}%`);
+
+        if (progress >= 100) {
+          clearInterval(self.storyTimer);
+          self.nextStorySlide();
+        }
+      }, 100);
+    }
+
+    nextStorySlide() {
+      if (!this.activeStory) return;
+      if (this.activeSlideIdx + 1 < this.activeStory.slides.length) {
+        this.activeSlideIdx++;
+        this.renderStorySlide();
+        this.startStoryTimer();
+      } else {
+        this.closeStory();
+      }
+    }
+
+    prevStorySlide() {
+      if (!this.activeStory) return;
+      if (this.activeSlideIdx > 0) {
+        this.activeSlideIdx--;
+        this.renderStorySlide();
+        this.startStoryTimer();
+      }
+    }
+
+    openQuiz() {
+      this.quizAnswers = {};
+      this.quizStep = 1;
+      this.showQuizStep(1);
+      $('#qx_quiz_backdrop').addClass('active');
+      $('#qx_quiz_modal').addClass('active');
+    }
+
+    closeQuiz() {
+      $('#qx_quiz_backdrop').removeClass('active');
+      $('#qx_quiz_modal').removeClass('active');
+    }
+
+    showQuizStep(step) {
+      this.quizStep = step;
+      $('#qx_quiz_bar').css('width', `${(step / 3) * 100}%`);
+      $('#qx_quiz_wizard .qx-quiz-step').removeClass('active');
+      $('#qx_quiz_results').hide();
+      $(`#qx_quiz_wizard .qx-quiz-step[data-step="${step}"]`).addClass('active');
+    }
+
+    handleQuizSelection(val) {
+      if (this.quizStep === 1) {
+        this.quizAnswers.occasion = val;
+        this.showQuizStep(2);
+      } else if (this.quizStep === 2) {
+        this.quizAnswers.style = val;
+        this.showQuizStep(3);
+      } else if (this.quizStep === 3) {
+        this.quizAnswers.budget = val;
+        this.calculateAndRenderQuizResults();
+      }
+    }
+
+    calculateAndRenderQuizResults() {
+      $('#qx_quiz_wizard .qx-quiz-step').removeClass('active');
+      $('#qx_quiz_bar').css('width', '100%');
+      const self = this;
+
+      const scored = this.products.map(p => {
+        let score = 55;
+        const text = (p.name + ' ' + p.category + ' ' + (p.notes || '')).toLowerCase();
+
+        if (self.quizAnswers.occasion === 'noche' && /nuit|intense|elixir|oud|amber|negro/i.test(text)) score += 20;
+        if (self.quizAnswers.occasion === 'diario' && /dive|fresh|blue|sport|aqua/i.test(text)) score += 20;
+        if (self.quizAnswers.style === 'fresco' && /c[ií]trico|marino|aquatic|bergamot|dive/i.test(text)) score += 20;
+        if (self.quizAnswers.style === 'amaderado' && /wood|cedar|vetiver|leather/i.test(text)) score += 20;
+        if (self.quizAnswers.style === 'dulce' && /vanilla|sweet|amber|tonka/i.test(text)) score += 20;
+        if (self.quizAnswers.style === 'intenso' && /elixir|intense|oud|black|supremacy/i.test(text)) score += 20;
+        if (self.quizAnswers.budget === 'lujo' && p.priceWithTax > 320) score += 15;
+        if (self.quizAnswers.budget === 'accesible' && p.priceWithTax <= 320) score += 15;
+
+        return { product: p, score: Math.min(99, score) };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+      const top3 = scored.slice(0, 3);
+
+      const grid = $('#qx_quiz_matches').empty();
+      top3.forEach((item, idx) => {
+        const p = item.product;
+        const badges = ['⭐ 98% Match con tus gustos', '✨ 92% Match Recomendado', '💎 88% Match Especial'];
+        const card = $(`
+          <div class="qx-quiz-match-card" style="cursor:pointer;">
+            <img class="qx-quiz-match-thumb" src="${self.esc(p.cover)}" alt="">
+            <div class="qx-quiz-match-info">
+              <div class="qx-quiz-match-badge">${badges[idx] || '⭐ ' + item.score + '% Match'}</div>
+              <div class="qx-quiz-match-title">${self.esc(p.name)}</div>
+              <div class="qx-quiz-match-price">$ ${self.formatMoney(p.priceWithTax)} MXN</div>
+            </div>
+            <button type="button" class="qx-btn-story-buy btn-quiz-view">Ver Ficha</button>
+          </div>
+        `);
+
+        card.on('click', () => {
+          self.closeQuiz();
+          self.openProductModal(p);
+        });
+
+        grid.append(card);
+      });
+
+      $('#qx_quiz_results').fadeIn(200);
+      this.playAudioSynth('cart');
     }
 
     esc(str) {

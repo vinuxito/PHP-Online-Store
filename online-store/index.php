@@ -63,7 +63,7 @@ $tenant = StorefrontTenant::resolve();
         <span class="qx-brand-badge">Boutique Oficial</span>
       </a>
 
-      <div class="qx-nav-search">
+      <div class="qx-nav-search" id="qx_nav_search_trigger" style="cursor:pointer" title="Haz clic o presiona ⌘K para buscar">
         <span class="qx-search-icon">🔍</span>
         <input type="text" id="qx_search_input" class="qx-search-input" placeholder="Buscar por nombre, código o SKU... (⌘K)" autocomplete="off">
       </div>
@@ -77,6 +77,11 @@ $tenant = StorefrontTenant::resolve();
       </div>
     </div>
   </header>
+
+  <!-- Boutique Stories Bar (Social Commerce) -->
+  <section class="qx-stories-section">
+    <div class="qx-stories-container" id="qx_stories_container"></div>
+  </section>
 
   <!-- Hero Showcase Banner -->
   <section class="qx-hero">
@@ -189,7 +194,8 @@ $tenant = StorefrontTenant::resolve();
 
         <div id="qx_cfdi_fields" style="display:none; margin-top:14px;">
           <div class="qx-form-group">
-            <label class="qx-form-label">RFC Receptor *</label>
+            <span id="qx_rfc_type_badge" style="display:none;"></span>
+            <label class="qx-form-label">RFC del Receptor *</label>
             <input type="text" class="qx-form-input" id="qx_cfdi_rfc" placeholder="Ej: XAXX010101000" maxlength="13" style="text-transform:uppercase;">
           </div>
           <div class="qx-form-group">
@@ -222,8 +228,25 @@ $tenant = StorefrontTenant::resolve();
         </div>
       </div>
 
-      <div style="margin-top:auto; padding-top:16px;">
+      <!-- SPEI Payment Voucher Container -->
+      <div id="qx_spei_voucher" style="display:none; margin-bottom:16px;">
+        <div class="qx-spei-voucher-card">
+          <div style="font-size:11px; font-weight:800; color:var(--qx-accent); text-transform:uppercase;">⚡ Ficha de Transferencia SPEI</div>
+          <div style="font-size:12px; color:#cbd5e1;">Realiza tu transferencia interbancaria a la siguiente cuenta:</div>
+          <div class="qx-clabe-copy-group">
+            <input type="text" id="qx_spei_clabe_val" value="012180001234567890" readonly>
+            <button type="button" class="qx-btn-copy" id="qx_btn_copy_clabe">📋 Copiar CLABE</button>
+          </div>
+          <div style="font-size:11px; color:var(--qx-text-muted);">Banco: <strong>BBVA México</strong> · Titular: <strong><?php echo htmlspecialchars($tenant->brandName); ?></strong></div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; padding-top:16px; display:flex; flex-direction:column; gap:10px;">
         <button type="submit" class="qx-btn-checkout" id="qx_btn_place_order">Confirmar y Pagar Orden &rarr;</button>
+        <button type="button" class="qx-btn-pmodal-wa" id="qx_btn_checkout_wa" style="display:none;">
+          <span>💬</span>
+          <span>Pedir & Confirmar por WhatsApp VIP</span>
+        </button>
       </div>
     </form>
   </aside>
@@ -265,9 +288,39 @@ $tenant = StorefrontTenant::resolve();
           </div>
         </div>
 
+        <!-- Adaptive Spec Matrix & Performance Indicators -->
         <div class="qx-pmodal-section">
           <h3 class="qx-pmodal-sec-title">Especificaciones & Detalles</h3>
-          <div class="qx-pmodal-desc" id="qx_pmodal_desc">Descripción detallada...</div>
+          <div id="qx_pmodal_adaptive_specs"></div>
+          <div class="qx-pmodal-desc" id="qx_pmodal_desc" style="margin-top:6px;">Descripción detallada...</div>
+        </div>
+
+        <!-- 3 Universal Satin Metric Bars -->
+        <div class="qx-pmodal-section">
+          <h3 class="qx-pmodal-sec-title">Métricas de Rendimiento</h3>
+          <div class="qx-pmodal-metrics-box">
+            <div class="qx-metric-item">
+              <div class="qx-metric-header">
+                <span id="qx_metric_label_1">Intensidad / Potencia</span>
+                <span class="qx-metric-val" id="qx_metric_val_1">85%</span>
+              </div>
+              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_1"></div></div>
+            </div>
+            <div class="qx-metric-item">
+              <div class="qx-metric-header">
+                <span id="qx_metric_label_2">Duración / Longevidad</span>
+                <span class="qx-metric-val" id="qx_metric_val_2">90%</span>
+              </div>
+              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_2"></div></div>
+            </div>
+            <div class="qx-metric-item">
+              <div class="qx-metric-header">
+                <span id="qx_metric_label_3">Versatilidad & Calidad</span>
+                <span class="qx-metric-val" id="qx_metric_val_3">95%</span>
+              </div>
+              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_3"></div></div>
+            </div>
+          </div>
         </div>
 
         <!-- Documents / Fichas Técnicas if any -->
@@ -303,6 +356,107 @@ $tenant = StorefrontTenant::resolve();
             <span>💬</span>
             <span>Consultar por WhatsApp con Concierge VIP</span>
           </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spotlight Omnibox (⌘K) Modal -->
+  <div class="qx-spotlight-backdrop" id="qx_spotlight_backdrop"></div>
+  <div class="qx-spotlight-modal" id="qx_spotlight_modal" role="dialog" aria-modal="true">
+    <div class="qx-spotlight-header">
+      <span class="qx-spotlight-search-icon">🔍</span>
+      <input type="text" id="qx_spotlight_input" class="qx-spotlight-input" placeholder="Buscar por producto, marca, SKU o clave SAT... (Esc para salir)" autocomplete="off">
+      <kbd class="qx-spotlight-kbd">ESC</kbd>
+    </div>
+    <div class="qx-spotlight-body">
+      <div class="qx-spotlight-results" id="qx_spotlight_results"></div>
+    </div>
+    <div class="qx-spotlight-footer">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> Navegar</span>
+      <span><kbd>↵</kbd> Ver Ficha</span>
+      <span><kbd>ESC</kbd> Cerrar</span>
+    </div>
+  </div>
+
+  <!-- Boutique Story Viewer Modal (Fullscreen Reels) -->
+  <div class="qx-story-viewer-modal" id="qx_story_viewer" style="display:none;">
+    <div class="qx-story-stage-box">
+      <div class="qx-story-progress-bar" id="qx_story_progress"></div>
+      <div class="qx-story-header">
+        <div class="qx-story-author">
+          <img id="qx_story_avatar" src="<?php echo htmlspecialchars($tenant->logo ?: 'images/logo.png'); ?>" alt="Brand">
+          <span id="qx_story_title">Boutique Reel</span>
+        </div>
+        <button type="button" class="qx-story-close" id="qx_story_close">&times;</button>
+      </div>
+      <div class="qx-story-media-stage" id="qx_story_media">
+        <img id="qx_story_img" src="" alt="Story Slide">
+      </div>
+      <div class="qx-story-product-card" id="qx_story_product_tag" style="display:none;">
+        <img id="qx_story_prod_thumb" class="qx-story-prod-thumb" src="" alt="">
+        <div class="qx-story-prod-info">
+          <div id="qx_story_prod_name" class="qx-story-prod-name">Nombre Producto</div>
+          <div id="qx_story_prod_price" class="qx-story-prod-price">$ 0.00 MXN</div>
+        </div>
+        <button type="button" class="qx-btn-story-buy" id="qx_story_btn_buy">Comprar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universal Concierge Matchmaker Floating Pill & Wizard Modal -->
+  <div class="qx-concierge-float-pill" id="qx_concierge_btn" title="Asistente de Selección Personalizada">
+    <span>✨</span>
+    <span>Matchmaker Concierge</span>
+  </div>
+
+  <div class="qx-quiz-backdrop" id="qx_quiz_backdrop"></div>
+  <div class="qx-quiz-modal" id="qx_quiz_modal" role="dialog" aria-modal="true">
+    <button type="button" class="qx-quiz-close" id="qx_quiz_close">&times;</button>
+    
+    <div class="qx-quiz-wizard" id="qx_quiz_wizard">
+      <div class="qx-quiz-progress-track">
+        <div class="qx-quiz-progress-bar" id="qx_quiz_bar" style="width:33%;"></div>
+      </div>
+      
+      <div class="qx-quiz-step active" data-step="1">
+        <h3 class="qx-quiz-question">¿Para qué ocasión o propósito buscas tu artículo?</h3>
+        <div class="qx-quiz-options">
+          <button type="button" class="qx-quiz-opt" data-val="diario">☀️ Uso Diario / Versátil</button>
+          <button type="button" class="qx-quiz-opt" data-val="noche">🌙 Citas / Noche / Gala</button>
+          <button type="button" class="qx-quiz-opt" data-val="regalo">🎁 Es un Regalo Especial</button>
+          <button type="button" class="qx-quiz-opt" data-val="profesional">💼 Oficina / Negocios</button>
+        </div>
+      </div>
+
+      <div class="qx-quiz-step" data-step="2">
+        <h3 class="qx-quiz-question">¿Qué estilo o familia de notas prefieres?</h3>
+        <div class="qx-quiz-options">
+          <button type="button" class="qx-quiz-opt" data-val="fresco">🌊 Fresco / Cítrico / Marino</button>
+          <button type="button" class="qx-quiz-opt" data-val="amaderado">🪵 Amaderado / Cedro / Vetiver</button>
+          <button type="button" class="qx-quiz-opt" data-val="dulce">🍯 Dulce / Vainilla / Ámbar</button>
+          <button type="button" class="qx-quiz-opt" data-val="intenso">👑 Intenso / Cuero / Oud Árabe</button>
+        </div>
+      </div>
+
+      <div class="qx-quiz-step" data-step="3">
+        <h3 class="qx-quiz-question">¿Qué rango o nivel de exclusividad buscas?</h3>
+        <div class="qx-quiz-options">
+          <button type="button" class="qx-quiz-opt" data-val="accesible">🏷️ Entrada / Best Seller</button>
+          <button type="button" class="qx-quiz-opt" data-val="premium">⭐ Gama Media Alta</button>
+          <button type="button" class="qx-quiz-opt" data-val="lujo">💎 Colección Privada / Alta Gama</button>
+        </div>
+      </div>
+
+      <div class="qx-quiz-results" id="qx_quiz_results" style="display:none;">
+        <div class="qx-quiz-results-header">
+          <div style="font-size:32px; text-align:center; margin-bottom:8px;">✨</div>
+          <h3 style="color:#fff; font-size:20px; font-weight:800; text-align:center;">Tus Matches Perfectos</h3>
+          <p style="color:var(--qx-text-muted); font-size:13px; text-align:center;">Curados a tu medida por el Concierge Oficial</p>
+        </div>
+        <div class="qx-quiz-matches-grid" id="qx_quiz_matches"></div>
+        <div style="text-align:center;">
+          <button type="button" class="qx-btn-quiz-restart" id="qx_quiz_restart">↻ Probar de Nuevo</button>
         </div>
       </div>
     </div>
@@ -347,6 +501,6 @@ $tenant = StorefrontTenant::resolve();
     </a>
   <?php endif; ?>
 
-  <script src="js/storefront_app.js?v=20260830_01"></script>
+  <script src="js/storefront_app.js?v=20260830_02"></script>
 </body>
 </html>
