@@ -24,13 +24,16 @@ try {
     $stmt = $db->prepare("
         SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.categoria,
                p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
-               p.ClaveProdServ, p.Observaciones,
+               p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
                pa.RutaMiniatura as CoverMiniatura
         FROM productos p
         LEFT JOIN productos_archivos pa ON p.ProductoID = pa.ProductoID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1
-        WHERE p.EmisorID = ? AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL)
+        WHERE p.EmisorID = ? 
+          AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL)
+          AND (p.TiendaInicio IS NULL OR p.TiendaInicio <= NOW())
+          AND (p.TiendaFin IS NULL OR p.TiendaFin >= NOW())
         ORDER BY p.descripcion ASC
     ");
     $stmt->execute([$tenant->emisorId]);
@@ -137,7 +140,9 @@ try {
             'notes'        => $p['Observaciones'] ?? '',
             'cover'        => $cover,
             'photos'       => $fotos,
-            'docs'         => $docs
+            'docs'         => $docs,
+            'storeStart'   => $p['TiendaInicio'] ?? null,
+            'storeEnd'     => $p['TiendaFin'] ?? null
         ];
     }
 
