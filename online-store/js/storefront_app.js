@@ -736,41 +736,47 @@
         dotsContainer.append(dot);
       });
 
+      const filmstrip = $('#qx_pmodal_filmstrip').empty();
+
       if (photos.length > 1) {
         dotsContainer.show();
+        filmstrip.show();
+
+        // Populate Filmstrip thumbnails (desktop & tablet)
+        photos.forEach((photo, idx) => {
+          const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" data-idx="${idx}" src="${self.esc(photo.url || photo.thumb)}" alt="">`);
+          thumbImg.on('click', function() {
+            self.playHaptic('light');
+            filmstrip.find('.qx-pmodal-thumb').removeClass('active');
+            $(this).addClass('active');
+            dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(idx).addClass('active');
+
+            const targetSlide = swipeTrack.find(`.qx-pmodal-swipe-slide[data-idx="${idx}"]`)[0];
+            if (targetSlide) {
+              targetSlide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+          });
+          filmstrip.append(thumbImg);
+        });
+
+        // Synchronize dots and thumbnails on manual swipe/scroll
         swipeTrack.off('scroll.pmodal').on('scroll.pmodal', function() {
           const scrollLeft = this.scrollLeft;
           const slideWidth = this.clientWidth || 1;
           const currentIdx = Math.round(scrollLeft / slideWidth);
           dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(currentIdx).addClass('active');
+          filmstrip.find('.qx-pmodal-thumb').removeClass('active').eq(currentIdx).addClass('active');
         });
       } else {
         dotsContainer.hide();
+        filmstrip.hide();
       }
 
-      // Gallery main image & badge
-      $('#qx_pmodal_main_img').attr('src', initialPhoto).attr('alt', product.name);
+      // Badge
       if (product.isFeatured) {
         $('#qx_pmodal_badge').text('★ Edición Destacada').show();
       } else {
         $('#qx_pmodal_badge').hide();
-      }
-
-      // Filmstrip thumbnails (desktop)
-      const filmstrip = $('#qx_pmodal_filmstrip').empty();
-      if (photos.length > 1) {
-        photos.forEach((photo, idx) => {
-          const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" src="${self.esc(photo.url || photo.thumb)}" alt="">`);
-          thumbImg.on('click', function() {
-            filmstrip.find('.qx-pmodal-thumb').removeClass('active');
-            $(this).addClass('active');
-            $('#qx_pmodal_main_img').attr('src', photo.url || photo.thumb);
-          });
-          filmstrip.append(thumbImg);
-        });
-        filmstrip.show();
-      } else {
-        filmstrip.hide();
       }
 
       // Meta & Titles
