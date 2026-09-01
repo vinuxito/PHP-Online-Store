@@ -2202,20 +2202,81 @@
       this.renderGrid();
     }
 
-    renderGrid() {
+    renderGrid(reset = true) {
       const self = this;
       const grid = $('#qx_product_grid');
-      grid.empty();
 
-      if (this.filteredProducts.length === 0) {
+      if (reset) {
+        grid.empty();
+        this.renderedCount = 0;
+      }
+
+      if (!this.filteredProducts || this.filteredProducts.length === 0) {
         grid.html('<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--qx-text-muted)">No se encontraron productos coincidentes.</div>');
+        $('#qx_infinite_sentinel').remove();
         return;
       }
 
-      this.filteredProducts.forEach(p => {
+      const pageSize = (this.tenant && this.tenant.initialProductCount) ? parseInt(this.tenant.initialProductCount, 10) : 13;
+      const startIdx = this.renderedCount;
+      const endIdx = Math.min(startIdx + pageSize, this.filteredProducts.length);
+      const batch = this.filteredProducts.slice(startIdx, endIdx);
+
+      // Clean sentinel before appending new batch
+      $('#qx_infinite_sentinel').remove();
+
+      batch.forEach(p => {
         const card = self.createCardElement(p);
         grid.append(card);
       });
+
+      this.renderedCount = endIdx;
+
+      // Infinite Scroll Sentinel
+      if (this.renderedCount < this.filteredProducts.length) {
+        const sentinel = $(`
+          <div id="qx_infinite_sentinel" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--qx-text-muted); font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px;">
+            <span style="display:inline-block; width:16px; height:16px; border:2px solid rgba(56,189,248,0.3); border-top-color:var(--qx-accent); border-radius:50%; animation:qx-spin 0.8s linear infinite;"></span>
+            <span>✦ Desliza para cargar más fragancias (${this.renderedCount} de ${this.filteredProducts.length})...</span>
+          </div>
+        `);
+        grid.append(sentinel);
+        self.setupInfiniteScrollObserver(sentinel[0]);
+      } else if (this.filteredProducts.length > pageSize) {
+        const endIndicator = $(`
+          <div id="qx_infinite_sentinel" style="grid-column:1/-1; text-align:center; padding:28px 16px; color:var(--qx-text-muted); font-size:12px; opacity:0.7;">
+            ✦ Has explorado la colección completa (${this.filteredProducts.length} piezas)
+          </div>
+        `);
+        grid.append(endIndicator);
+      }
+    }
+
+    setupInfiniteScrollObserver(sentinelEl) {
+      const self = this;
+      if (this.infiniteObserver) {
+        this.infiniteObserver.disconnect();
+      }
+
+      if ('IntersectionObserver' in window) {
+        this.infiniteObserver = new IntersectionObserver((entries) => {
+          if (entries[0] && entries[0].isIntersecting) {
+            self.infiniteObserver.disconnect();
+            setTimeout(() => {
+              self.renderGrid(false);
+            }, 100);
+          }
+        }, { rootMargin: '300px 0px' });
+
+        this.infiniteObserver.observe(sentinelEl);
+      } else {
+        $(window).off('scroll.qxInfinite').on('scroll.qxInfinite', function() {
+          if ($(window).scrollTop() + $(window).height() >= $(document).height() - 400) {
+            $(window).off('scroll.qxInfinite');
+            self.renderGrid(false);
+          }
+        });
+      }
     }
 
     createCardElement(p) {

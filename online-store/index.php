@@ -1645,8 +1645,53 @@ $tenant = StorefrontTenant::resolve();
       </span>
       <span class="qx-dock-label">Bolsa</span>
     </button>
-  </nav>
-
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
+  <script>
+    // Quantix Glass Twin Live Simulator Synchronization Listener
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.source === 'QUANTIX_APEX_COMMAND_TOWER') {
+        const type = e.data.type;
+        const payload = e.data.payload;
+        if (type === 'SYNC_FEATURE_MATRIX') {
+          if (payload.royal_agenda) {
+            $('#hub-agenda-vip, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
+          }
+          if (payload.tasting_room) {
+            $('#hub-tasting-room, #qx_dock_tasting').toggle(Boolean(payload.tasting_room.enabled));
+          }
+          if (payload.layering_crucible) {
+            $('#hub-layering-alchemy, #qx_dock_layering').toggle(Boolean(payload.layering_crucible.enabled));
+          }
+          if (payload.scent_radar) {
+            $('#hub-scent-radar').toggle(Boolean(payload.scent_radar.enabled));
+          }
+          if (payload.decant_passport) {
+            $('#hub-decant-passport, #qx_dock_passport').toggle(Boolean(payload.decant_passport.enabled));
+          }
+          if (payload.loyalty_refill_vault) {
+            $('#hub-loyalty-vault, #qx_dock_vault').toggle(Boolean(payload.loyalty_refill_vault.enabled));
+          }
+        }
+        if (type === 'SYNC_HERO_CURATION') {
+          if (payload.headline) {
+            $('.qx-hero-title, .qx-hero-banner h1').text(payload.headline);
+          }
+          if (payload.subheadline) {
+            $('.qx-hero-subtitle, .qx-hero-banner p').text(payload.subheadline);
+          }
+        }
+        if (type === 'SYNC_ATMOSPHERE') {
+          $('body').attr('data-atmosphere', payload);
+        }
+        if (type === 'SYNC_SPEED_TUNING') {
+          if (payload && payload.initial_product_count && window.quantixStore) {
+            window.quantixStore.tenant = window.quantixStore.tenant || {};
+            window.quantixStore.tenant.initialProductCount = parseInt(payload.initial_product_count, 10);
+            window.quantixStore.renderGrid(true);
+          }
+        }
+      }
+    });
+  </script>
 </body>
 </html>

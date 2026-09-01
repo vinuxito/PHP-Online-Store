@@ -217,7 +217,8 @@ try {
             'description' => $tenant->description,
             'email'       => $tenant->email,
             'phone'       => $tenant->phone,
-            'address'     => $tenant->address
+            'address'     => $tenant->address,
+            'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13
         ],
         'Categories' => $categories,
         'Featured'   => $featuredProducts,

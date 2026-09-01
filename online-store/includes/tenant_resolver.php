@@ -132,12 +132,28 @@ class StorefrontTenant {
                 $tenant->logo = $deMap['STORE_LOGO_URL'];
             }
             $tenant->heroBg = $deMap['STORE_HERO_BG'] ?? 'obsidian';
-            $tenant->whatsappPhone = $deMap['STORE_WHATSAPP_PHONE'] ?? '';
-            $tenant->whatsappGreeting = $deMap['STORE_WHATSAPP_GREETING'] ?? '¡Hola! Deseo información para comprar.';
-            $tenant->showWhatsapp = (!isset($deMap['STORE_SHOW_WHATSAPP']) || $deMap['STORE_SHOW_WHATSAPP'] === 'SI') && !empty($tenant->whatsappPhone);
-            $tenant->speiBank = $deMap['STORE_SPEI_BANK'] ?? '';
-            $tenant->speiClabe = $deMap['STORE_SPEI_CLABE'] ?? '';
-            $tenant->speiBeneficiary = $deMap['STORE_SPEI_BENEFICIARY'] ?? $tenant->brandName;
+            // Load Quantix Apex Command Tower configuration
+            $tenant->apexConfig = null;
+            try {
+                $stmtApex = $db->prepare("SELECT ConfigJSON FROM config_tienda_tenants WHERE EmisorID = ? LIMIT 1");
+                $stmtApex->execute([$tenant->emisorId]);
+                if ($rowApex = $stmtApex->fetch()) {
+                    $decodedApex = json_decode($rowApex['ConfigJSON'], true);
+                    if (is_array($decodedApex)) {
+                        $tenant->apexConfig = $decodedApex;
+                        if (!empty($decodedApex['tenant_name'])) {
+                            $tenant->brandName = $decodedApex['tenant_name'];
+                        }
+                        if (!empty($decodedApex['hero_curation']['headline'])) {
+                            $tenant->description = $decodedApex['hero_curation']['headline'];
+                        }
+                        if (!empty($decodedApex['theme']['primary_color'])) {
+                            $tenant->primaryColor = $decodedApex['theme']['primary_color'];
+                        }
+                        $tenant->isStoreActive = true; // Enabled when configured via Apex
+                    }
+                }
+            } catch (\Exception $e) {}
         }
 
         return $tenant;
