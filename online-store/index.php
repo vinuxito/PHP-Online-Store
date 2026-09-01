@@ -22,7 +22,7 @@ $tenant = StorefrontTenant::resolve();
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body>
+<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
@@ -1685,13 +1685,15 @@ $tenant = StorefrontTenant::resolve();
           $('body').attr('data-atmosphere', atmo);
           if (atmo === 'gold') {
             document.documentElement.style.setProperty('--qx-accent', '#fbbf24');
+          } else if (atmo === 'cyberpunk') {
+            document.documentElement.style.setProperty('--qx-accent', '#00f0ff');
           } else if (atmo === 'emerald') {
             document.documentElement.style.setProperty('--qx-accent', '#10b981');
           } else if (atmo === 'amethyst') {
             document.documentElement.style.setProperty('--qx-accent', '#c084fc');
           } else if (atmo === 'crimson') {
             document.documentElement.style.setProperty('--qx-accent', '#f43f5e');
-          } else if (atmo === 'minimalist') {
+          } else if (atmo === 'minimalist' || atmo === 'light') {
             document.documentElement.style.setProperty('--qx-accent', '#2563eb');
           } else {
             document.documentElement.style.setProperty('--qx-accent', '#38bdf8');

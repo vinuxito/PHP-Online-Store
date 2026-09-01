@@ -28,6 +28,204 @@
   --qx-radius-xl: 28px;
 }
 
+/* ==========================================================================
+   VIBE & ATMOSPHERE ECOSYSTEM (Dark / Light / Elegant / Cyberpunk / Versace)
+   ========================================================================== */
+
+/* 1. IMPERIAL GOLD / VERSACE HIGH REFINED */
+body[data-atmosphere="gold"] {
+  --qx-bg: #0b0906;
+  --qx-surface: #141009;
+  --qx-surface-glass: rgba(20, 16, 9, 0.88);
+  --qx-card: #1c160c;
+  --qx-card-hover: #261f12;
+  --qx-border: rgba(251, 191, 36, 0.18);
+  --qx-border-hover: rgba(251, 191, 36, 0.6);
+  --qx-text: #fffdf5;
+  --qx-text-muted: #d4af37;
+  --qx-text-dim: #927529;
+  --qx-accent: #fbbf24;
+  --qx-accent-gradient: linear-gradient(135deg, #fef08a 0%, #fbbf24 40%, #d97706 80%, #92400e 100%);
+  --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
+  --qx-shadow-glow: 0 0 30px rgba(251, 191, 36, 0.28);
+  background: radial-gradient(circle at 50% 0%, #221a0c 0%, #0d0b06 60%, #050402 100%) !important;
+}
+body[data-atmosphere="gold"] .qx-brand-title {
+  background: linear-gradient(135deg, #ffffff 0%, #fbbf24 60%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+body[data-atmosphere="gold"] .qx-card {
+  border: 1px solid rgba(251, 191, 36, 0.16);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(251, 191, 36, 0.15);
+}
+body[data-atmosphere="gold"] .qx-card:hover {
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.9), 0 0 20px rgba(251, 191, 36, 0.25);
+}
+body[data-atmosphere="gold"] .qx-hero-banner {
+  background: radial-gradient(circle at 50% 30%, rgba(251, 191, 36, 0.12) 0%, rgba(11, 9, 6, 0.9) 70%);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+/* 2. CYBERPUNK 2099 / NEO TOKYO VIBE */
+body[data-atmosphere="cyberpunk"] {
+  --qx-bg: #070210;
+  --qx-surface: #120524;
+  --qx-surface-glass: rgba(18, 5, 36, 0.88);
+  --qx-card: #1c0836;
+  --qx-card-hover: #290c4f;
+  --qx-border: rgba(0, 240, 255, 0.2);
+  --qx-border-hover: rgba(255, 0, 127, 0.6);
+  --qx-text: #fdf4ff;
+  --qx-text-muted: #e879f9;
+  --qx-text-dim: #a21caf;
+  --qx-accent: #00f0ff;
+  --qx-accent-gradient: linear-gradient(135deg, #00f0ff 0%, #d946ef 50%, #ff007f 100%);
+  --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.8);
+  --qx-shadow-glow: 0 0 35px rgba(255, 0, 127, 0.35);
+  background: radial-gradient(circle at 50% 0%, #20063b 0%, #0c0217 60%, #030006 100%) !important;
+}
+body[data-atmosphere="cyberpunk"] .qx-brand-title {
+  background: linear-gradient(135deg, #00f0ff 0%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+}
+body[data-atmosphere="cyberpunk"] .qx-card {
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(217, 70, 239, 0.08);
+}
+body[data-atmosphere="cyberpunk"] .qx-card:hover {
+  border-color: #ff007f;
+  box-shadow: 0 0 25px rgba(255, 0, 127, 0.4), 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+/* 3. EMERALD ROYALE / BOTANIQUE LUXE */
+body[data-atmosphere="emerald"] {
+  --qx-bg: #03140e;
+  --qx-surface: #07231a;
+  --qx-surface-glass: rgba(7, 35, 26, 0.88);
+  --qx-card: #0c3327;
+  --qx-card-hover: #124535;
+  --qx-border: rgba(16, 185, 129, 0.18);
+  --qx-border-hover: rgba(52, 211, 153, 0.6);
+  --qx-text: #f0fdf4;
+  --qx-text-muted: #6ee7b7;
+  --qx-text-dim: #059669;
+  --qx-accent: #10b981;
+  --qx-accent-gradient: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #047857 100%);
+  --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
+  --qx-shadow-glow: 0 0 30px rgba(16, 185, 129, 0.28);
+  background: radial-gradient(circle at 50% 0%, #0c3024 0%, #04140e 60%, #010805 100%) !important;
+}
+
+/* 4. ROYAL AMETHYST / VENETIAN VELVET */
+body[data-atmosphere="amethyst"] {
+  --qx-bg: #0c0517;
+  --qx-surface: #180a2e;
+  --qx-surface-glass: rgba(24, 10, 46, 0.88);
+  --qx-card: #240f42;
+  --qx-card-hover: #32165c;
+  --qx-border: rgba(192, 132, 252, 0.18);
+  --qx-border-hover: rgba(216, 180, 254, 0.6);
+  --qx-text: #faf5ff;
+  --qx-text-muted: #d8b4fe;
+  --qx-text-dim: #9333ea;
+  --qx-accent: #c084fc;
+  --qx-accent-gradient: linear-gradient(135deg, #f0abfc 0%, #c084fc 50%, #7e22ce 100%);
+  --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
+  --qx-shadow-glow: 0 0 30px rgba(192, 132, 252, 0.28);
+  background: radial-gradient(circle at 50% 0%, #200d3d 0%, #0e051a 60%, #04010a 100%) !important;
+}
+
+/* 5. CRIMSON VELVET / ROUGE OPULENT */
+body[data-atmosphere="crimson"] {
+  --qx-bg: #140207;
+  --qx-surface: #24040d;
+  --qx-surface-glass: rgba(36, 4, 13, 0.88);
+  --qx-card: #330613;
+  --qx-card-hover: #48091c;
+  --qx-border: rgba(244, 63, 94, 0.18);
+  --qx-border-hover: rgba(251, 113, 133, 0.6);
+  --qx-text: #fff1f2;
+  --qx-text-muted: #fda4af;
+  --qx-text-dim: #e11d48;
+  --qx-accent: #f43f5e;
+  --qx-accent-gradient: linear-gradient(135deg, #fda4af 0%, #f43f5e 50%, #9f1239 100%);
+  --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
+  --qx-shadow-glow: 0 0 30px rgba(244, 63, 94, 0.28);
+  background: radial-gradient(circle at 50% 0%, #2d040f 0%, #140207 60%, #060002 100%) !important;
+}
+
+/* 6. APPLE MINIMALIST / PURE LIGHT STUDIO */
+body[data-atmosphere="minimalist"],
+body[data-atmosphere="light"] {
+  --qx-bg: #f8fafc;
+  --qx-surface: #ffffff;
+  --qx-surface-glass: rgba(255, 255, 255, 0.94);
+  --qx-card: #ffffff;
+  --qx-card-hover: #f1f5f9;
+  --qx-border: #e2e8f0;
+  --qx-border-hover: #3b82f6;
+  --qx-text: #0f172a;
+  --qx-text-muted: #64748b;
+  --qx-text-dim: #94a3b8;
+  --qx-accent: #2563eb;
+  --qx-accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --qx-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --qx-shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+  --qx-shadow-glow: 0 0 25px rgba(37, 99, 235, 0.15);
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-navbar,
+body[data-atmosphere="light"] .qx-navbar {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+body[data-atmosphere="minimalist"] .qx-brand-title,
+body[data-atmosphere="light"] .qx-brand-title {
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-card,
+body[data-atmosphere="light"] .qx-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+body[data-atmosphere="minimalist"] .qx-card-title,
+body[data-atmosphere="light"] .qx-card-title {
+  color: #0f172a;
+}
+body[data-atmosphere="minimalist"] .qx-hero-banner,
+body[data-atmosphere="light"] .qx-hero-banner {
+  background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.06) 0%, rgba(248, 250, 252, 0.95) 70%);
+  border-bottom: 1px solid #e2e8f0;
+}
+body[data-atmosphere="minimalist"] .qx-bottom-dock,
+body[data-atmosphere="light"] .qx-bottom-dock {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+body[data-atmosphere="minimalist"] .qx-search-input,
+body[data-atmosphere="light"] .qx-search-input {
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+}
+body[data-atmosphere="minimalist"] .qx-drawer,
+body[data-atmosphere="light"] .qx-drawer,
+body[data-atmosphere="minimalist"] .qx-modal-content,
+body[data-atmosphere="light"] .qx-modal-content {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

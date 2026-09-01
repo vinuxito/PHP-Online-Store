@@ -147,6 +147,9 @@ class StorefrontTenant {
                         if (!empty($decodedApex['hero_curation']['headline'])) {
                             $tenant->description = $decodedApex['hero_curation']['headline'];
                         }
+                        if (!empty($decodedApex['theme']['atmosphere_mode'])) {
+                            $tenant->theme = strtolower($decodedApex['theme']['atmosphere_mode']);
+                        }
                         if (!empty($decodedApex['theme']['primary_color'])) {
                             $tenant->primaryColor = $decodedApex['theme']['primary_color'];
                         }
