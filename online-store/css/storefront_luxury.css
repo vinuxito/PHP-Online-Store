@@ -168,9 +168,9 @@ body[data-atmosphere="light"] {
   --qx-card: #ffffff;
   --qx-card-hover: #f1f5f9;
   --qx-border: #e2e8f0;
-  --qx-border-hover: #3b82f6;
+  --qx-border-hover: #2563eb;
   --qx-text: #0f172a;
-  --qx-text-muted: #64748b;
+  --qx-text-muted: #475569;
   --qx-text-dim: #94a3b8;
   --qx-accent: #2563eb;
   --qx-accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
@@ -180,50 +180,280 @@ body[data-atmosphere="light"] {
   background: #f8fafc !important;
   color: #0f172a !important;
 }
+
+/* Navbar & Brand */
 body[data-atmosphere="minimalist"] .qx-navbar,
 body[data-atmosphere="light"] .qx-navbar {
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
 }
 body[data-atmosphere="minimalist"] .qx-brand-title,
 body[data-atmosphere="light"] .qx-brand-title {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: initial !important;
+  color: #0f172a !important;
+  text-shadow: none !important;
+  font-weight: 900 !important;
+}
+body[data-atmosphere="minimalist"] .qx-brand-badge,
+body[data-atmosphere="light"] .qx-brand-badge {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+}
+
+/* Quick Action Navbar Buttons */
+body[data-atmosphere="minimalist"] .qx-agenda-nav-btn,
+body[data-atmosphere="light"] .qx-agenda-nav-btn {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-tasting-nav-btn,
+body[data-atmosphere="light"] .qx-tasting-nav-btn {
+  background: #fdf2f8 !important;
+  color: #be185d !important;
+  border-color: #fbcfe8 !important;
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-vault-nav-btn,
+body[data-atmosphere="light"] .qx-vault-nav-btn {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  border-color: #fef3c7 !important;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-passport-nav-btn,
+body[data-atmosphere="light"] .qx-passport-nav-btn {
+  background: #f0fdf4 !important;
+  color: #065f46 !important;
+  border-color: #bbf7d0 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-layering-nav-btn,
+body[data-atmosphere="light"] .qx-layering-nav-btn {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border-color: #ddd6fe !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-somm-nav-btn,
+body[data-atmosphere="light"] .qx-somm-nav-btn {
+  background: #eff6ff !important;
+  color: #1e40af !important;
+  border-color: #bfdbfe !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1) !important;
+}
+
+/* Search Bar */
+body[data-atmosphere="minimalist"] .qx-search-input,
+body[data-atmosphere="light"] .qx-search-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+}
+body[data-atmosphere="minimalist"] .qx-search-input::placeholder,
+body[data-atmosphere="light"] .qx-search-input::placeholder {
+  color: #94a3b8 !important;
+}
+body[data-atmosphere="minimalist"] .qx-search-icon,
+body[data-atmosphere="light"] .qx-search-icon {
+  color: #64748b !important;
+}
+
+/* Hero Showcase */
+body[data-atmosphere="minimalist"] .qx-hero,
+body[data-atmosphere="light"] .qx-hero,
+body[data-atmosphere="minimalist"] .qx-hero-banner,
+body[data-atmosphere="light"] .qx-hero-banner {
+  background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.06) 0%, rgba(248, 250, 252, 0.95) 70%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+body[data-atmosphere="minimalist"] .qx-hero-title,
+body[data-atmosphere="light"] .qx-hero-title,
+body[data-atmosphere="minimalist"] .qx-hero h1,
+body[data-atmosphere="light"] .qx-hero h1 {
+  color: #0f172a !important;
+  text-shadow: none !important;
+  font-weight: 900 !important;
+}
+body[data-atmosphere="minimalist"] .qx-hero-subtitle,
+body[data-atmosphere="light"] .qx-hero-subtitle,
+body[data-atmosphere="minimalist"] .qx-hero p,
+body[data-atmosphere="light"] .qx-hero p {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+/* Featured 3D Cards / Hero Stage */
+body[data-atmosphere="minimalist"] .qx-hero-carousel-3d-wrapper,
+body[data-atmosphere="light"] .qx-hero-carousel-3d-wrapper,
+body[data-atmosphere="minimalist"] .qx-3d-card,
+body[data-atmosphere="light"] .qx-3d-card,
+body[data-atmosphere="minimalist"] .qx-carousel-card,
+body[data-atmosphere="light"] .qx-carousel-card,
+body[data-atmosphere="minimalist"] .qx-featured-card,
+body[data-atmosphere="light"] .qx-featured-card,
+body[data-atmosphere="minimalist"] .qx-featured-box,
+body[data-atmosphere="light"] .qx-featured-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-card.active,
+body[data-atmosphere="light"] .qx-3d-card.active {
+  border-color: #2563eb !important;
+  box-shadow: 0 20px 45px rgba(37, 99, 235, 0.16), 0 0 20px rgba(37, 99, 235, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-img-container,
+body[data-atmosphere="light"] .qx-3d-img-container {
+  background: #f1f5f9 !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-badge,
+body[data-atmosphere="light"] .qx-3d-badge {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+  border-color: #bfdbfe !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-title,
+body[data-atmosphere="light"] .qx-3d-title,
+body[data-atmosphere="minimalist"] .qx-carousel-card h3,
+body[data-atmosphere="light"] .qx-carousel-card h3,
+body[data-atmosphere="minimalist"] .qx-featured-card h3,
+body[data-atmosphere="light"] .qx-featured-card h3 {
   color: #0f172a !important;
 }
+body[data-atmosphere="minimalist"] .qx-3d-price,
+body[data-atmosphere="light"] .qx-3d-price {
+  color: #0f172a !important;
+}
+
+/* Category Filter Pills */
+body[data-atmosphere="minimalist"] .qx-cat-pill,
+body[data-atmosphere="light"] .qx-cat-pill {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+body[data-atmosphere="minimalist"] .qx-cat-pill:hover,
+body[data-atmosphere="light"] .qx-cat-pill:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+body[data-atmosphere="minimalist"] .qx-cat-pill.active,
+body[data-atmosphere="light"] .qx-cat-pill.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* Product Grid Cards */
 body[data-atmosphere="minimalist"] .qx-card,
 body[data-atmosphere="light"] .qx-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+body[data-atmosphere="minimalist"] .qx-card:hover,
+body[data-atmosphere="light"] .qx-card:hover {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 12px 35px rgba(37, 99, 235, 0.12) !important;
 }
 body[data-atmosphere="minimalist"] .qx-card-title,
 body[data-atmosphere="light"] .qx-card-title {
-  color: #0f172a;
+  color: #0f172a !important;
 }
-body[data-atmosphere="minimalist"] .qx-hero-banner,
-body[data-atmosphere="light"] .qx-hero-banner {
-  background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.06) 0%, rgba(248, 250, 252, 0.95) 70%);
-  border-bottom: 1px solid #e2e8f0;
+body[data-atmosphere="minimalist"] .qx-card-subtitle,
+body[data-atmosphere="light"] .qx-card-subtitle,
+body[data-atmosphere="minimalist"] .qx-card-cat,
+body[data-atmosphere="light"] .qx-card-cat {
+  color: #64748b !important;
 }
-body[data-atmosphere="minimalist"] .qx-bottom-dock,
-body[data-atmosphere="light"] .qx-bottom-dock {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+body[data-atmosphere="minimalist"] .qx-card-price,
+body[data-atmosphere="light"] .qx-card-price {
+  color: #0f172a !important;
 }
-body[data-atmosphere="minimalist"] .qx-search-input,
-body[data-atmosphere="light"] .qx-search-input {
-  background: #f1f5f9;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
-}
+
+/* Modals, Drawers & Popups (Fixing All Modals) */
+body[data-atmosphere="minimalist"] .qx-modal,
+body[data-atmosphere="light"] .qx-modal,
+body[data-atmosphere="minimalist"] .qx-modal-content,
+body[data-atmosphere="light"] .qx-modal-content,
+body[data-atmosphere="minimalist"] .qx-modal-body,
+body[data-atmosphere="light"] .qx-modal-body,
 body[data-atmosphere="minimalist"] .qx-drawer,
 body[data-atmosphere="light"] .qx-drawer,
-body[data-atmosphere="minimalist"] .qx-modal-content,
-body[data-atmosphere="light"] .qx-modal-content {
-  background: #ffffff;
+body[data-atmosphere="minimalist"] .qx-agenda-modal,
+body[data-atmosphere="light"] .qx-agenda-modal,
+body[data-atmosphere="minimalist"] .qx-tasting-modal,
+body[data-atmosphere="light"] .qx-tasting-modal,
+body[data-atmosphere="minimalist"] .qx-vault-modal,
+body[data-atmosphere="light"] .qx-vault-modal,
+body[data-atmosphere="minimalist"] .qx-passport-modal,
+body[data-atmosphere="light"] .qx-passport-modal,
+body[data-atmosphere="minimalist"] .qx-layering-modal,
+body[data-atmosphere="light"] .qx-layering-modal,
+body[data-atmosphere="minimalist"] .qx-somm-modal,
+body[data-atmosphere="light"] .qx-somm-modal,
+body[data-atmosphere="minimalist"] .qx-cart-drawer,
+body[data-atmosphere="light"] .qx-cart-drawer,
+body[data-atmosphere="minimalist"] .qx-quick-modal,
+body[data-atmosphere="light"] .qx-quick-modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-modal-content h1,
+body[data-atmosphere="minimalist"] .qx-modal-content h2,
+body[data-atmosphere="minimalist"] .qx-modal-content h3,
+body[data-atmosphere="minimalist"] .qx-modal-content h4,
+body[data-atmosphere="minimalist"] .qx-modal-content p,
+body[data-atmosphere="minimalist"] .qx-modal-content span,
+body[data-atmosphere="minimalist"] .qx-modal-content label,
+body[data-atmosphere="light"] .qx-modal-content h1,
+body[data-atmosphere="light"] .qx-modal-content h2,
+body[data-atmosphere="light"] .qx-modal-content h3,
+body[data-atmosphere="light"] .qx-modal-content h4,
+body[data-atmosphere="light"] .qx-modal-content p,
+body[data-atmosphere="light"] .qx-modal-content span,
+body[data-atmosphere="light"] .qx-modal-content label {
   color: #0f172a;
-  border: 1px solid #e2e8f0;
+}
+
+body[data-atmosphere="minimalist"] .qx-modal-close,
+body[data-atmosphere="light"] .qx-modal-close {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* Bottom Navigation Dock */
+body[data-atmosphere="minimalist"] .qx-bottom-dock,
+body[data-atmosphere="light"] .qx-bottom-dock {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item,
+body[data-atmosphere="light"] .qx-dock-item {
+  color: #475569 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item:hover,
+body[data-atmosphere="minimalist"] .qx-dock-item.active,
+body[data-atmosphere="light"] .qx-dock-item:hover,
+body[data-atmosphere="light"] .qx-dock-item.active {
+  color: #2563eb !important;
 }
 
 * {
