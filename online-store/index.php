@@ -1681,7 +1681,27 @@ $tenant = StorefrontTenant::resolve();
           }
         }
         if (type === 'SYNC_ATMOSPHERE') {
-          $('body').attr('data-atmosphere', payload);
+          const atmo = typeof payload === 'object' ? payload.atmosphere : payload;
+          $('body').attr('data-atmosphere', atmo);
+          if (atmo === 'gold') {
+            document.documentElement.style.setProperty('--qx-accent', '#fbbf24');
+          } else if (atmo === 'emerald') {
+            document.documentElement.style.setProperty('--qx-accent', '#10b981');
+          } else if (atmo === 'amethyst') {
+            document.documentElement.style.setProperty('--qx-accent', '#c084fc');
+          } else if (atmo === 'crimson') {
+            document.documentElement.style.setProperty('--qx-accent', '#f43f5e');
+          } else if (atmo === 'minimalist') {
+            document.documentElement.style.setProperty('--qx-accent', '#2563eb');
+          } else {
+            document.documentElement.style.setProperty('--qx-accent', '#38bdf8');
+          }
+        }
+        if (type === 'SYNC_PRIMARY_COLOR') {
+          if (payload) {
+            document.documentElement.style.setProperty('--qx-accent', payload);
+            document.documentElement.style.setProperty('--qx-accent-gradient', `linear-gradient(135deg, ${payload} 0%, #2563eb 100%)`);
+          }
         }
         if (type === 'SYNC_SPEED_TUNING') {
           if (payload && payload.initial_product_count && window.quantixStore) {
