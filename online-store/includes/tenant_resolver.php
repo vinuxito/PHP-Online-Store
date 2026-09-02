@@ -17,7 +17,9 @@ class StorefrontTenant {
     public $phone = '';
     public $address = '';
     public $description = 'Alta Perfumería & Fragancias Exclusivas';
+    public $headline = 'COLECCIÓN IMPERIAL & ALTA COSECHA 2026';
     public $quantixFrontStore = 'NO';
+    public $quantixStorePerfums = 'NO';
     public $isStoreActive = false;
 
     public static function resolve() {
@@ -103,8 +105,8 @@ class StorefrontTenant {
                 $tenant->logo = '';
             }
 
-            // Load all STORE_* settings from emisoresde
-            $stmtDeAll = $db->prepare("SELECT Variable, Valor FROM emisoresde WHERE EmisorID = ? AND (Variable = 'QUANTIXFRONTSTORE' OR Variable LIKE 'STORE_%')");
+            // Load all QUANTIX* and STORE_* settings from emisoresde
+            $stmtDeAll = $db->prepare("SELECT Variable, Valor FROM emisoresde WHERE EmisorID = ? AND (Variable LIKE 'QUANTIX%' OR Variable LIKE 'STORE_%')");
             $stmtDeAll->execute([$tenant->emisorId]);
             $deMap = [];
             while ($r = $stmtDeAll->fetch()) {
@@ -113,6 +115,7 @@ class StorefrontTenant {
 
             // Gating
             $tenant->quantixFrontStore = (isset($deMap['QUANTIXFRONTSTORE']) && strtoupper(trim($deMap['QUANTIXFRONTSTORE'])) === 'SI') ? 'SI' : 'NO';
+            $tenant->quantixStorePerfums = (isset($deMap['QUANTIXSTOREPERFUMS']) && strtoupper(trim($deMap['QUANTIXSTOREPERFUMS'])) === 'SI') ? 'SI' : 'NO';
             $tenant->isStoreActive = ($tenant->quantixFrontStore === 'SI');
 
             // Dynamic Maître D' customizations
@@ -145,7 +148,10 @@ class StorefrontTenant {
                             $tenant->brandName = $decodedApex['tenant_name'];
                         }
                         if (!empty($decodedApex['hero_curation']['headline'])) {
-                            $tenant->description = $decodedApex['hero_curation']['headline'];
+                            $tenant->headline = $decodedApex['hero_curation']['headline'];
+                        }
+                        if (!empty($decodedApex['hero_curation']['subheadline'])) {
+                            $tenant->description = $decodedApex['hero_curation']['subheadline'];
                         }
                         if (!empty($decodedApex['theme']['atmosphere_mode'])) {
                             $tenant->theme = strtolower($decodedApex['theme']['atmosphere_mode']);

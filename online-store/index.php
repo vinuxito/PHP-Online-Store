@@ -6,6 +6,14 @@
 
 require_once __DIR__ . '/includes/tenant_resolver.php';
 $tenant = StorefrontTenant::resolve();
+$featMatrix = $tenant->apexConfig['feature_matrix'] ?? [];
+$isPerfumsTenant = ($tenant->quantixStorePerfums === 'SI');
+$isAgendaActive = $isPerfumsTenant && (!isset($featMatrix['royal_agenda']) || !empty($featMatrix['royal_agenda']['enabled']));
+$isTastingActive = $isPerfumsTenant && (!isset($featMatrix['tasting_room']) || !empty($featMatrix['tasting_room']['enabled']));
+$isVaultActive = $isPerfumsTenant && (!isset($featMatrix['loyalty_refill_vault']) || !empty($featMatrix['loyalty_refill_vault']['enabled']));
+$isPassportActive = $isPerfumsTenant && (!isset($featMatrix['decant_passport']) || !empty($featMatrix['decant_passport']['enabled']));
+$isLayeringActive = $isPerfumsTenant && (!isset($featMatrix['layering_crucible']) || !empty($featMatrix['layering_crucible']['enabled']));
+$isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier']) || !empty($featMatrix['aura_ai_sommelier']['enabled']));
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -68,31 +76,31 @@ $tenant = StorefrontTenant::resolve();
         <input type="text" id="qx_search_input" class="qx-search-input" placeholder="Buscar por nombre, código o SKU... (⌘K)" autocomplete="off">
       </div>
 
-        <button type="button" class="qx-agenda-nav-btn" id="qx_btn_nav_agenda" title="Agenda VIP & Concierge Privado">
+        <button type="button" class="qx-agenda-nav-btn" id="qx_btn_nav_agenda" title="Agenda VIP & Concierge Privado" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
           <span class="qx-agenda-sparkle">🗓️</span>
           <span>Agenda VIP</span>
           <span class="qx-agenda-live-dot" title="Concierge Disponible"></span>
         </button>
-        <button type="button" class="qx-tasting-nav-btn" id="qx_btn_nav_tasting" title="Masterclass VIP & Sala Privada de Cata 1-a-1">
+        <button type="button" class="qx-tasting-nav-btn" id="qx_btn_nav_tasting" title="Masterclass VIP & Sala Privada de Cata 1-a-1" style="<?php echo $isTastingActive ? '' : 'display:none;'; ?>">
           <span class="qx-tasting-sparkle">🍷</span>
           <span>Cata Virtual</span>
           <span class="qx-tasting-live-dot" title="Sommelier en Línea"></span>
         </button>
-        <button type="button" class="qx-vault-nav-btn" id="qx_btn_nav_vault" title="Bóveda de Fidelidad & Club de Recargas VIP">
+        <button type="button" class="qx-vault-nav-btn" id="qx_btn_nav_vault" title="Bóveda de Fidelidad & Club de Recargas VIP" style="<?php echo $isVaultActive ? '' : 'display:none;'; ?>">
           <span class="qx-vault-sparkle">👑</span>
           <span>Bóveda VIP</span>
           <span class="qx-vault-tier-badge" id="qx_nav_vault_tier">VIP</span>
         </button>
-        <button type="button" class="qx-passport-nav-btn" id="qx_btn_nav_passport" title="Pasaporte Digital de Cata & Blind-Buy Shield">
+        <button type="button" class="qx-passport-nav-btn" id="qx_btn_nav_passport" title="Pasaporte Digital de Cata & Blind-Buy Shield" style="<?php echo $isPassportActive ? '' : 'display:none;'; ?>">
           <span class="qx-passport-sparkle">🛡️</span>
           <span>Pasaporte</span>
           <span class="qx-passport-badge" id="qx_passport_badge" style="display:none">0</span>
         </button>
-        <button type="button" class="qx-layering-nav-btn" id="qx_btn_nav_layering" title="Atelier de Alquimia de Capas & Layering">
+        <button type="button" class="qx-layering-nav-btn" id="qx_btn_nav_layering" title="Atelier de Alquimia de Capas & Layering" style="<?php echo $isLayeringActive ? '' : 'display:none;'; ?>">
           <span class="qx-layering-sparkle">🧪</span>
           <span>Alquimia</span>
         </button>
-        <button type="button" class="qx-somm-nav-btn" id="qx_btn_sommelier_trigger" title="Asesor Sensorial Aura AI Sommelier">
+        <button type="button" class="qx-somm-nav-btn" id="qx_btn_sommelier_trigger" title="Asesor Sensorial Aura AI Sommelier" style="<?php echo $isSommelierActive ? '' : 'display:none;'; ?>">
           <span class="qx-somm-sparkle">✨</span>
           <span>Aura Sommelier</span>
         </button>
@@ -112,7 +120,7 @@ $tenant = StorefrontTenant::resolve();
 
   <!-- Hero Showcase Banner -->
   <section class="qx-hero">
-    <h1 class="qx-hero-title"><?php echo htmlspecialchars($tenant->brandName); ?></h1>
+    <h1 class="qx-hero-title"><?php echo htmlspecialchars(!empty($tenant->headline) ? $tenant->headline : $tenant->brandName); ?></h1>
     <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
     
     <!-- Hero 3D Star Carousel -->
@@ -590,18 +598,21 @@ $tenant = StorefrontTenant::resolve();
 
           <div class="qx-pmodal-buttons">
             <button type="button" class="qx-btn-pmodal-cart" id="qx_pmodal_btn_add">
-              <span>🛍️</span>
-              <span>Agregar al Carrito</span>
+              <span>🛍️ Agregar al Carrito</span>
             </button>
             <button type="button" class="qx-btn-pmodal-buy" id="qx_pmodal_btn_buy">
-              <span>⚡</span>
-              <span>Comprar Ahora</span>
+              <span>⚡ Comprar Ahora</span>
             </button>
           </div>
 
           <!-- Layering Alchemy Trigger Button -->
           <button type="button" class="qx-btn-pmodal-layering" id="qx_pmodal_btn_layering">
             <span>🧪 Probar Alquimia de Capas (Layering Studio)</span>
+          </button>
+
+          <!-- Quantum Comparison Studio Trigger Button -->
+          <button type="button" class="qx-btn-pmodal-compare" id="qx_pmodal_btn_compare">
+            <span>⚖️ Comparar en Arena 1-vs-1 (Quantum Studio)</span>
           </button>
 
           <!-- VIP WhatsApp inquiry button -->
@@ -1614,27 +1625,27 @@ $tenant = StorefrontTenant::resolve();
       <span class="qx-dock-icon">🏠</span>
       <span class="qx-dock-label">Inicio</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_agenda" aria-label="Agenda VIP">
+    <button type="button" class="qx-dock-item" id="qx_dock_agenda" aria-label="Agenda VIP" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🗓️</span>
       <span class="qx-dock-label">Agenda</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_tasting" aria-label="Cata Virtual">
+    <button type="button" class="qx-dock-item" id="qx_dock_tasting" aria-label="Cata Virtual" style="<?php echo $isTastingActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🍷</span>
       <span class="qx-dock-label">Cata VIP</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_vault" aria-label="Bóveda VIP">
+    <button type="button" class="qx-dock-item" id="qx_dock_vault" aria-label="Bóveda VIP" style="<?php echo $isVaultActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">👑</span>
       <span class="qx-dock-label">Bóveda</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_passport" aria-label="Pasaporte de Cata">
+    <button type="button" class="qx-dock-item" id="qx_dock_passport" aria-label="Pasaporte de Cata" style="<?php echo $isPassportActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🛡️</span>
       <span class="qx-dock-label">Pasaporte</span>
     </button>
-    <button type="button" class="qx-dock-item highlight" id="qx_dock_concierge" aria-label="Concierge Quiz">
+    <button type="button" class="qx-dock-item highlight" id="qx_dock_concierge" aria-label="Concierge Quiz" style="<?php echo $isSommelierActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">✨</span>
       <span class="qx-dock-label">Concierge</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_layering" aria-label="Alquimia de Capas">
+    <button type="button" class="qx-dock-item" id="qx_dock_layering" aria-label="Alquimia de Capas" style="<?php echo $isLayeringActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🧪</span>
       <span class="qx-dock-label">Alquimia</span>
     </button>
@@ -1645,6 +1656,8 @@ $tenant = StorefrontTenant::resolve();
       </span>
       <span class="qx-dock-label">Bolsa</span>
     </button>
+  </nav>
+
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
     // Quantix Glass Twin Live Simulator Synchronization Listener
@@ -1654,22 +1667,22 @@ $tenant = StorefrontTenant::resolve();
         const payload = e.data.payload;
         if (type === 'SYNC_FEATURE_MATRIX') {
           if (payload.royal_agenda) {
-            $('#hub-agenda-vip, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
+            $('#qx_btn_nav_agenda, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
           }
           if (payload.tasting_room) {
-            $('#hub-tasting-room, #qx_dock_tasting').toggle(Boolean(payload.tasting_room.enabled));
+            $('#qx_btn_nav_tasting, #qx_dock_tasting').toggle(Boolean(payload.tasting_room.enabled));
           }
           if (payload.layering_crucible) {
-            $('#hub-layering-alchemy, #qx_dock_layering').toggle(Boolean(payload.layering_crucible.enabled));
+            $('#qx_btn_nav_layering, #qx_dock_layering').toggle(Boolean(payload.layering_crucible.enabled));
           }
-          if (payload.scent_radar) {
-            $('#hub-scent-radar').toggle(Boolean(payload.scent_radar.enabled));
+          if (payload.aura_ai_sommelier) {
+            $('#qx_btn_sommelier_trigger, #qx_dock_concierge, #qx_sommelier_floating_nudge').toggle(Boolean(payload.aura_ai_sommelier.enabled));
           }
           if (payload.decant_passport) {
-            $('#hub-decant-passport, #qx_dock_passport').toggle(Boolean(payload.decant_passport.enabled));
+            $('#qx_btn_nav_passport, #qx_dock_passport, .qx-shield-badge').toggle(Boolean(payload.decant_passport.enabled));
           }
           if (payload.loyalty_refill_vault) {
-            $('#hub-loyalty-vault, #qx_dock_vault').toggle(Boolean(payload.loyalty_refill_vault.enabled));
+            $('#qx_btn_nav_vault, #qx_dock_vault').toggle(Boolean(payload.loyalty_refill_vault.enabled));
           }
         }
         if (type === 'SYNC_HERO_CURATION') {
@@ -1715,5 +1728,167 @@ $tenant = StorefrontTenant::resolve();
       }
     });
   </script>
+
+  <!-- Floating Quantum Comparison Dock -->
+  <div class="qx-comparison-dock" id="qx_comparison_dock" style="display:none;">
+    <div class="qx-dock-tray">
+      <div class="qx-dock-items-wrap" id="qx_dock_items_wrap"></div>
+      <div class="qx-dock-meta">
+        <span class="qx-dock-count-badge" id="qx_dock_count_badge">⚖️ 2 / 4 Seleccionados</span>
+        <button type="button" class="qx-btn-dock-clear" id="qx_btn_dock_clear" title="Vaciar comparativa">Limpiar</button>
+      </div>
+      <button type="button" class="qx-btn-launch-crucible" id="qx_btn_launch_crucible">
+        <span>⚔️</span>
+        <span>Entrar a la Arena (Comparar)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quantum Comparison Studio (The Sensory Crucible) -->
+  <div class="qx-crucible-backdrop" id="qx_crucible_backdrop"></div>
+  <div class="qx-crucible-modal" id="qx_crucible_modal" role="dialog" aria-modal="true" aria-labelledby="qx_crucible_title">
+    <div class="qx-crucible-header">
+      <div class="qx-crucible-brand">
+        <span class="qx-crucible-icon">👑</span>
+        <div>
+          <h2 class="qx-crucible-title" id="qx_crucible_title">Quantum Comparison Studio</h2>
+          <span class="qx-crucible-badge">THE SENSORY CRUCIBLE</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher: X-Ray Slider | Face-to-Face Split | Fusion Crucible -->
+      <div class="qx-crucible-view-modes">
+        <button type="button" class="qx-crucible-tab-btn active" data-mode="xray" id="qx_tab_xray">
+          <span>↔️</span> X-Ray Guillotina
+        </button>
+        <button type="button" class="qx-crucible-tab-btn" data-mode="split" id="qx_tab_split">
+          <span>🪞</span> Cara a Cara
+        </button>
+        <button type="button" class="qx-crucible-tab-btn" data-mode="fusion" id="qx_tab_fusion">
+          <span>🔮</span> Fusión & Layering
+        </button>
+      </div>
+
+      <div class="qx-crucible-header-actions">
+        <button type="button" class="qx-crucible-share-btn" id="qx_crucible_btn_share" title="Compartir Comparativa en WhatsApp">
+          <span>💬</span> WhatsApp
+        </button>
+        <button type="button" class="qx-crucible-close-btn" id="qx_crucible_close">&times;</button>
+      </div>
+    </div>
+
+    <div class="qx-crucible-body">
+      <!-- Neural AI Micro-Verdict Banner -->
+      <div class="qx-crucible-verdict-banner" id="qx_crucible_verdict_banner">
+        <div class="qx-verdict-icon">🧠</div>
+        <div class="qx-verdict-content">
+          <div class="qx-verdict-tag">Veredicto Ejecutivo Neural (Aura AI):</div>
+          <div class="qx-verdict-text" id="qx_crucible_verdict_text">Calculando síntesis comparativa en tiempo real...</div>
+          <div class="qx-verdict-badges" id="qx_crucible_verdict_badges"></div>
+        </div>
+      </div>
+
+      <!-- Central Interactive Crucible Stage -->
+      <div class="qx-crucible-stage" id="qx_crucible_stage">
+        
+        <!-- Left / Bottom Layer (Product A) -->
+        <div class="qx-stage-layer layer-a" id="qx_stage_layer_a">
+          <div class="qx-product-selector-pill">
+            <label>Producto A:</label>
+            <select class="qx-crucible-prod-select" id="qx_select_prod_a"></select>
+          </div>
+          <div class="qx-stage-img-wrap">
+            <img id="qx_stage_img_a" src="" alt="Producto A" class="qx-stage-img">
+          </div>
+          <div class="qx-stage-info-pill left">
+            <div class="qx-stage-name" id="qx_stage_name_a">Producto A</div>
+            <div class="qx-stage-price" id="qx_stage_price_a">$ 0.00 MXN</div>
+            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_a">🛒 Elegir Este</button>
+          </div>
+        </div>
+
+        <!-- Right / Overlay Layer (Product B) with Clip-Path Laser Curtain -->
+        <div class="qx-stage-layer layer-b" id="qx_stage_layer_b">
+          <div class="qx-product-selector-pill right">
+            <label>Producto B:</label>
+            <select class="qx-crucible-prod-select" id="qx_select_prod_b"></select>
+          </div>
+          <div class="qx-stage-img-wrap">
+            <img id="qx_stage_img_b" src="" alt="Producto B" class="qx-stage-img">
+          </div>
+          <div class="qx-stage-info-pill right">
+            <div class="qx-stage-name" id="qx_stage_name_b">Producto B</div>
+            <div class="qx-stage-price" id="qx_stage_price_b">$ 0.00 MXN</div>
+            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_b">🛒 Elegir Este</button>
+          </div>
+        </div>
+
+        <!-- Optical Guillotine Laser Slider Handle -->
+        <div class="qx-xray-slider-divider" id="qx_xray_slider">
+          <div class="qx-xray-laser-line"></div>
+          <div class="qx-xray-handle" id="qx_xray_handle">
+            <span class="qx-handle-arrow">‹</span>
+            <span class="qx-handle-icon">↔</span>
+            <span class="qx-handle-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- Fusion Crucible Overlay (When in Fusion Mode) -->
+        <div class="qx-fusion-stage-overlay" id="qx_fusion_overlay" style="display:none;">
+          <div class="qx-fusion-aura-glow"></div>
+          <div class="qx-fusion-card">
+            <div class="qx-fusion-badge">🔮 Alquimia & Sinergia Perfecta</div>
+            <h3 class="qx-fusion-title" id="qx_fusion_title">Dúo Maestro de Capas</h3>
+            <p class="qx-fusion-desc" id="qx_fusion_desc">Combinación sinérgica calculada para máxima estela y longevidad.</p>
+            
+            <div class="qx-fusion-radar-container">
+              <svg id="qx_fusion_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+            </div>
+
+            <div class="qx-fusion-pricing-box">
+              <div class="qx-fusion-price-calc">
+                <span class="qx-fusion-old-price" id="qx_fusion_old_price">$ 0.00</span>
+                <span class="qx-fusion-new-price" id="qx_fusion_new_price">$ 0.00 MXN</span>
+                <span class="qx-fusion-save-pill">Ahorras 15% en Dúo</span>
+              </div>
+              <button type="button" class="qx-btn-fusion-add-pack" id="qx_btn_fusion_add_pack">
+                <span>✨</span> Añadir Paquete Dúo al Carrito
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Dual Scent Radar & Delta Spec Matrix Section -->
+      <div class="qx-crucible-analysis-grid">
+        <!-- Radar Section (Adaptive for Perfumes / Visual Specs for Tech) -->
+        <div class="qx-crucible-radar-card" id="qx_crucible_radar_card">
+          <div class="qx-crucible-card-header">
+            <span>📊 Radar Olfativo Superpuesto</span>
+            <div class="qx-radar-legend">
+              <span class="legend-dot prod-a"></span> <span id="qx_legend_label_a">Prod A</span>
+              <span class="legend-dot prod-b"></span> <span id="qx_legend_label_b">Prod B</span>
+            </div>
+          </div>
+          <div class="qx-dual-radar-wrap">
+            <svg id="qx_dual_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+          </div>
+        </div>
+
+        <!-- Side-by-Side Deep Spec Delta Table -->
+        <div class="qx-crucible-diff-card">
+          <div class="qx-crucible-card-header">
+            <span>⚖️ Matriz de Especificaciones & Rendimiento</span>
+            <span class="qx-diff-tag">Diferencias Calculadas</span>
+          </div>
+          <div class="qx-crucible-diff-table-wrap" id="qx_crucible_diff_table_wrap">
+            <table class="qx-diff-table" id="qx_diff_table"></table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </body>
 </html>

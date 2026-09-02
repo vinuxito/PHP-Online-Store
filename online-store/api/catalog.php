@@ -218,6 +218,8 @@ try {
             'email'       => $tenant->email,
             'phone'       => $tenant->phone,
             'address'     => $tenant->address,
+            'quantixStorePerfums' => $tenant->quantixStorePerfums,
+            'featureMatrix'=> $tenant->apexConfig['feature_matrix'] ?? [],
             'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13
         ],
         'Categories' => $categories,

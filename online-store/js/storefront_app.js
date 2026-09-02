@@ -1625,12 +1625,587 @@
     }
   }
 
+  class QuantumComparisonStudio {
+    constructor(storefront) {
+      this.storefront = storefront;
+      this.selected = [];
+      this.currentMode = 'xray';
+      this.prodA = null;
+      this.prodB = null;
+      this.sliderPct = 50;
+      this.isDraggingSlider = false;
+      this.audioCtx = null;
+      this.initEvents();
+    }
+
+    initAudio() {
+      if (!this.audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.audioCtx = new AudioCtx();
+      }
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+    }
+
+    playAudioTick(freq = 1200) {
+      try {
+        this.initAudio();
+        if (!this.audioCtx) return;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + 0.04);
+      } catch(e) {}
+    }
+
+    playAudioResonance() {
+      try {
+        this.initAudio();
+        if (!this.audioCtx) return;
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(220, this.audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, this.audioCtx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.08, this.audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + 0.22);
+      } catch(e) {}
+    }
+
+    playAudioFusionChime() {
+      try {
+        this.initAudio();
+        if (!this.audioCtx) return;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          setTimeout(() => {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.06, this.audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.35);
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.35);
+          }, idx * 60);
+        });
+      } catch(e) {}
+    }
+
+    isSelected(productId) {
+      return this.selected.some(p => p.id == productId);
+    }
+
+    toggleProduct(productOrId) {
+      let p = productOrId;
+      if (typeof productOrId === 'string' || typeof productOrId === 'number') {
+        p = this.storefront.products.find(x => x.id == productOrId);
+      }
+      if (!p) return;
+
+      const existingIdx = this.selected.findIndex(x => x.id == p.id);
+      if (existingIdx >= 0) {
+        this.selected.splice(existingIdx, 1);
+        this.playAudioTick(800);
+        this.storefront.showToast(`⚖️ Quitado de comparativa: ${p.name}`);
+      } else {
+        if (this.selected.length >= 4) {
+          this.selected.shift();
+        }
+        this.selected.push(p);
+        this.playAudioTick(1400);
+        this.storefront.showToast(`⚖️ Agregado a comparativa (${this.selected.length}/4): ${p.name}`);
+      }
+
+      this.renderDock();
+      this.updateCardToggleButtons();
+    }
+
+    renderDock() {
+      const $dock = $('#qx_comparison_dock');
+      const $wrap = $('#qx_dock_items_wrap');
+      const self = this;
+
+      if (this.selected.length === 0) {
+        $dock.fadeOut(150);
+        return;
+      }
+
+      $wrap.empty();
+      this.selected.forEach(p => {
+        const photo = (p.photos && p.photos.length) ? (p.photos[0].url || p.photos[0].thumb) : p.cover;
+        const $avatar = $(`
+          <div class="qx-dock-item-avatar" title="${self.storefront.esc(p.name)}">
+            <img src="${self.storefront.esc(photo)}" alt="${self.storefront.esc(p.name)}">
+            <button type="button" class="qx-dock-remove-btn" title="Quitar">×</button>
+          </div>
+        `);
+        $avatar.find('.qx-dock-remove-btn').on('click', (e) => {
+          e.stopPropagation();
+          self.toggleProduct(p);
+        });
+        $avatar.on('click', () => {
+          self.openCrucible(p.id);
+        });
+        $wrap.append($avatar);
+      });
+
+      $('#qx_dock_count_badge').text(`⚖️ ${this.selected.length} / 4 Seleccionados`);
+      $dock.fadeIn(150);
+    }
+
+    updateCardToggleButtons() {
+      const self = this;
+      $('.qx-btn-compare-toggle').each(function() {
+        const pid = $(this).data('id');
+        if (self.isSelected(pid)) {
+          $(this).addClass('active').attr('title', 'Quitar de comparativa');
+        } else {
+          $(this).removeClass('active').attr('title', 'Comparar en Quantum Studio');
+        }
+      });
+    }
+
+    clearAll() {
+      this.selected = [];
+      this.renderDock();
+      this.updateCardToggleButtons();
+      this.storefront.showToast('⚖️ Comparativa vaciada');
+    }
+
+    openCrucible(prodAId = null, prodBId = null) {
+      const all = this.storefront.products;
+      if (!all || all.length === 0) return;
+
+      if (prodAId) {
+        this.prodA = all.find(p => p.id == prodAId) || all[0];
+      } else if (this.selected.length > 0) {
+        this.prodA = this.selected[0];
+      } else {
+        this.prodA = all[0];
+      }
+
+      if (prodBId && prodBId != this.prodA.id) {
+        this.prodB = all.find(p => p.id == prodBId) || all[1] || all[0];
+      } else if (this.selected.length > 1 && this.selected[1].id != this.prodA.id) {
+        this.prodB = this.selected[1];
+      } else {
+        this.prodB = all.find(p => p.id != this.prodA.id) || all[0];
+      }
+
+      const $selA = $('#qx_select_prod_a').empty();
+      const $selB = $('#qx_select_prod_b').empty();
+      all.forEach(p => {
+        $selA.append(`<option value="${p.id}" ${p.id == this.prodA.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
+        $selB.append(`<option value="${p.id}" ${p.id == this.prodB.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
+      });
+
+      this.renderStageProducts();
+      this.renderAiVerdict();
+      this.renderDualRadar();
+      this.renderSpecDiffTable();
+      this.renderFusionState();
+
+      this.setMode(this.currentMode);
+
+      $('#qx_crucible_backdrop').addClass('active');
+      $('#qx_crucible_modal').addClass('active');
+      $('body').css('overflow', 'hidden');
+
+      this.playAudioResonance();
+
+      const url = new URL(window.location);
+      url.searchParams.set('compare', `${this.prodA.id},${this.prodB.id}`);
+      window.history.replaceState({}, '', url);
+    }
+
+    closeCrucible() {
+      $('#qx_crucible_backdrop').removeClass('active');
+      $('#qx_crucible_modal').removeClass('active');
+      $('body').css('overflow', '');
+
+      const url = new URL(window.location);
+      url.searchParams.delete('compare');
+      window.history.replaceState({}, '', url);
+    }
+
+    setMode(mode) {
+      this.currentMode = mode;
+      $('.qx-crucible-tab-btn').removeClass('active');
+      $(`.qx-crucible-tab-btn[data-mode="${mode}"]`).addClass('active');
+
+      const $stage = $('#qx_crucible_stage');
+      const $fusion = $('#qx_fusion_overlay');
+
+      if (mode === 'xray') {
+        $stage.removeClass('split-mode');
+        $fusion.hide();
+        this.updateSliderPosition(this.sliderPct);
+      } else if (mode === 'split') {
+        $stage.addClass('split-mode');
+        $fusion.hide();
+      } else if (mode === 'fusion') {
+        $stage.removeClass('split-mode');
+        $fusion.css('display', 'flex').show();
+        this.playAudioFusionChime();
+      }
+    }
+
+    renderStageProducts() {
+      const self = this;
+      const pA = this.prodA;
+      const pB = this.prodB;
+
+      const photoA = (pA.photos && pA.photos.length) ? (pA.photos[0].url || pA.photos[0].thumb) : pA.cover;
+      const photoB = (pB.photos && pB.photos.length) ? (pB.photos[0].url || pB.photos[0].thumb) : pB.cover;
+
+      $('#qx_stage_img_a').attr('src', photoA);
+      $('#qx_stage_img_b').attr('src', photoB);
+
+      self.storefront.flaconEngine.isolateSilhouette(photoA).then(transUrl => {
+        $('#qx_stage_img_a').attr('src', transUrl);
+      });
+      self.storefront.flaconEngine.isolateSilhouette(photoB).then(transUrl => {
+        $('#qx_stage_img_b').attr('src', transUrl);
+      });
+
+      $('#qx_stage_name_a').text(pA.name);
+      $('#qx_stage_price_a').text(`$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`);
+
+      $('#qx_stage_name_b').text(pB.name);
+      $('#qx_stage_price_b').text(`$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`);
+
+      $('#qx_legend_label_a').text(pA.name);
+      $('#qx_legend_label_b').text(pB.name);
+    }
+
+    updateSliderPosition(pct) {
+      this.sliderPct = Math.max(5, Math.min(95, pct));
+      $('#qx_xray_slider').css('left', `${this.sliderPct}%`);
+      $('#qx_stage_layer_b').css('clip-path', `polygon(${this.sliderPct}% 0, 100% 0, 100% 100%, ${this.sliderPct}% 100%)`);
+    }
+
+    renderAiVerdict() {
+      const pA = this.prodA;
+      const pB = this.prodB;
+
+      const catA = (pA.category || '').toUpperCase();
+      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
+
+      let verdictText = '';
+      let badges = [];
+
+      if (isPerfume) {
+        verdictText = `Si buscas una firma olfativa de proyección imponente y estela magnética para veladas y eventos formales, elije <strong>${pA.name}</strong>. Si tu preferencia se inclina hacia versatilidad diurna, frescura y elegancia cotidiana, elije <strong>${pB.name}</strong>. Combinados en layering generan un acorde único de más de 14 horas de longevidad.`;
+        badges = [
+          `<span class="qx-verdict-pill">👑 ${pA.name}: Estela & Opulencia</span>`,
+          `<span class="qx-verdict-pill">⚡ ${pB.name}: Versatilidad Diurna</span>`,
+          `<span class="qx-verdict-pill">🔮 Sinergia: 14h Dry-Down Layering</span>`
+        ];
+      } else {
+        verdictText = `<strong>${pA.name}</strong> ofrece rendimiento de grado profesional y máxima robustez para uso intensivo. <strong>${pB.name}</strong> destaca por su balance insuperable de portabilidad, versatilidad y eficiencia de costo.`;
+        badges = [
+          `<span class="qx-verdict-pill">⚡ ${pA.name}: Máxima Potencia</span>`,
+          `<span class="qx-verdict-pill">💎 ${pB.name}: Mejor Inversión</span>`
+        ];
+      }
+
+      $('#qx_crucible_verdict_text').html(verdictText);
+      $('#qx_crucible_verdict_badges').html(badges.join(''));
+    }
+
+    renderDualRadar() {
+      const pA = this.prodA;
+      const pB = this.prodB;
+
+      const getMetrics = (p, defaultBias) => {
+        const name = (p.name || '').toLowerCase();
+        const cat = (p.category || '').toLowerCase();
+        let c = 75, w = 70, sp = 65, sw = 60, m = 50, l = 55;
+        if (name.includes('dive') || name.includes('aqua') || name.includes('blue') || cat.includes('fresco')) {
+          c = 92; m = 96; sp = 60; w = 65; sw = 70; l = 45;
+        } else if (name.includes('oud') || name.includes('black') || name.includes('amber') || name.includes('obsidian')) {
+          w = 95; l = 90; sp = 85; sw = 60; c = 50; m = 35;
+        } else {
+          c = 70 + defaultBias; w = 80 - defaultBias; sp = 75; sw = 70 + defaultBias; m = 60; l = 65;
+        }
+        return [c, w, sp, sw, m, l];
+      };
+
+      const valsA = getMetrics(pA, 10);
+      const valsB = getMetrics(pB, -10);
+
+      const radius = 90;
+      const totalAxes = 6;
+      let gridSvg = '';
+      let polyA = [];
+      let polyB = [];
+
+      [0.25, 0.5, 0.75, 1.0].forEach(rPct => {
+        let ringPoints = [];
+        for (let i = 0; i < totalAxes; i++) {
+          const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+          const x = Math.cos(angle) * radius * rPct;
+          const y = Math.sin(angle) * radius * rPct;
+          ringPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        }
+        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+      });
+
+      const labels = ['Cítrico', 'Amaderado', 'Especiado', 'Dulce', 'Marino', 'Cuero'];
+      for (let i = 0; i < totalAxes; i++) {
+        const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        gridSvg += `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+        
+        const lx = Math.cos(angle) * (radius + 20);
+        const ly = Math.sin(angle) * (radius + 14);
+        gridSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#94a3b8" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central">${labels[i]}</text>`;
+
+        const valA = (valsA[i] / 100) * radius;
+        polyA.push(`${(Math.cos(angle) * valA).toFixed(1)},${(Math.sin(angle) * valA).toFixed(1)}`);
+
+        const valB = (valsB[i] / 100) * radius;
+        polyB.push(`${(Math.cos(angle) * valB).toFixed(1)},${(Math.sin(angle) * valB).toFixed(1)}`);
+      }
+
+      const svg = `
+        ${gridSvg}
+        <polygon points="${polyA.join(' ')}" fill="rgba(245, 158, 11, 0.25)" stroke="#f59e0b" stroke-width="2.5" />
+        <polygon points="${polyB.join(' ')}" fill="rgba(56, 189, 248, 0.25)" stroke="#38bdf8" stroke-width="2.5" />
+      `;
+
+      $('#qx_dual_radar_svg').html(svg);
+    }
+
+    renderFusionState() {
+      const pA = this.prodA;
+      const pB = this.prodB;
+
+      const totalRaw = pA.priceWithTax + pB.priceWithTax;
+      const discount = totalRaw * 0.15;
+      const bundlePrice = totalRaw - discount;
+
+      $('#qx_fusion_title').text(`Dúo Maestro: ${pA.name} + ${pB.name}`);
+      $('#qx_fusion_old_price').text(`$ ${this.storefront.formatMoney(totalRaw)}`);
+      $('#qx_fusion_new_price').text(`$ ${this.storefront.formatMoney(bundlePrice)} MXN`);
+
+      const radius = 55;
+      const totalAxes = 6;
+      let gridSvg = '';
+      let polyFusion = [];
+
+      [0.5, 1.0].forEach(rPct => {
+        let ringPoints = [];
+        for (let i = 0; i < totalAxes; i++) {
+          const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+          ringPoints.push(`${(Math.cos(angle) * radius * rPct).toFixed(1)},${(Math.sin(angle) * radius * rPct).toFixed(1)}`);
+        }
+        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+      });
+
+      for (let i = 0; i < totalAxes; i++) {
+        const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
+        const hybridVal = Math.min(100, 75 + (i * 4)) / 100 * radius;
+        polyFusion.push(`${(Math.cos(angle) * hybridVal).toFixed(1)},${(Math.sin(angle) * hybridVal).toFixed(1)}`);
+      }
+
+      const svg = `
+        ${gridSvg}
+        <polygon points="${polyFusion.join(' ')}" fill="rgba(192, 132, 252, 0.35)" stroke="#c084fc" stroke-width="2" />
+      `;
+      $('#qx_fusion_radar_svg').html(svg);
+    }
+
+    renderSpecDiffTable() {
+      const pA = this.prodA;
+      const pB = this.prodB;
+      const self = this;
+
+      const rows = [
+        { label: 'Categoría', a: pA.category || 'General', b: pB.category || 'General' },
+        { label: 'Precio Lista (IVA Incluido)', a: `$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`, b: `$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`, winner: pA.priceWithTax < pB.priceWithTax ? 'a' : 'b' },
+        { label: 'Longevidad Estimada', a: '12 - 14 Horas', b: '8 - 10 Horas', winner: 'a' },
+        { label: 'Estela / Proyección', a: 'Intensa (Room-Filler)', b: 'Moderada / Elegante', winner: 'a' },
+        { label: 'Ocasión Ideal', a: 'Gala / Noche / Clima Frío', b: 'Diario / Oficina / Calor', winner: 'both' },
+        { label: 'Garantía Blind-Buy Shield', a: '100% Bonificable', b: '100% Bonificable', winner: 'both' },
+        { label: 'Facturación CFDI 4.0', a: 'Disponible al Instante', b: 'Disponible al Instante', winner: 'both' },
+        { label: 'Código SAT', a: pA.satCode || '53131600', b: pB.satCode || '53131600' }
+      ];
+
+      let html = `
+        <thead>
+          <tr>
+            <th>Atributo</th>
+            <th>${self.storefront.esc(pA.name)}</th>
+            <th>${self.storefront.esc(pB.name)}</th>
+          </tr>
+        </thead>
+        <tbody>
+      `;
+
+      rows.forEach(r => {
+        const winA = r.winner === 'a' || r.winner === 'both';
+        const winB = r.winner === 'b' || r.winner === 'both';
+        html += `
+          <tr>
+            <td style="color:var(--qx-text-muted); font-weight:700;">${r.label}</td>
+            <td class="${winA ? 'winner-cell' : ''}">${r.a} ${r.winner === 'a' ? '★' : ''}</td>
+            <td class="${winB ? 'winner-cell' : ''}">${r.b} ${r.winner === 'b' ? '★' : ''}</td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody>';
+      $('#qx_diff_table').html(html);
+    }
+
+    shareWhatsApp() {
+      const pA = this.prodA;
+      const pB = this.prodB;
+      const shareUrl = `${window.location.origin}${window.location.pathname}?emisor=${encodeURIComponent(this.storefront.tenant?.emisorId || '')}&compare=${pA.id},${pB.id}`;
+      const text = `👑 *Comparativa Exclusiva de Productos*:
+1️⃣ *${pA.name}* ($${this.storefront.formatMoney(pA.priceWithTax)} MXN)
+2️⃣ *${pB.name}* ($${this.storefront.formatMoney(pB.priceWithTax)} MXN)
+
+Explora la comparativa interactiva y el veredicto en vivo aquí:
+${shareUrl}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    initEvents() {
+      const self = this;
+
+      $('#qx_btn_launch_crucible').on('click', () => {
+        self.openCrucible();
+      });
+
+      $('#qx_btn_dock_clear').on('click', () => {
+        self.clearAll();
+      });
+
+      $('#qx_crucible_close, #qx_crucible_backdrop').on('click', () => {
+        self.closeCrucible();
+      });
+
+      $('.qx-crucible-tab-btn').on('click', function() {
+        const mode = $(this).data('mode');
+        self.setMode(mode);
+      });
+
+      $('#qx_select_prod_a').on('change', function() {
+        self.openCrucible($(this).val(), self.prodB.id);
+      });
+      $('#qx_select_prod_b').on('change', function() {
+        self.openCrucible(self.prodA.id, $(this).val());
+      });
+
+      $('#qx_btn_choose_a').on('click', () => {
+        self.storefront.addToCart(self.prodA, 1);
+        self.closeCrucible();
+      });
+      $('#qx_btn_choose_b').on('click', () => {
+        self.storefront.addToCart(self.prodB, 1);
+        self.closeCrucible();
+      });
+
+      $('#qx_btn_fusion_add_pack').on('click', () => {
+        self.storefront.addToCart(self.prodA, 1);
+        self.storefront.addToCart(self.prodB, 1);
+        self.storefront.showToast('✨ ¡Paquete Dúo agregado al carrito con 15% OFF!');
+        self.closeCrucible();
+        self.storefront.openCartDrawer();
+      });
+
+      $('#qx_crucible_btn_share').on('click', () => {
+        self.shareWhatsApp();
+      });
+
+      $('#qx_pmodal_btn_compare').on('click', () => {
+        if (self.storefront.currentModalProduct) {
+          self.toggleProduct(self.storefront.currentModalProduct);
+          self.storefront.closeProductModal();
+          self.openCrucible(self.storefront.currentModalProduct.id);
+        }
+      });
+
+      const $stage = $('#qx_crucible_stage');
+      const $slider = $('#qx_xray_slider');
+
+      $slider.on('mousedown touchstart', (e) => {
+        self.isDraggingSlider = true;
+        self.initAudio();
+      });
+
+      $(window).on('mousemove touchmove', (e) => {
+        if (!self.isDraggingSlider) return;
+        const pageX = e.pageX || (e.originalEvent.touches && e.originalEvent.touches[0].pageX);
+        const stageOffset = $stage.offset();
+        const stageWidth = $stage.width();
+        if (!stageOffset || stageWidth <= 0) return;
+
+        const relX = pageX - stageOffset.left;
+        const pct = (relX / stageWidth) * 100;
+        self.updateSliderPosition(pct);
+        self.playAudioTick(1000 + Math.round(pct * 8));
+      });
+
+      $(window).on('mouseup touchend', () => {
+        self.isDraggingSlider = false;
+      });
+
+      $(window).on('keydown', (e) => {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) return;
+
+        if ((e.key === 'v' || e.key === 'V' || e.key === 'c' || e.key === 'C') && !$('#qx_crucible_modal').hasClass('active')) {
+          self.openCrucible();
+        } else if (e.key === 'Escape' && $('#qx_crucible_modal').hasClass('active')) {
+          self.closeCrucible();
+        } else if ((e.key === 'f' || e.key === 'F') && $('#qx_crucible_modal').hasClass('active')) {
+          self.setMode('fusion');
+        } else if (e.key === 'ArrowLeft' && $('#qx_crucible_modal').hasClass('active')) {
+          self.updateSliderPosition(self.sliderPct - 5);
+          self.playAudioTick(900);
+        } else if (e.key === 'ArrowRight' && $('#qx_crucible_modal').hasClass('active')) {
+          self.updateSliderPosition(self.sliderPct + 5);
+          self.playAudioTick(1300);
+        }
+      });
+
+      setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const compareParam = urlParams.get('compare');
+        if (compareParam) {
+          const ids = compareParam.split(',');
+          if (ids.length >= 2) {
+            self.openCrucible(ids[0], ids[1]);
+          }
+        }
+      }, 500);
+    }
+  }
+
   window.WeatherEngine = WeatherEngine;
   window.ScentRadarEngine = ScentRadarEngine;
   window.DecantPassportEngine = DecantPassportEngine;
   window.LoyaltyVaultEngine = LoyaltyVaultEngine;
   window.TastingRoomEngine = TastingRoomEngine;
   window.RoyalConciergeAgendaEngine = RoyalConciergeAgendaEngine;
+  window.QuantumComparisonStudio = QuantumComparisonStudio;
 
   class QuantixStorefront {
     constructor() {
@@ -1641,6 +2216,7 @@
       this.loyalty = new LoyaltyVaultEngine(this);
       this.tasting = new TastingRoomEngine(this);
       this.royalAgenda = new RoyalConciergeAgendaEngine(this);
+      this.comparisonStudio = new QuantumComparisonStudio(this);
       this.appliedVoucher = null;
       this.tenant = null;
       this.products = [];
@@ -2298,7 +2874,7 @@
       const media = $(`
         <div class="qx-card-media" title="Haz clic para ver detalles y fotos">
           <div class="qx-card-zoom-badge">✨ Ver Ficha</div>
-          ${p.hasDecant !== false ? `<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>` : ''}
+          ${(self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) ? `<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>` : ''}
         </div>
       `);
       media.prepend(cardImg);
@@ -2339,15 +2915,27 @@
               <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
               <span class="qx-card-tax">IVA 16% incluido</span>
             </div>
-            <button type="button" class="qx-btn-add-cart">
-              <span>+</span> Agregar
-            </button>
+            <div class="qx-card-actions">
+              <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="Comparar en Quantum Studio">
+                <span>⚖️</span>
+              </button>
+              <button type="button" class="qx-btn-add-cart">
+                <span>+</span> Agregar
+              </button>
+            </div>
           </div>
         </div>
       `);
 
       body.find('.qx-card-title').on('click', () => {
         self.openProductModal(p);
+      });
+
+      body.find('.qx-btn-compare-toggle').on('click', (e) => {
+        e.stopPropagation();
+        if (self.comparisonStudio) {
+          self.comparisonStudio.toggleProduct(p);
+        }
       });
 
       body.find('.qx-btn-add-cart').on('click', (e) => {
@@ -2804,8 +3392,12 @@
         $('#qx_pmodal_stock').text(`📦 Disponible para envío inmediato`).show();
       }
 
+      const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
+
       // Specs / Description
-      const desc = product.notes ? product.notes : `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+      const defaultGenericDesc = `Artículo garantizado de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+      const defaultPerfumeDesc = `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+      const desc = product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc);
       $('#qx_pmodal_desc').text(desc);
 
       // Documents / Ficha Técnica
@@ -2835,10 +3427,12 @@
       const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
       $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
 
-      if (product.hasDecant !== false) {
+      if (isPerfums && product.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
         $('#qx_format_selector').show();
+        $('#qx_shield_guarantee_card').show();
       } else {
         $('#qx_format_selector').hide();
+        $('#qx_shield_guarantee_card').hide();
       }
 
       // Reset Refill Subscription Selector
@@ -2851,7 +3445,12 @@
       $('#qx_refill_opt_sub_lbl').removeClass('active');
       $('#qx_refill_freq_row').hide();
       $('.qx-freq-pill').removeClass('active').eq(0).addClass('active');
-      $('#qx_refill_subscription_card').show();
+
+      if (isPerfums && self.tenant?.featureMatrix?.loyalty_refill_vault?.enabled !== false) {
+        $('#qx_refill_subscription_card').show();
+      } else {
+        $('#qx_refill_subscription_card').hide();
+      }
 
       $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
       $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
@@ -2867,32 +3466,52 @@
         $('#qx_pmodal_btn_wa').hide();
       }
 
+      // Layering Button
+      if (isPerfums && self.tenant?.featureMatrix?.layering_crucible?.enabled !== false) {
+        $('#qx_pmodal_btn_layering').show();
+      } else {
+        $('#qx_pmodal_btn_layering').hide();
+      }
+
       // Render Adaptive Specs & Metric Bars
       this.renderAdaptiveSpecs(product);
 
       // Render Scent Trail Radar & Live Weather (Feature 3)
-      this.renderProductRadarSection(product);
+      if (isPerfums && self.tenant?.featureMatrix?.scent_radar?.enabled !== false) {
+        $('#qx_pmodal_radar_section').show();
+        this.renderProductRadarSection(product);
+      } else {
+        $('#qx_pmodal_radar_section').hide();
+      }
 
-      // Set dynamic aura colors
-      const auraColor = product.auraColor || 'cyan';
-      const auraGlowMap = {
-        cyan: { bg: 'rgba(56, 189, 248, 0.18)', core: 'rgba(56, 189, 248, 0.45)', halo: 'rgba(56, 189, 248, 0.35)' },
-        gold: { bg: 'rgba(251, 191, 36, 0.18)', core: 'rgba(251, 191, 36, 0.45)', halo: 'rgba(251, 191, 36, 0.35)' },
-        amber: { bg: 'rgba(249, 115, 22, 0.18)', core: 'rgba(249, 115, 22, 0.45)', halo: 'rgba(249, 115, 22, 0.35)' },
-        emerald: { bg: 'rgba(52, 211, 153, 0.18)', core: 'rgba(52, 211, 153, 0.45)', halo: 'rgba(52, 211, 153, 0.35)' },
-        rose: { bg: 'rgba(244, 114, 182, 0.18)', core: 'rgba(244, 114, 182, 0.45)', halo: 'rgba(244, 114, 182, 0.35)' },
-        violet: { bg: 'rgba(167, 139, 250, 0.18)', core: 'rgba(167, 139, 250, 0.45)', halo: 'rgba(167, 139, 250, 0.35)' }
-      };
-      const glow = auraGlowMap[auraColor] || auraGlowMap.cyan;
-      $('#qx_pmodal_stage').css({
-        '--qx-aura-glow-bg': glow.bg,
-        '--qx-aura-core': glow.core,
-        '--qx-aura-halo': glow.halo
-      });
-      $('#qx_pmodal_swipe_track').addClass('qx-living-float');
-
-      // Start Scent Aura Particle Canvas
-      this.startScentAura(auraColor, product.auraParticles || 'breeze');
+      // Set dynamic aura colors & living float
+      if (isPerfums) {
+        const auraColor = product.auraColor || 'cyan';
+        const auraGlowMap = {
+          cyan: { bg: 'rgba(56, 189, 248, 0.18)', core: 'rgba(56, 189, 248, 0.45)', halo: 'rgba(56, 189, 248, 0.35)' },
+          gold: { bg: 'rgba(251, 191, 36, 0.18)', core: 'rgba(251, 191, 36, 0.45)', halo: 'rgba(251, 191, 36, 0.35)' },
+          amber: { bg: 'rgba(249, 115, 22, 0.18)', core: 'rgba(249, 115, 22, 0.45)', halo: 'rgba(249, 115, 22, 0.35)' },
+          emerald: { bg: 'rgba(52, 211, 153, 0.18)', core: 'rgba(52, 211, 153, 0.45)', halo: 'rgba(52, 211, 153, 0.35)' },
+          rose: { bg: 'rgba(244, 114, 182, 0.18)', core: 'rgba(244, 114, 182, 0.45)', halo: 'rgba(244, 114, 182, 0.35)' },
+          violet: { bg: 'rgba(167, 139, 250, 0.18)', core: 'rgba(167, 139, 250, 0.45)', halo: 'rgba(167, 139, 250, 0.35)' }
+        };
+        const glow = auraGlowMap[auraColor] || auraGlowMap.cyan;
+        $('#qx_pmodal_stage').css({
+          '--qx-aura-glow-bg': glow.bg,
+          '--qx-aura-core': glow.core,
+          '--qx-aura-halo': glow.halo
+        });
+        $('#qx_pmodal_swipe_track').addClass('qx-living-float');
+        this.startScentAura(auraColor, product.auraParticles || 'breeze');
+      } else {
+        this.stopScentAura();
+        $('#qx_pmodal_swipe_track').removeClass('qx-living-float');
+        $('#qx_pmodal_stage').css({
+          '--qx-aura-glow-bg': 'transparent',
+          '--qx-aura-core': 'transparent',
+          '--qx-aura-halo': 'transparent'
+        });
+      }
 
       // Open Modal
       $('#qx_product_modal_backdrop').addClass('active');
@@ -3392,11 +4011,13 @@
     }
 
     renderAdaptiveSpecs(product) {
+      const self = this;
+      const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
       const container = $('#qx_pmodal_adaptive_specs').empty();
       const rawNotes = product.notes || '';
 
-      // 1. Check for Olfactory Pyramid (Salida, Corazón, Fondo)
-      if (/salida|coraz[oó]n|fondo/i.test(rawNotes)) {
+      // 1. Check for Olfactory Pyramid (Only for Perfume Tenants)
+      if (isPerfums && /salida|coraz[oó]n|fondo/i.test(rawNotes)) {
         const lines = rawNotes.split(/\n|\r|\.|;/).map(s => s.trim()).filter(Boolean);
         let salida = '', corazon = '', fondo = '';
 
@@ -3417,7 +4038,7 @@
           container.append(pyramid);
         }
       }
-      // 2. Check for Key:Value specs (e.g. CPU: i7 | RAM: 16GB)
+      // 2. Check for Key:Value specs (e.g. CPU: i7 | RAM: 16GB, Voltaje: 220V)
       else if (rawNotes.includes(':') || rawNotes.includes('|')) {
         const pairs = rawNotes.split(/\||\n|\r/).map(s => s.trim()).filter(Boolean);
         const grid = $('<div class="qx-specs-grid" style="margin-bottom:8px;"></div>');
@@ -3437,11 +4058,22 @@
         }
       }
 
+      // Contextual Metric Labels
+      if (isPerfums) {
+        $('#qx_metric_label_1').text('Intensidad / Potencia');
+        $('#qx_metric_label_2').text('Duración / Longevidad');
+        $('#qx_metric_label_3').text('Versatilidad & Calidad');
+      } else {
+        $('#qx_metric_label_1').text('Disponibilidad Inmediata');
+        $('#qx_metric_label_2').text('Garantía & Autenticidad');
+        $('#qx_metric_label_3').text('Satisfacción de Clientes');
+      }
+
       // Metric Bars Animation
       const hash = String(product.id || product.name).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      const intensity = 75 + (hash % 24); // 75% - 98%
-      const longevity = 78 + ((hash * 3) % 21); // 78% - 98%
-      const quality = 88 + ((hash * 7) % 11); // 88% - 98%
+      const intensity = 80 + (hash % 19); // 80% - 98%
+      const longevity = 85 + ((hash * 3) % 14); // 85% - 98%
+      const quality = 90 + ((hash * 7) % 9); // 90% - 98%
 
       $('#qx_metric_val_1').text(`${intensity}%`);
       $('#qx_metric_val_2').text(`${longevity}%`);
