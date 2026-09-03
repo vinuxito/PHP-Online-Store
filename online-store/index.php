@@ -847,7 +847,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-shootout-card base" id="qx_shootout_card_base">
           <div class="qx-shootout-badge">CONTENDIENTE A</div>
           <div class="qx-shootout-img-box">
-            <img id="qx_shootout_img_base" src="" alt="Base" onerror="this.onerror=null;this.src='images/flacon_default.png';">
+            <img id="qx_shootout_img_base" src="images/flacon_default.png" alt="Base" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
           <button type="button" class="qx-btn-swap-contender" id="qx_btn_change_base" title="Cambiar Contendiente A">🔍 Cambiar Fragancia A</button>
           <h4 class="qx-shootout-name" id="qx_compare_base_name">Perfume A</h4>
@@ -863,7 +863,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           <div class="qx-select-rival-box">
             <span class="qx-rival-selector-label">Cambiar Contendiente B:</span>
             <button type="button" class="qx-btn-rival-picker" id="qx_btn_open_rival_picker" title="Buscar y cambiar contendiente B">
-              <img id="qx_rival_picker_thumb_img" src="images/flacon_default.png" alt="" class="qx-rival-picker-thumb" onerror="this.src='images/flacon_default.png';">
+              <img id="qx_rival_picker_thumb_img" src="images/flacon_default.png" alt="" class="qx-rival-picker-thumb" onerror="this.onerror=null;this.src='images/flacon_default.png';">
               <span class="qx-rival-picker-name" id="qx_rival_picker_current_name">Seleccionar Rival...</span>
               <span class="qx-rival-picker-search-badge">🔍 Buscar</span>
             </button>
@@ -874,7 +874,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-shootout-card rival" id="qx_shootout_card_rival">
           <div class="qx-shootout-badge">CONTENDIENTE B</div>
           <div class="qx-shootout-img-box">
-            <img id="qx_shootout_img_rival" src="" alt="Rival" onerror="this.onerror=null;this.src='images/flacon_default.png';">
+            <img id="qx_shootout_img_rival" src="images/flacon_default.png" alt="Rival" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
           <button type="button" class="qx-btn-swap-contender" id="qx_btn_change_rival" title="Cambiar Contendiente B">🔍 Cambiar Fragancia B</button>
           <h4 class="qx-shootout-name" id="qx_compare_rival_name">Perfume B</h4>
@@ -1670,7 +1670,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
               </div>
 
               <div class="qx-lounge-somm-status">
-                <img src="assets/sommelier_avatar.png" alt="Sommelier" class="qx-lounge-somm-avatar" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'%23f59e0b\'><circle cx=\'12\' cy=\'8\' r=\'4\'/><path d=\'M12 14c-6 0-8 3-8 6h16c0-3-2-6-8-6z\'/></svg>'">
+                <img src="assets/sommelier_avatar.png" alt="Sommelier" class="qx-lounge-somm-avatar" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'%23f59e0b\'><circle cx=\'12\' cy=\'8\' r=\'4\'/><path d=\'M12 14c-6 0-8 3-8 6h16c0-3-2-6-8-6z\'/></svg>'">
                 <div>
                   <div style="font-size:13px; font-weight:700; color:#fff;" id="qx_lounge_somm_msg">Jean-Luc Moreau está preparando tu set de catas...</div>
                   <div style="font-size:11px; color:#94a3b8;">Frascos 3D, pirámides y decants cargados en el atelier.</div>
