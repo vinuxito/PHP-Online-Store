@@ -49,19 +49,47 @@ class StorefrontTenant {
             $stmt->execute([$targetId]);
             $row = $stmt->fetch();
         } elseif (!empty($targetSlug)) {
-            // Slug resolution heuristics
-            if ($targetSlug === 'mistiq' || strpos($targetSlug, 'mistiq') !== false) {
-                $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00163e311ce9a3e711f1591962781ba6' OR nombre LIKE '%MISTIQ%' LIMIT 1");
-                $stmt->execute();
-                $row = $stmt->fetch();
-            } elseif ($targetSlug === 'beskolab' || strpos($targetSlug, 'besko') !== false) {
-                $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00155d3c42c29a0411e9a4c358646c44' OR nombre LIKE '%BESKOLAB%' LIMIT 1");
-                $stmt->execute();
-                $row = $stmt->fetch();
-            } else {
-                $stmt = $db->prepare("SELECT * FROM emisores WHERE nombre LIKE ? OR rfc LIKE ? LIMIT 1");
-                $stmt->execute(["%{$targetSlug}%", "%{$targetSlug}%"]);
-                $row = $stmt->fetch();
+            // 1. Direct match by subdomain_slug in config_tienda_tenants
+            try {
+                $stmtSlug = $db->prepare("SELECT EmisorID FROM config_tienda_tenants WHERE JSON_UNQUOTE(JSON_EXTRACT(ConfigJSON, '$.subdomain_slug')) = ? LIMIT 1");
+                $stmtSlug->execute([$targetSlug]);
+                if ($rowSlug = $stmtSlug->fetch()) {
+                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1");
+                    $stmt->execute([$rowSlug['EmisorID']]);
+                    $row = $stmt->fetch();
+                }
+            } catch (\Exception $eSlug) {}
+
+            // 2. Check quantix_subdomains.subdomain note if still not resolved
+            if (!$row) {
+                try {
+                    $stmtSub = $db->prepare("SELECT note FROM quantix_subdomains.subdomain WHERE label = ? LIMIT 1");
+                    $stmtSub->execute([$targetSlug]);
+                    if ($rowSub = $stmtSub->fetch()) {
+                        if (!empty($rowSub['note']) && preg_match('/Tenant:\s*([a-zA-Z0-9_-]+)/', $rowSub['note'], $mSub)) {
+                            $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1");
+                            $stmt->execute([$mSub[1]]);
+                            $row = $stmt->fetch();
+                        }
+                    }
+                } catch (\Exception $eSub) {}
+            }
+
+            // 3. Heuristics fallback
+            if (!$row) {
+                if ($targetSlug === 'mistiq' || strpos($targetSlug, 'mistiq') !== false) {
+                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00163e311ce9a3e711f1591962781ba6' OR nombre LIKE '%MISTIQ%' LIMIT 1");
+                    $stmt->execute();
+                    $row = $stmt->fetch();
+                } elseif ($targetSlug === 'beskolab' || strpos($targetSlug, 'besko') !== false) {
+                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00155d3c42c29a0411e9a4c358646c44' OR nombre LIKE '%BESKOLAB%' LIMIT 1");
+                    $stmt->execute();
+                    $row = $stmt->fetch();
+                } else {
+                    $stmt = $db->prepare("SELECT * FROM emisores WHERE nombre LIKE ? OR rfc LIKE ? LIMIT 1");
+                    $stmt->execute(["%{$targetSlug}%", "%{$targetSlug}%"]);
+                    $row = $stmt->fetch();
+                }
             }
         }
 
