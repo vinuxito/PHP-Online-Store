@@ -6,6 +6,9 @@
 header('Content-Type: application/json; charset=utf-8');
 
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
+if (file_exists('/lamp/www/cfdadmin/lib/media_cdn.php')) {
+    require_once '/lamp/www/cfdadmin/lib/media_cdn.php';
+}
 
 $tenant = StorefrontTenant::resolve();
 
@@ -52,13 +55,6 @@ try {
     $stmtMedia->execute([$tenant->emisorId]);
     $allMedia = $stmtMedia->fetchAll();
 
-    $resolveCdn = function($path) {
-        if (empty($path)) return 'https://media.evinux.net/no-image.svg';
-        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) return $path;
-        $clean = preg_replace('#^/?(cfdadmin/)?uploads/productos/#i', '', $path);
-        return 'https://media.evinux.net/' . ltrim($clean, '/');
-    };
-
     $mediaByProduct = [];
     foreach ($allMedia as $m) {
         $pId = $m['ProductoID'];
@@ -68,14 +64,14 @@ try {
         if ($m['TipoArchivo'] === 'DOCUMENTO') {
             $mediaByProduct[$pId]['docs'][] = [
                 'id' => $m['ArchivoID'],
-                'url' => $resolveCdn($m['RutaRelativa']),
+                'url' => MediaCDNResolver::resolve($m['RutaRelativa']),
                 'title' => $m['Descripcion'] ?: 'Ficha Técnica'
             ];
         } else {
             $mediaByProduct[$pId]['fotos'][] = [
                 'id' => $m['ArchivoID'],
-                'url' => $resolveCdn($m['RutaRelativa']),
-                'thumb' => $resolveCdn($m['RutaRelativa']),
+                'url' => MediaCDNResolver::resolve($m['RutaRelativa']),
+                'thumb' => MediaCDNResolver::resolveThumb($m['RutaRelativa'], $m['RutaMiniatura']),
                 'isCover' => ($m['EsPrincipal'] === 'SI')
             ];
         }
@@ -96,12 +92,14 @@ try {
         $docs = $prodMedia['docs'];
 
         // Fallback cover using full uncropped image
-        $cover = !empty($p['CoverRuta']) ? $resolveCdn($p['CoverRuta']) : (!empty($p['CoverMiniatura']) ? $resolveCdn($p['CoverMiniatura']) : 'https://media.evinux.net/no-image.svg');
+        $cover = !empty($p['CoverRuta']) 
+            ? MediaCDNResolver::resolve($p['CoverRuta']) 
+            : (!empty($p['CoverMiniatura']) ? MediaCDNResolver::resolveThumb($p['CoverMiniatura']) : 'https://media.evinux.net/no-image.svg');
         if (empty($fotos) && !empty($p['CoverRuta'])) {
             $fotos[] = [
                 'id' => $p['CoverArchivoID'] ?? 'cover',
-                'url' => $resolveCdn($p['CoverRuta']),
-                'thumb' => $resolveCdn($p['CoverRuta']),
+                'url' => MediaCDNResolver::resolve($p['CoverRuta']),
+                'thumb' => MediaCDNResolver::resolveThumb($p['CoverRuta']),
                 'isCover' => true
             ];
         }

@@ -13,6 +13,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE & ~E_DEPRECATED);
 
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
+if (file_exists('/lamp/www/cfdadmin/lib/media_cdn.php')) {
+    require_once '/lamp/www/cfdadmin/lib/media_cdn.php';
+}
 
 $tenant = StorefrontTenant::resolve();
 
@@ -132,10 +135,7 @@ try {
     $rows = $stmt->fetchAll();
 
     $resolveCdn = function($path) {
-        if (empty($path)) return 'https://media.evinux.net/no-image.svg';
-        if (strpos($path, 'http://') === 0 || strpos($path, 'https://') === 0) return $path;
-        $clean = preg_replace('#^/?(cfdadmin/)?uploads/productos/#i', '', $path);
-        return 'https://media.evinux.net/' . ltrim($clean, '/');
+        return MediaCDNResolver::resolve($path);
     };
 
     $scored = [];

@@ -847,7 +847,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-shootout-card base" id="qx_shootout_card_base">
           <div class="qx-shootout-badge">CONTENDIENTE A</div>
           <div class="qx-shootout-img-box">
-            <img id="qx_shootout_img_base" src="" alt="Base">
+            <img id="qx_shootout_img_base" src="" alt="Base" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
           <h4 class="qx-shootout-name" id="qx_compare_base_name">Perfume A</h4>
           <div class="qx-shootout-price" id="qx_shootout_price_base">$0.00 MXN</div>
@@ -871,7 +871,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-shootout-card rival" id="qx_shootout_card_rival">
           <div class="qx-shootout-badge">CONTENDIENTE B</div>
           <div class="qx-shootout-img-box">
-            <img id="qx_shootout_img_rival" src="" alt="Rival">
+            <img id="qx_shootout_img_rival" src="" alt="Rival" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
           <h4 class="qx-shootout-name" id="qx_compare_rival_name">Perfume B</h4>
           <div class="qx-shootout-price" id="qx_shootout_price_rival">$0.00 MXN</div>
