@@ -1929,6 +1929,8 @@
     renderDualRadar() {
       const pA = this.prodA;
       const pB = this.prodB;
+      const catA = (pA.category || '').toUpperCase();
+      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
 
       const getMetrics = (p, defaultBias) => {
         const name = (p.name || '').toLowerCase();
@@ -1964,7 +1966,14 @@
         gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
       });
 
-      const labels = ['Cítrico', 'Amaderado', 'Especiado', 'Dulce', 'Marino', 'Cuero'];
+      const labels = isPerfume 
+        ? ['Cítrico', 'Amaderado', 'Especiado', 'Dulce', 'Marino', 'Cuero']
+        : ['Rendimiento', 'Durabilidad', 'Eficiencia', 'Calidad', 'Demanda', 'Garantía'];
+
+      $('#qx_crucible_radar_card .qx-crucible-card-header > span:first-child').text(
+        isPerfume ? '📊 Radar Olfativo Superpuesto' : '📊 Radar de Rendimiento & Especificaciones'
+      );
+
       for (let i = 0; i < totalAxes; i++) {
         const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
         const x = Math.cos(angle) * radius;
@@ -1994,12 +2003,14 @@
     renderFusionState() {
       const pA = this.prodA;
       const pB = this.prodB;
+      const catA = (pA.category || '').toUpperCase();
+      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
 
       const totalRaw = pA.priceWithTax + pB.priceWithTax;
       const discount = totalRaw * 0.15;
       const bundlePrice = totalRaw - discount;
 
-      $('#qx_fusion_title').text(`Dúo Maestro: ${pA.name} + ${pB.name}`);
+      $('#qx_fusion_title').text(isPerfume ? `Dúo Maestro: ${pA.name} + ${pB.name}` : `Dúo Estratégico: ${pA.name} + ${pB.name}`);
       $('#qx_fusion_old_price').text(`$ ${this.storefront.formatMoney(totalRaw)}`);
       $('#qx_fusion_new_price').text(`$ ${this.storefront.formatMoney(bundlePrice)} MXN`);
 
@@ -2034,8 +2045,10 @@
       const pA = this.prodA;
       const pB = this.prodB;
       const self = this;
+      const catA = (pA.category || '').toUpperCase();
+      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
 
-      const rows = [
+      const rows = isPerfume ? [
         { label: 'Categoría', a: pA.category || 'General', b: pB.category || 'General' },
         { label: 'Precio Lista (IVA Incluido)', a: `$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`, b: `$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`, winner: pA.priceWithTax < pB.priceWithTax ? 'a' : 'b' },
         { label: 'Longevidad Estimada', a: '12 - 14 Horas', b: '8 - 10 Horas', winner: 'a' },
@@ -2043,7 +2056,15 @@
         { label: 'Ocasión Ideal', a: 'Gala / Noche / Clima Frío', b: 'Diario / Oficina / Calor', winner: 'both' },
         { label: 'Garantía Blind-Buy Shield', a: '100% Bonificable', b: '100% Bonificable', winner: 'both' },
         { label: 'Facturación CFDI 4.0', a: 'Disponible al Instante', b: 'Disponible al Instante', winner: 'both' },
-        { label: 'Código SAT', a: pA.satCode || '53131600', b: pB.satCode || '53131600' }
+        { label: 'Código SAT', a: pA.satKey || pA.satCode || 'General', b: pB.satKey || pB.satCode || 'General' }
+      ] : [
+        { label: 'Categoría', a: pA.category || 'General', b: pB.category || 'General' },
+        { label: 'Precio Lista (IVA Incluido)', a: `$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`, b: `$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`, winner: pA.priceWithTax < pB.priceWithTax ? 'a' : 'b' },
+        { label: 'Disponibilidad / Entrega', a: 'En Stock / Envío Inmediato', b: 'En Stock / Envío Inmediato', winner: 'both' },
+        { label: 'Calidad & Robustez', a: 'Grado Profesional / Certificado', b: 'Grado Profesional / Certificado', winner: 'both' },
+        { label: 'Garantía de Satisfacción', a: 'Garantía Oficial Directa', b: 'Garantía Oficial Directa', winner: 'both' },
+        { label: 'Facturación Fiscal SAT', a: 'CFDI 4.0 Válido al Instante', b: 'CFDI 4.0 Válido al Instante', winner: 'both' },
+        { label: 'Código SAT / Clave', a: pA.satKey || pA.satCode || pA.code || 'General', b: pB.satKey || pB.satCode || pB.code || 'General' }
       ];
 
       let html = `
@@ -2127,7 +2148,11 @@ ${shareUrl}`;
         self.storefront.addToCart(self.prodB, 1);
         self.storefront.showToast('✨ ¡Paquete Dúo agregado al carrito con 15% OFF!');
         self.closeCrucible();
-        self.storefront.openCartDrawer();
+        if (self.storefront.openCart) {
+          self.storefront.openCart();
+        } else if (self.storefront.openCartDrawer) {
+          self.storefront.openCartDrawer();
+        }
       });
 
       $('#qx_crucible_btn_share').on('click', () => {
@@ -2135,10 +2160,11 @@ ${shareUrl}`;
       });
 
       $('#qx_pmodal_btn_compare').on('click', () => {
-        if (self.storefront.currentModalProduct) {
-          self.toggleProduct(self.storefront.currentModalProduct);
+        const prod = self.storefront.activeProductModal || self.storefront.currentModalProduct;
+        if (prod) {
+          self.toggleProduct(prod);
           self.storefront.closeProductModal();
-          self.openCrucible(self.storefront.currentModalProduct.id);
+          self.openCrucible(prod.id);
         }
       });
 
@@ -3280,6 +3306,7 @@ ${shareUrl}`;
       }
       $('#qx_lightbox_overlay').removeClass('active');
       this.activeProductModal = null;
+      this.currentModalProduct = null;
       this.activeStory = null;
 
       if (syncHistory && this.activeHistoryModal) {
@@ -3293,6 +3320,7 @@ ${shareUrl}`;
     openProductModal(product) {
       if (!product) return;
       this.activeProductModal = product;
+      this.currentModalProduct = product;
       this.pmodalQty = 1;
 
       // Scroll modal container to top
