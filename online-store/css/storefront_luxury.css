@@ -265,13 +265,26 @@ body[data-atmosphere="light"] .qx-search-icon {
   color: #64748b !important;
 }
 
+/* Stories Ring & Avatar Labels (High Contrast Light Mode) */
+body[data-atmosphere="minimalist"] .qx-story-avatar-label,
+body[data-atmosphere="light"] .qx-story-avatar-label {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+}
+body[data-atmosphere="minimalist"] .qx-story-ring,
+body[data-atmosphere="light"] .qx-story-ring {
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+}
+
 /* Hero Showcase */
 body[data-atmosphere="minimalist"] .qx-hero,
 body[data-atmosphere="light"] .qx-hero,
 body[data-atmosphere="minimalist"] .qx-hero-banner,
 body[data-atmosphere="light"] .qx-hero-banner {
   background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.06) 0%, rgba(248, 250, 252, 0.95) 70%) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
 }
 body[data-atmosphere="minimalist"] .qx-hero-title,
 body[data-atmosphere="light"] .qx-hero-title,
@@ -285,7 +298,7 @@ body[data-atmosphere="minimalist"] .qx-hero-subtitle,
 body[data-atmosphere="light"] .qx-hero-subtitle,
 body[data-atmosphere="minimalist"] .qx-hero p,
 body[data-atmosphere="light"] .qx-hero p {
-  color: #475569 !important;
+  color: #1e293b !important;
   font-weight: 600 !important;
 }
 
@@ -301,7 +314,7 @@ body[data-atmosphere="light"] .qx-featured-card,
 body[data-atmosphere="minimalist"] .qx-featured-box,
 body[data-atmosphere="light"] .qx-featured-box {
   background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
 }
@@ -315,10 +328,25 @@ body[data-atmosphere="minimalist"] .qx-3d-card.prev,
 body[data-atmosphere="minimalist"] .qx-3d-card.next,
 body[data-atmosphere="light"] .qx-3d-card.prev,
 body[data-atmosphere="light"] .qx-3d-card.next {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  filter: brightness(0.98) !important;
-  opacity: 0.8 !important;
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+  filter: none !important;
+  opacity: 0.92 !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-card.prev .qx-3d-title,
+body[data-atmosphere="minimalist"] .qx-3d-card.next .qx-3d-title,
+body[data-atmosphere="light"] .qx-3d-card.prev .qx-3d-title,
+body[data-atmosphere="light"] .qx-3d-card.next .qx-3d-title {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+body[data-atmosphere="minimalist"] .qx-3d-card.prev .qx-3d-price,
+body[data-atmosphere="minimalist"] .qx-3d-card.next .qx-3d-price,
+body[data-atmosphere="light"] .qx-3d-card.prev .qx-3d-price,
+body[data-atmosphere="light"] .qx-3d-card.next .qx-3d-price {
+  color: #0f172a !important;
+  font-weight: 800 !important;
 }
 body[data-atmosphere="minimalist"] .qx-3d-img-container,
 body[data-atmosphere="light"] .qx-3d-img-container {
@@ -327,8 +355,9 @@ body[data-atmosphere="light"] .qx-3d-img-container {
 body[data-atmosphere="minimalist"] .qx-3d-badge,
 body[data-atmosphere="light"] .qx-3d-badge {
   background: #eff6ff !important;
-  color: #2563eb !important;
-  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
+  font-weight: 800 !important;
 }
 body[data-atmosphere="minimalist"] .qx-3d-title,
 body[data-atmosphere="light"] .qx-3d-title,
@@ -337,23 +366,103 @@ body[data-atmosphere="light"] .qx-carousel-card h3,
 body[data-atmosphere="minimalist"] .qx-featured-card h3,
 body[data-atmosphere="light"] .qx-featured-card h3 {
   color: #0f172a !important;
+  font-weight: 800 !important;
 }
 body[data-atmosphere="minimalist"] .qx-3d-price,
 body[data-atmosphere="light"] .qx-3d-price {
   color: #0f172a !important;
+  font-weight: 800 !important;
 }
 body[data-atmosphere="minimalist"] .qx-3d-nav-arrow,
 body[data-atmosphere="light"] .qx-3d-nav-arrow {
   background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
 }
 body[data-atmosphere="minimalist"] .qx-3d-nav-arrow:hover,
 body[data-atmosphere="light"] .qx-3d-nav-arrow:hover {
-  background: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+  background: #eff6ff !important;
+  border-color: #2563eb !important;
   color: #2563eb !important;
+}
+
+/* Tilt Hint */
+body[data-atmosphere="minimalist"] .qx-tilt-hint,
+body[data-atmosphere="light"] .qx-tilt-hint {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1) !important;
+}
+
+/* Mobile Dock (Light Glass) */
+body[data-atmosphere="minimalist"] .qx-mobile-dock,
+body[data-atmosphere="light"] .qx-mobile-dock {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item,
+body[data-atmosphere="light"] .qx-dock-item {
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item.active,
+body[data-atmosphere="light"] .qx-dock-item.active {
+  color: #2563eb !important;
+  font-weight: 800 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item.highlight,
+body[data-atmosphere="light"] .qx-dock-item.highlight {
+  color: #92400e !important;
+  font-weight: 800 !important;
+}
+
+/* Concierge Floating Pill (High Contrast Light Mode) */
+body[data-atmosphere="minimalist"] .qx-concierge-float-pill,
+body[data-atmosphere="light"] .qx-concierge-float-pill {
+  background: #ffffff !important;
+  border: 1.5px solid #2563eb !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 0 15px rgba(37, 99, 235, 0.18) !important;
+}
+body[data-atmosphere="minimalist"] .qx-concierge-float-pill:hover,
+body[data-atmosphere="light"] .qx-concierge-float-pill:hover {
+  background: #eff6ff !important;
+  border-color: #1d4ed8 !important;
+  color: #1d4ed8 !important;
+}
+
+/* Specs & Notes High Contrast */
+body[data-atmosphere="minimalist"] .qx-pyramid-tier-notes,
+body[data-atmosphere="light"] .qx-pyramid-tier-notes,
+body[data-atmosphere="minimalist"] .qx-verdict-text,
+body[data-atmosphere="light"] .qx-verdict-text {
+  color: #1e293b !important;
+}
+body[data-atmosphere="minimalist"] .qx-cnote-pill,
+body[data-atmosphere="light"] .qx-cnote-pill {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+body[data-atmosphere="minimalist"] .qx-spec-card,
+body[data-atmosphere="light"] .qx-spec-card {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body[data-atmosphere="minimalist"] .qx-spec-value,
+body[data-atmosphere="light"] .qx-spec-value {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+body[data-atmosphere="minimalist"] .qx-spec-key,
+body[data-atmosphere="light"] .qx-spec-key {
+  color: #475569 !important;
+  font-weight: 700 !important;
 }
 
 /* Category Filter Pills */
@@ -1415,13 +1524,25 @@ body[data-atmosphere="light"] .qx-bottom-dock {
 }
 body[data-atmosphere="minimalist"] .qx-dock-item,
 body[data-atmosphere="light"] .qx-dock-item {
-  color: #475569 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
 }
 body[data-atmosphere="minimalist"] .qx-dock-item:hover,
 body[data-atmosphere="minimalist"] .qx-dock-item.active,
 body[data-atmosphere="light"] .qx-dock-item:hover,
 body[data-atmosphere="light"] .qx-dock-item.active {
   color: #2563eb !important;
+  font-weight: 800 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-item.highlight,
+body[data-atmosphere="light"] .qx-dock-item.highlight {
+  color: #92400e !important;
+  font-weight: 800 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-label,
+body[data-atmosphere="light"] .qx-dock-label {
+  color: inherit !important;
+  font-weight: 700 !important;
 }
 
 * {
