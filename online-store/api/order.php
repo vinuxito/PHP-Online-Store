@@ -133,10 +133,41 @@ try {
     error_log('[Storefront Order Warning] ' . $e->getMessage());
 }
 
+$qfsResult = null;
+try {
+    require_once '/lamp/www/cfdadmin/lib/nota_qfs.php';
+    $qfsConceptos = [];
+    foreach ($items as $it) {
+        $qfsConceptos[] = [
+            'sku'            => $it['sku'] ?? 'QFS-PROD',
+            'productoID'     => $it['id'] ?? '',
+            'descripcion'    => $it['title'] ?? 'Producto QuantiX Storefront',
+            'cantidad'       => $it['qty'] ?? 1,
+            'precioUnitario' => $it['unitPrice'] ?? 0,
+            'descuento'      => 0,
+            'claveProdServ'  => '53131600',
+            'claveUnidad'    => 'H87'
+        ];
+    }
+    $qfsResult = NotaQFSManager::emitirNotaQFS($tenant->emisorId, [
+        'clienteNombre'    => $customerName,
+        'clienteEmail'     => $customerEmail,
+        'clienteTelefono'  => $customerPhone,
+        'rfc'              => $rfc,
+        'conceptos'        => $qfsConceptos,
+        'formaDePago'      => $paymentMethod === 'SPEI' ? '03' : '04',
+        'origen'           => 'QUANTIXFRONTSTORE',
+        'origenReferencia' => $orderFolio
+    ]);
+} catch (Exception $e) {
+    error_log('[QFS Note Warning] ' . $e->getMessage());
+}
+
 $logLine = sprintf(
-    "[%s] ORDER_CREATED Folio=%s EmisorID=%s Customer='%s' Email='%s' Total=%.2f Items=%d CFDI=%s\n",
+    "[%s] ORDER_CREATED Folio=%s QFS=%s EmisorID=%s Customer='%s' Email='%s' Total=%.2f Items=%d CFDI=%s\n",
     date('Y-m-d H:i:s'),
     $orderFolio,
+    $qfsResult['folioCompleto'] ?? 'NONE',
     $tenant->emisorId,
     $customerName,
     $customerEmail,
@@ -149,6 +180,9 @@ $logLine = sprintf(
 echo json_encode([
     'Status'        => 'OK',
     'OrderFolio'    => $orderFolio,
+    'folioQFS'      => $qfsResult['folioCompleto'] ?? null,
+    'receiptUrl'    => !empty($qfsResult['receiptUrl']) ? '/cfdadmin/' . $qfsResult['receiptUrl'] : null,
+    'facturarUrl'   => !empty($qfsResult['facturarUrl']) ? '/cfdadmin/' . $qfsResult['facturarUrl'] : null,
     'CustomerName'  => $customerName,
     'CustomerEmail' => $customerEmail,
     'Total'         => round($grandTotal, 2),

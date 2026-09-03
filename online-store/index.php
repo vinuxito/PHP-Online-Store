@@ -820,40 +820,97 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </div>
   </div>
 
-  <!-- Modal Comparador de Radares 1-vs-1 (Feature 3) -->
+  <!-- Modal Comparador de Radares & Ficha Técnica 1-vs-1 (Tier-0 Shootout Arena) -->
   <div class="qx-radar-compare-backdrop" id="qx_radar_compare_backdrop"></div>
   <div class="qx-radar-compare-modal" id="qx_radar_compare_modal" role="dialog" aria-modal="true" aria-labelledby="qx_compare_title">
     <div class="qx-compare-modal-header">
       <div class="qx-compare-modal-title" id="qx_compare_title">
-        <span>⚔️ Comparador de Estela & Rendimiento Olfativo</span>
+        <span>⚔️ QuantiX Sensory Arena · Comparador Maestro</span>
       </div>
-      <button type="button" class="qx-btn-compare-close" id="qx_compare_close">✕</button>
+      <div class="qx-compare-header-actions">
+        <!-- Switch Mágico: Todas vs Sólo Diferencias -->
+        <div class="qx-segmented-compare">
+          <button type="button" class="qx-seg-btn active" id="qx_btn_store_all_specs">Todas las Specs</button>
+          <button type="button" class="qx-seg-btn" id="qx_btn_store_diffs_specs">Sólo Diferencias</button>
+        </div>
+        <a id="qx_btn_open_full_arena" href="/cfdadmin/comparador_arena.php" target="_blank" class="qx-btn-fullscreen-arena" title="Abrir en Pantalla Completa">
+          <span>↗ Pantalla Completa</span>
+        </a>
+        <button type="button" class="qx-btn-compare-close" id="qx_compare_close">✕</button>
+      </div>
     </div>
+    
     <div class="qx-compare-modal-body">
-      <div class="qx-compare-selectors-row">
-        <div class="qx-compare-pill base">
-          <span class="dot base"></span>
-          <span id="qx_compare_base_name">Perfume A</span>
+      <!-- 1. Pedestales Cara a Cara (Item X vs Item Y: Fotos, Precios y Nombres) -->
+      <div class="qx-shootout-pedestals">
+        <!-- Contendiente A -->
+        <div class="qx-shootout-card base" id="qx_shootout_card_base">
+          <div class="qx-shootout-badge">CONTENDIENTE A</div>
+          <div class="qx-shootout-img-box">
+            <img id="qx_shootout_img_base" src="" alt="Base">
+          </div>
+          <h4 class="qx-shootout-name" id="qx_compare_base_name">Perfume A</h4>
+          <div class="qx-shootout-price" id="qx_shootout_price_base">$0.00 MXN</div>
+          <div class="qx-shootout-ctas">
+            <button type="button" class="qx-btn-buy-contender" id="qx_btn_buy_base">⚡ Comprar</button>
+          </div>
         </div>
-        <span class="qx-compare-vs">VS</span>
-        <div class="qx-compare-select-wrapper">
-          <select id="qx_compare_rival_select" class="qx-compare-select">
-            <!-- Populated dynamically -->
-          </select>
+
+        <!-- Divisor VS & Selector de Rival -->
+        <div class="qx-shootout-vs-divider">
+          <div class="qx-vs-circle">VS</div>
+          <div class="qx-select-rival-box">
+            <label for="qx_compare_rival_select">Cambiar Contendiente B:</label>
+            <select id="qx_compare_rival_select" class="qx-compare-select">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Contendiente B -->
+        <div class="qx-shootout-card rival" id="qx_shootout_card_rival">
+          <div class="qx-shootout-badge">CONTENDIENTE B</div>
+          <div class="qx-shootout-img-box">
+            <img id="qx_shootout_img_rival" src="" alt="Rival">
+          </div>
+          <h4 class="qx-shootout-name" id="qx_compare_rival_name">Perfume B</h4>
+          <div class="qx-shootout-price" id="qx_shootout_price_rival">$0.00 MXN</div>
+          <div class="qx-shootout-ctas">
+            <button type="button" class="qx-btn-buy-contender" id="qx_btn_buy_rival">⚡ Comprar</button>
+          </div>
         </div>
       </div>
 
-      <div class="qx-compare-stage" id="qx_compare_stage">
-        <svg id="qx_compare_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+      <!-- 2. Curva de Evaporación 24h & Radar Comparativo -->
+      <div class="qx-shootout-sensory-bar">
+        <div class="qx-shootout-time-box">
+          <div class="qx-time-header">
+            <span>⏳ Curva de Evaporación: <strong id="qx_store_time_val">0h (Salida)</strong></span>
+          </div>
+          <input type="range" min="0" max="14" value="0" step="1" id="qx_store_time_slider" class="qx-time-slider">
+          <div class="qx-time-desc" id="qx_store_time_desc">
+            <strong>Fase 1: Salida Explosiva</strong> — Menta, Limón y Bergamota a máxima proyección (2.8m).
+          </div>
+        </div>
+        <div class="qx-compare-stage" id="qx_compare_stage">
+          <svg id="qx_compare_radar_svg" class="qx-radar-svg" viewBox="-160 -150 320 300"></svg>
+        </div>
       </div>
 
-      <div class="qx-compare-delta-matrix" id="qx_compare_delta_matrix">
-        <!-- Dynamic Head-to-Head differences -->
+      <!-- 3. Tabla de Especificaciones GSMArena Style (Shootout Specs) -->
+      <div class="qx-shootout-specs-table" id="qx_shootout_specs_table">
+        <!-- Rendered dynamically by storefront_app.js -->
       </div>
 
+      <!-- 4. Duo Pack Footer -->
       <div class="qx-compare-actions">
+        <div class="qx-duo-summary">
+          <span class="qx-duo-lbl">🎁 Duo Pack Synergy (15% OFF):</span>
+          <span class="qx-duo-old-price" id="qx_duo_old_price">$0.00</span>
+          <span class="qx-duo-new-price" id="qx_duo_new_price">$0.00 MXN</span>
+        </div>
         <button type="button" class="qx-btn-buy-duo-compare" id="btn_buy_duo_from_compare">
-          <span>🎁 Comprar Ambos en Duo Pack (15% OFF)</span>
+          <span>⚡ Comprar Ambos en Duo Pack (15% OFF)</span>
         </button>
       </div>
     </div>

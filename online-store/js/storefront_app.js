@@ -3626,9 +3626,12 @@ ${shareUrl}`;
               <div><strong>Cliente:</strong> ${this.esc(orderResp.CustomerName || '')}</div>
               <div><strong>Total:</strong> $ ${this.formatMoney(orderResp.Total || 0)} MXN</div>
               <div><strong>Método:</strong> ${this.esc(orderResp.PaymentMethod || '')}</div>
+              ${orderResp.folioQFS ? `<div style="margin-top:6px;"><strong>Nota de Venta:</strong> <span style="color:#d4af37; font-weight:800;">${this.esc(orderResp.folioQFS)}</span> <span style="font-size:11px; color:#10b981;">(● 0 timbres)</span></div>` : ''}
               ${orderResp.CfdiStatus ? `<div style="margin-top:8px; color:var(--qx-emerald)">✔ Factura Fiscal CFDI 4.0 timbrada con éxito</div>` : ''}
             </div>
-            <button type="button" class="qx-btn-checkout" id="qx_btn_finish_success">Entendido, Volver a la Tienda</button>
+            ${orderResp.receiptUrl ? `<a href="${orderResp.receiptUrl}" target="_blank" class="qx-btn-checkout" style="background:#2563eb; color:#fff; text-decoration:none; display:block; margin-bottom:10px; padding:10px; font-weight:700;">📥 Descargar Recibo Digital</a>` : ''}
+            ${orderResp.facturarUrl ? `<a href="${orderResp.facturarUrl}" target="_blank" class="qx-btn-checkout" style="background:linear-gradient(135deg, #d4af37, #b3860b); color:#0b1329; text-decoration:none; display:block; margin-bottom:10px; font-weight:800; padding:10px;">⚡ Facturar esta Nota (CFDI 4.0)</a>` : ''}
+            <button type="button" class="qx-btn-checkout" id="qx_btn_finish_success" style="background:rgba(255,255,255,0.1); border:1px solid var(--qx-border); color:#cbd5e1;">Entendido, Volver a la Tienda</button>
           </div>
         </div>
       `);
@@ -4173,14 +4176,53 @@ ${shareUrl}`;
       if (!base) return;
       this.compareBaseProduct = base;
 
+      const getProdImg = (p) => p.cover || (p.photos && p.photos[0] && (p.photos[0].url || p.photos[0].thumb)) || 'images/flacon_default.png';
+      const getProdPrice = (p) => parseFloat(p.priceWithTax || p.unitPrice || p.price || 0);
+
+      // Base card info
       $('#qx_compare_base_name').text(base.name);
+      $('#qx_shootout_img_base').attr('src', getProdImg(base));
+      $('#qx_shootout_price_base').text(`$ ${getProdPrice(base).toFixed(2)} MXN`);
+      $('#qx_btn_buy_base').off('click').on('click', () => {
+        this.addToCart(base.id, 1);
+        this.showToast(`✓ [${base.name}] agregado al carrito`);
+      });
 
       // Populate rival select with all other products
       const select = $('#qx_compare_rival_select').empty();
       const rivals = this.products.filter(p => p.id !== base.id);
       
       rivals.forEach((p, idx) => {
-        select.append(`<option value="${p.id}" ${idx === 0 ? 'selected' : ''}>${this.esc(p.name)}</option>`);
+        select.append(`<option value="${p.id}" ${idx === 0 ? 'selected' : ''}>${this.esc(p.name)} - $${getProdPrice(p).toFixed(2)} MXN</option>`);
+      });
+
+      // Bind Segmented Switch (Todas vs Diferencias)
+      $('#qx_btn_store_all_specs').off('click').on('click', function() {
+        $('#qx_radar_compare_modal').removeClass('only-diffs-active');
+        $('#qx_btn_store_all_specs').addClass('active');
+        $('#qx_btn_store_diffs_specs').removeClass('active');
+      });
+
+      $('#qx_btn_store_diffs_specs').off('click').on('click', function() {
+        $('#qx_radar_compare_modal').addClass('only-diffs-active');
+        $('#qx_btn_store_diffs_specs').addClass('active');
+        $('#qx_btn_store_all_specs').removeClass('active');
+      });
+
+      // Bind Time Machine Slider
+      $('#qx_store_time_slider').off('input').on('input', function() {
+        const h = parseInt($(this).val(), 10);
+        $('#qx_store_time_val').text(`${h}h (${h <= 1 ? 'Salida' : (h <= 4 ? 'Corazón' : (h <= 8 ? 'Secado' : 'Fijación'))})`);
+        const desc = $('#qx_store_time_desc');
+        if (h <= 1) {
+          desc.html('<strong>Fase 1: Salida Explosiva</strong> — Menta, Limón y Bergamota a máxima proyección (2.8m).');
+        } else if (h <= 4) {
+          desc.html('<strong>Fase 2: Corazón Envolvente</strong> — Salvia esclarea, lavanda y maderas nobles en plenitud (2.0m).');
+        } else if (h <= 8) {
+          desc.html('<strong>Fase 3: Secado Profundo</strong> — Fusión con el pH de la piel; ámbar gris, almizcle y vainilla (1.2m).');
+        } else {
+          desc.html('<strong>Fase 4: Rescoldo Beast Mode</strong> — Fijación íntima residual en piel y ropa (>12 horas).');
+        }
       });
 
       const initialRivalId = rivals.length ? rivals[0].id : null;
@@ -4196,56 +4238,173 @@ ${shareUrl}`;
       const rival = this.products.find(p => p.id === rivalId);
       if (!rival || !this.compareBaseProduct) return;
       this.compareRivalProduct = rival;
+      const base = this.compareBaseProduct;
 
-      const baseRadar = this.compareBaseProduct.radar || { proyeccion: 8, longevidad: 8.5, elogios: 94, versatilidad: 90, dulzorFrescura: -70, tempMin: 18, tempMax: 38 };
+      const getProdImg = (p) => p.cover || (p.photos && p.photos[0] && (p.photos[0].url || p.photos[0].thumb)) || 'images/flacon_default.png';
+      const getProdPrice = (p) => parseFloat(p.priceWithTax || p.unitPrice || p.price || 0);
+
+      // Update Rival Card
+      $('#qx_compare_rival_name').text(rival.name);
+      $('#qx_shootout_img_rival').attr('src', getProdImg(rival));
+      $('#qx_shootout_price_rival').text(`$ ${getProdPrice(rival).toFixed(2)} MXN`);
+      $('#qx_btn_buy_rival').off('click').on('click', () => {
+        this.addToCart(rival.id, 1);
+        this.showToast(`✓ [${rival.name}] agregado al carrito`);
+      });
+
+      // Update Fullscreen link
+      $('#qx_btn_open_full_arena').attr('href', `/cfdadmin/comparador_arena.php?items=${encodeURIComponent((base.sku || base.id) + ',' + (rival.sku || rival.id))}`);
+
+      // Update Duo Pack
+      const p1 = getProdPrice(base);
+      const p2 = getProdPrice(rival);
+      const subtotal = p1 + p2;
+      const duoTotal = (subtotal * 0.85);
+      $('#qx_duo_old_price').text(`$ ${subtotal.toFixed(2)} MXN`);
+      $('#qx_duo_new_price').text(`$ ${duoTotal.toFixed(2)} MXN (15% OFF)`);
+
+      $('#btn_buy_duo_from_compare').off('click').on('click', () => {
+        this.addToCart(base.id, 1);
+        this.addToCart(rival.id, 1);
+        this.showToast(`🎁 Duo Pack agregado al carrito con 15% de descuento directo`);
+        this.closeRadarCompareModal();
+        this.openCart();
+      });
+
+      const baseRadar = base.radar || { proyeccion: 8, longevidad: 8.5, elogios: 94, versatilidad: 90, dulzorFrescura: -70, tempMin: 18, tempMax: 38 };
       const rivalRadar = rival.radar || { proyeccion: 9, longevidad: 11.5, elogios: 96, versatilidad: 70, dulzorFrescura: 80, tempMin: 10, tempMax: 23 };
 
       // Render dual radar SVG
-      const svgMarkup = this.radarEngine.generateSvgMarkup(baseRadar, rivalRadar, this.compareBaseProduct.auraColor || 'cyan');
+      const svgMarkup = this.radarEngine.generateSvgMarkup(baseRadar, rivalRadar, base.auraColor || 'cyan');
       $('#qx_compare_radar_svg').html(svgMarkup);
 
-      // Populate delta comparison matrix
-      const matrix = $('#qx_compare_delta_matrix').empty();
+      // Helper function for spec values
+      const getSpecs = (p) => {
+        const n = (p.name || '').toUpperCase();
+        if (n.includes('DIVE') || n.includes('9AM')) {
+          return {
+            salida: 'Menta piperita, Limón Amalfi, Manzana verde',
+            corazon: 'Incienso blanco, Cedro atlas, Salvia esclarea',
+            fondo: 'Jengibre dulce, Pachulí terroso, Sándalo',
+            familia: 'Aromática Acuática Azul',
+            concentracion: 'Eau de Parfum (18% concentración)',
+            longevidad: `${baseRadar.longevidad || 8.0} hrs (Larga Duración)`,
+            proyeccion: `${baseRadar.proyeccion || 8.5} / 10 (Radio 2.0m)`,
+            atomizador: 'Vaporizador presurizado Micro-Mist',
+            clima: '18°C a 36°C (Primavera / Verano Cálido)',
+            escenario: 'Día, Oficina, Sport Elegante, Climas Soleados',
+            elogios: `${baseRadar.elogios || 94}% (Atracción Masiva)`,
+            costoMl: `$ ${(parseFloat(p.price || 0) / 100).toFixed(2)} MXN/ml`,
+            inspiracion: 'Vibra Bleu de Chanel + YSL Y EDP'
+          };
+        }
+        if (n.includes('MALEKA')) {
+          return {
+            salida: 'Pimienta rosa, Grosella roja, Lirio silvestre',
+            corazon: 'Rosa de damasco, Azahar, Orquídea nocturna',
+            fondo: 'Vainilla bourbon, Haba tonka, Ámbar gris',
+            familia: 'Floral Ambarina Frutal',
+            concentracion: 'Extrait / EDP Intenso (22% aceites)',
+            longevidad: `${rivalRadar.longevidad || 11.5} hrs (Beast Mode 👑)`,
+            proyeccion: `${rivalRadar.proyeccion || 9.4} / 10 (Radio 2.8m)`,
+            atomizador: 'Vaporizador presurizado de alta dispersión',
+            clima: '12°C a 24°C (Noche / Climas Templados)',
+            escenario: 'Citas privadas, Eventos de gala, Black Tie',
+            elogios: `${rivalRadar.elogios || 96}% (Seducción VIP)`,
+            costoMl: `$ ${(parseFloat(p.price || 0) / 105).toFixed(2)} MXN/ml`,
+            inspiracion: 'Inspiración Delina Exclusif / BR540'
+          };
+        }
+        if (n.includes('ELIXIR') || n.includes('9PM')) {
+          return {
+            salida: 'Manzana canela, Vainilla especiada, Bergamota',
+            corazon: 'Lavanda francesa, Lirio del valle, Azahar',
+            fondo: 'Haba tonka, Ámbar gris, Cedro de Virginia',
+            familia: 'Ámbar Especiada Gourmand',
+            concentracion: 'Extrait de Parfum (24% aceites)',
+            longevidad: `${rivalRadar.longevidad || 10.5} hrs (Beast Mode 👑)`,
+            proyeccion: `${rivalRadar.proyeccion || 9.0} / 10 (Radio 2.5m)`,
+            atomizador: 'Vaporizador presurizado Micro-Mist',
+            clima: '10°C a 22°C (Otoño / Invierno Nocturno)',
+            escenario: 'Fiesta, Conquista nocturna, Noches frías',
+            elogios: `${rivalRadar.elogios || 95}% (Imán de cumplidos)`,
+            costoMl: `$ ${(parseFloat(p.price || 0) / 100).toFixed(2)} MXN/ml`,
+            inspiracion: 'Inspiración Jean Paul Gaultier Ultra Male'
+          };
+        }
+        return {
+          salida: p.salida || 'Cítricos chispeantes, Pimienta blanca, Lavanda',
+          corazon: p.corazon || 'Geranio bourbon, Maderas nobles, Iris',
+          fondo: p.fondo || 'Almizcle blanco, Pachulí, Ámbar gris',
+          familia: p.category || 'Amaderada Aromática',
+          concentracion: 'Eau de Parfum (18% concentración)',
+          longevidad: `${baseRadar.longevidad || 8.0} hrs (Larga duración)`,
+          proyeccion: `${baseRadar.proyeccion || 8.0} / 10 (Estela media)`,
+          atomizador: 'Vaporizador presurizado estándar',
+          clima: '16°C a 30°C (Todo el año / 4 Estaciones)',
+          escenario: 'Versátil día y noche, Firma personal',
+          elogios: `${baseRadar.elogios || 90}% (Excelente recepción)`,
+          costoMl: `$ ${(parseFloat(p.price || 0) / 100).toFixed(2)} MXN/ml`,
+          inspiracion: 'Composición original de autor'
+        };
+      };
 
-      // Proyección
-      const projDiff = (rivalRadar.proyeccion || 7) - (baseRadar.proyeccion || 7);
-      let projText = projDiff === 0 ? 'Misma proyección' : (projDiff > 0 ? `+${projDiff} pts superior en ${rival.name}` : `+${Math.abs(projDiff)} pts superior en ${this.compareBaseProduct.name}`);
-      matrix.append(`
-        <div class="qx-delta-row">
-          <span class="qx-delta-metric-title">🚀 Proyección / Estela</span>
-          <span class="qx-delta-comparison ${projDiff > 0 ? 'qx-delta-win-rival' : (projDiff < 0 ? 'qx-delta-win-base' : '')}">${projText}</span>
-        </div>
-      `);
+      const sA = getSpecs(base);
+      const sB = getSpecs(rival);
 
-      // Longevidad
-      const longDiff = ((rivalRadar.longevidad || 8.0) - (baseRadar.longevidad || 8.0)).toFixed(1);
-      let longText = Math.abs(parseFloat(longDiff)) < 0.1 ? 'Misma fijación' : (parseFloat(longDiff) > 0 ? `+${longDiff}h más fijación en ${rival.name}` : `+${Math.abs(parseFloat(longDiff))}h más fijación en ${this.compareBaseProduct.name}`);
-      matrix.append(`
-        <div class="qx-delta-row">
-          <span class="qx-delta-metric-title">⏳ Longevidad en Piel</span>
-          <span class="qx-delta-comparison ${parseFloat(longDiff) > 0 ? 'qx-delta-win-rival' : (parseFloat(longDiff) < 0 ? 'qx-delta-win-base' : '')}">${longText}</span>
-        </div>
-      `);
+      const specGroups = [
+        {
+          title: '🌸 1. Arquitectura Olfativa & Notas',
+          fields: [
+            { lbl: '🍋 Notas de Salida', valA: sA.salida, valB: sB.salida },
+            { lbl: '🌿 Notas de Corazón', valA: sA.corazon, valB: sB.corazon },
+            { lbl: '🪵 Notas de Fondo', valA: sA.fondo, valB: sB.fondo },
+            { lbl: '👑 Familia Olfativa', valA: sA.familia, valB: sB.familia, highlight: true }
+          ]
+        },
+        {
+          title: '🧪 2. Rendimiento Técnico en Piel (Lab Specs)',
+          fields: [
+            { lbl: '⚗️ Concentración Real', valA: sA.concentracion, valB: sB.concentracion, highlight: true },
+            { lbl: '⏳ Longevidad en Piel', valA: sA.longevidad, valB: sB.longevidad, highlight: true },
+            { lbl: '🚀 Radio de Proyección', valA: sA.proyeccion, valB: sB.proyeccion, highlight: true },
+            { lbl: '💨 Tipo de Atomizador', valA: sA.atomizador, valB: sB.atomizador }
+          ]
+        },
+        {
+          title: '☀️ 3. Ocasión, Clima & Versatilidad',
+          fields: [
+            { lbl: '🌡️ Rango Térmico Óptimo', valA: sA.clima, valB: sB.clima },
+            { lbl: '🎩 Escenario Sugerido', valA: sA.escenario, valB: sB.escenario, highlight: true },
+            { lbl: '💎 Factor de Cumplidos', valA: sA.elogios, valB: sB.elogios, highlight: true }
+          ]
+        },
+        {
+          title: '💎 4. Ingeniería del Envase & Valor',
+          fields: [
+            { lbl: '🏷️ Costo por Mililitro', valA: sA.costoMl, valB: sB.costoMl },
+            { lbl: '✨ Inspiración Nicho', valA: sA.inspiracion, valB: sB.inspiracion }
+          ]
+        }
+      ];
 
-      // Elogios
-      const elogDiff = (rivalRadar.elogios || 85) - (baseRadar.elogios || 85);
-      let elogText = elogDiff === 0 ? 'Afinidad idéntica' : (elogDiff > 0 ? `+${elogDiff}% en ${rival.name}` : `+${Math.abs(elogDiff)}% en ${this.compareBaseProduct.name}`);
-      matrix.append(`
-        <div class="qx-delta-row">
-          <span class="qx-delta-metric-title">👑 Factor de Elogios</span>
-          <span class="qx-delta-comparison ${elogDiff > 0 ? 'qx-delta-win-rival' : (elogDiff < 0 ? 'qx-delta-win-base' : '')}">${elogText}</span>
-        </div>
-      `);
+      // Build HTML for Specs Table
+      let tableHtml = '';
+      specGroups.forEach(g => {
+        tableHtml += `<div class="qx-spec-group-title">${g.title}</div>`;
+        g.fields.forEach(f => {
+          const isDiff = (f.valA !== f.valB);
+          tableHtml += `
+            <div class="qx-spec-row ${isDiff ? 'is-different' : 'is-identical'}">
+              <div class="qx-spec-lbl">${f.lbl}</div>
+              <div class="qx-spec-val ${f.highlight ? 'highlight' : ''}">${f.valA}</div>
+              <div class="qx-spec-val ${f.highlight ? 'highlight' : ''}">${f.valB}</div>
+            </div>
+          `;
+        });
+      });
 
-      // Versatilidad
-      const versDiff = (rivalRadar.versatilidad || 75) - (baseRadar.versatilidad || 75);
-      let versText = versDiff === 0 ? 'Misma versatilidad' : (versDiff > 0 ? `+${versDiff}% en ${rival.name}` : `+${Math.abs(versDiff)}% en ${this.compareBaseProduct.name}`);
-      matrix.append(`
-        <div class="qx-delta-row">
-          <span class="qx-delta-metric-title">☀️ Versatilidad</span>
-          <span class="qx-delta-comparison ${versDiff > 0 ? 'qx-delta-win-rival' : (versDiff < 0 ? 'qx-delta-win-base' : '')}">${versText}</span>
-        </div>
-      `);
+      $('#qx_shootout_specs_table').html(tableHtml);
     }
 
     closeRadarCompareModal() {
