@@ -58,6 +58,9 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
 </html>
 <?php exit; endif; ?>
 
+  <!-- Atmospheric Volumetric Caustics & Motes Layer -->
+  <div class="qx-atmospheric-caustics" id="qx_atmospheric_caustics"></div>
+
   <!-- Navigation Bar -->
   <header class="qx-navbar">
     <div class="qx-nav-container">
@@ -1755,10 +1758,15 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
     // Quantix Glass Twin Live Simulator Synchronization Listener
+    let persistentAtmosphere = null;
+
     window.addEventListener('message', function(e) {
       if (e.data && e.data.source === 'QUANTIX_APEX_COMMAND_TOWER') {
         const type = e.data.type;
         const payload = e.data.payload;
+        if (!persistentAtmosphere) {
+          persistentAtmosphere = $('body').attr('data-atmosphere') || 'obsidian';
+        }
         if (type === 'SYNC_FEATURE_MATRIX') {
           if (payload.royal_agenda) {
             $('#qx_btn_nav_agenda, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
@@ -1787,8 +1795,10 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
             $('.qx-hero-subtitle, .qx-hero-banner p').text(payload.subheadline);
           }
         }
+
         if (type === 'SYNC_ATMOSPHERE') {
           const atmo = typeof payload === 'object' ? payload.atmosphere : payload;
+          persistentAtmosphere = atmo;
           $('body').attr('data-atmosphere', atmo);
           if (atmo === 'gold') {
             document.documentElement.style.setProperty('--qx-accent', '#fbbf24');
@@ -1805,6 +1815,13 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           } else {
             document.documentElement.style.setProperty('--qx-accent', '#38bdf8');
           }
+        }
+        if (type === 'PEEK_ATMOSPHERE') {
+          const atmo = typeof payload === 'object' ? payload.atmosphere : payload;
+          $('body').attr('data-atmosphere', atmo);
+        }
+        if (type === 'REVERT_ATMOSPHERE_PEEK') {
+          $('body').attr('data-atmosphere', persistentAtmosphere);
         }
         if (type === 'SYNC_PRIMARY_COLOR') {
           if (payload) {
