@@ -29,6 +29,32 @@
 }
 
 /* ==========================================================================
+   Smooth Atmosphere Crossfade & Dynamic Radiance
+   ========================================================================== */
+body {
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.qx-navbar, .qx-card, .qx-hero, .qx-hero-banner, .qx-mobile-dock, .qx-concierge-float-pill, .qx-3d-card, .qx-filter-pill {
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.qx-3d-card.active {
+  border-color: var(--qx-accent, #38bdf8) !important;
+  box-shadow: 0 16px 45px -10px var(--qx-accent, rgba(56, 189, 248, 0.4)), 0 0 30px var(--qx-accent, rgba(56, 189, 248, 0.25)) !important;
+}
+
+.qx-btn-buy, .qx-3d-btn-buy {
+  background: var(--qx-accent-gradient, linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)) !important;
+  box-shadow: 0 4px 16px var(--qx-accent, rgba(37, 99, 235, 0.4)) !important;
+}
+
+.qx-filter-pill.active {
+  background: var(--qx-accent-gradient, linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px var(--qx-accent, rgba(37, 99, 235, 0.35)) !important;
+}
+
+/* ==========================================================================
    VIBE & ATMOSPHERE ECOSYSTEM (Dark / Light / Elegant / Cyberpunk / Versace)
    ========================================================================== */
 
@@ -157,6 +183,52 @@ body[data-atmosphere="crimson"] {
   --qx-shadow-card: 0 12px 35px -10px rgba(0, 0, 0, 0.7);
   --qx-shadow-glow: 0 0 30px rgba(244, 63, 94, 0.28);
   background: radial-gradient(circle at 50% 0%, #2d040f 0%, #140207 60%, #060002 100%) !important;
+}
+
+/* Signature Atmosphere Accents */
+body[data-atmosphere="gold"] .qx-story-ring {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.5) !important;
+}
+body[data-atmosphere="gold"] .qx-concierge-float-pill {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.35) !important;
+}
+
+body[data-atmosphere="cyberpunk"] .qx-story-ring {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.6) !important;
+}
+body[data-atmosphere="cyberpunk"] .qx-concierge-float-pill {
+  border-color: #00f0ff !important;
+  box-shadow: 0 8px 25px rgba(255, 0, 127, 0.4) !important;
+}
+
+body[data-atmosphere="emerald"] .qx-story-ring {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.5) !important;
+}
+body[data-atmosphere="emerald"] .qx-concierge-float-pill {
+  border-color: #10b981 !important;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.35) !important;
+}
+
+body[data-atmosphere="amethyst"] .qx-story-ring {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 16px rgba(192, 132, 252, 0.5) !important;
+}
+body[data-atmosphere="amethyst"] .qx-concierge-float-pill {
+  border-color: #c084fc !important;
+  box-shadow: 0 8px 25px rgba(192, 132, 252, 0.35) !important;
+}
+
+body[data-atmosphere="crimson"] .qx-story-ring {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.5) !important;
+}
+body[data-atmosphere="crimson"] .qx-concierge-float-pill {
+  border-color: #f43f5e !important;
+  box-shadow: 0 8px 25px rgba(244, 63, 94, 0.35) !important;
 }
 
 /* 6. APPLE MINIMALIST / PURE LIGHT STUDIO */
