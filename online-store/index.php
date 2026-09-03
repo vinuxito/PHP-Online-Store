@@ -849,6 +849,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           <div class="qx-shootout-img-box">
             <img id="qx_shootout_img_base" src="" alt="Base" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
+          <button type="button" class="qx-btn-swap-contender" id="qx_btn_change_base" title="Cambiar Contendiente A">🔍 Cambiar Fragancia A</button>
           <h4 class="qx-shootout-name" id="qx_compare_base_name">Perfume A</h4>
           <div class="qx-shootout-price" id="qx_shootout_price_base">$0.00 MXN</div>
           <div class="qx-shootout-ctas">
@@ -856,14 +857,16 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           </div>
         </div>
 
-        <!-- Divisor VS & Selector de Rival -->
+        <!-- Divisor VS & Selector de Rival de Ultra Lujo -->
         <div class="qx-shootout-vs-divider">
           <div class="qx-vs-circle">VS</div>
           <div class="qx-select-rival-box">
-            <label for="qx_compare_rival_select">Cambiar Contendiente B:</label>
-            <select id="qx_compare_rival_select" class="qx-compare-select">
-              <!-- Populated dynamically -->
-            </select>
+            <span class="qx-rival-selector-label">Cambiar Contendiente B:</span>
+            <button type="button" class="qx-btn-rival-picker" id="qx_btn_open_rival_picker" title="Buscar y cambiar contendiente B">
+              <img id="qx_rival_picker_thumb_img" src="images/flacon_default.png" alt="" class="qx-rival-picker-thumb" onerror="this.src='images/flacon_default.png';">
+              <span class="qx-rival-picker-name" id="qx_rival_picker_current_name">Seleccionar Rival...</span>
+              <span class="qx-rival-picker-search-badge">🔍 Buscar</span>
+            </button>
           </div>
         </div>
 
@@ -873,6 +876,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           <div class="qx-shootout-img-box">
             <img id="qx_shootout_img_rival" src="" alt="Rival" onerror="this.onerror=null;this.src='images/flacon_default.png';">
           </div>
+          <button type="button" class="qx-btn-swap-contender" id="qx_btn_change_rival" title="Cambiar Contendiente B">🔍 Cambiar Fragancia B</button>
           <h4 class="qx-shootout-name" id="qx_compare_rival_name">Perfume B</h4>
           <div class="qx-shootout-price" id="qx_shootout_price_rival">$0.00 MXN</div>
           <div class="qx-shootout-ctas">
@@ -913,6 +917,39 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           <span>⚡ Comprar Ambos en Duo Pack (15% OFF)</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- QuantiX Contender Search & Find Modal (Tier-0 Luxury Omnibox) -->
+  <div class="qx-arena-picker-backdrop" id="qx_arena_picker_backdrop"></div>
+  <div class="qx-arena-picker-modal" id="qx_arena_picker_modal" role="dialog" aria-modal="true">
+    <div class="qx-arena-picker-header">
+      <div class="qx-arena-picker-title-wrap">
+        <span class="qx-arena-picker-badge" id="qx_arena_picker_badge">ELEGIR CONTENDIENTE</span>
+        <h3 class="qx-arena-picker-title">Coliseo Olfativo · Explorador de Fragancias</h3>
+        <p class="qx-arena-picker-sub">Busca por nombre, diseñador, acordes o familia olfativa</p>
+      </div>
+      <button type="button" class="qx-arena-picker-close" id="qx_arena_picker_close">✕</button>
+    </div>
+
+    <div class="qx-arena-picker-search-bar">
+      <span class="qx-arena-search-icon">🔍</span>
+      <input type="text" id="qx_arena_picker_input" class="qx-arena-picker-input" placeholder="Escribe para buscar... Ej. Afnan, Armaf, Vainilla, Cítrico..." autocomplete="off">
+      <button type="button" class="qx-arena-picker-clear" id="qx_arena_picker_clear" style="display:none;">✕</button>
+      <span class="qx-arena-picker-counter" id="qx_arena_picker_count">58 opciones</span>
+    </div>
+
+    <div class="qx-arena-picker-chips" id="qx_arena_picker_chips">
+      <button type="button" class="qx-picker-chip active" data-filter="ALL">✦ Todos</button>
+      <button type="button" class="qx-picker-chip" data-filter="AFNAN">Afnan</button>
+      <button type="button" class="qx-picker-chip" data-filter="ARMAF">Armaf</button>
+      <button type="button" class="qx-picker-chip" data-filter="CITRICO">Cítrico / Fresco</button>
+      <button type="button" class="qx-picker-chip" data-filter="AMADERADO">Amaderado</button>
+      <button type="button" class="qx-picker-chip" data-filter="DULCE">Dulce / Vainilla</button>
+    </div>
+
+    <div class="qx-arena-picker-results" id="qx_arena_picker_results">
+      <!-- Inyectado dinámicamente por storefront_app.js -->
     </div>
   </div>
 

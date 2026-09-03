@@ -2353,6 +2353,7 @@ ${shareUrl}`;
           self.closeSpotlight();
           self.closeStory();
           self.closeQuiz();
+          self.closeArenaPicker();
         } else if (isSpotlightActive) {
           const items = $('#qx_spotlight_results .qx-spotlight-item');
           if (items.length === 0) return;
@@ -4188,12 +4189,36 @@ ${shareUrl}`;
         this.showToast(`✓ [${base.name}] agregado al carrito`);
       });
 
-      // Populate rival select with all other products
-      const select = $('#qx_compare_rival_select').empty();
-      const rivals = this.products.filter(p => p.id !== base.id);
-      
-      rivals.forEach((p, idx) => {
-        select.append(`<option value="${p.id}" ${idx === 0 ? 'selected' : ''}>${this.esc(p.name)} - $${getProdPrice(p).toFixed(2)} MXN</option>`);
+      // Bind Search & Find Triggers for Contenders
+      $('#qx_btn_open_rival_picker, #qx_btn_change_rival').off('click').on('click', () => {
+        this.openArenaPicker('rival');
+      });
+
+      $('#qx_btn_change_base').off('click').on('click', () => {
+        this.openArenaPicker('base');
+      });
+
+      $('#qx_arena_picker_close, #qx_arena_picker_backdrop').off('click').on('click', () => {
+        this.closeArenaPicker();
+      });
+
+      $('#qx_arena_picker_input').off('input').on('input', (e) => {
+        const val = $(e.target).val();
+        $('#qx_arena_picker_clear').toggle(val.length > 0);
+        this.renderArenaPickerResults(val, this.arenaActiveFilter || 'ALL');
+      });
+
+      $('#qx_arena_picker_clear').off('click').on('click', () => {
+        $('#qx_arena_picker_input').val('').focus();
+        $('#qx_arena_picker_clear').hide();
+        this.renderArenaPickerResults('', this.arenaActiveFilter || 'ALL');
+      });
+
+      $('#qx_arena_picker_chips .qx-picker-chip').off('click').on('click', (e) => {
+        $('#qx_arena_picker_chips .qx-picker-chip').removeClass('active');
+        const chip = $(e.currentTarget).addClass('active');
+        this.arenaActiveFilter = chip.data('filter') || 'ALL';
+        this.renderArenaPickerResults($('#qx_arena_picker_input').val(), this.arenaActiveFilter);
       });
 
       // Bind Segmented Switch (Todas vs Diferencias)
@@ -4225,6 +4250,7 @@ ${shareUrl}`;
         }
       });
 
+      const rivals = this.products.filter(p => p.id !== base.id);
       const initialRivalId = rivals.length ? rivals[0].id : null;
       if (initialRivalId) {
         this.selectRadarRival(initialRivalId);
@@ -4247,6 +4273,8 @@ ${shareUrl}`;
       $('#qx_compare_rival_name').text(rival.name);
       $('#qx_shootout_img_rival').attr('src', getProdImg(rival));
       $('#qx_shootout_price_rival').text(`$ ${getProdPrice(rival).toFixed(2)} MXN`);
+      $('#qx_rival_picker_current_name').text(rival.name);
+      $('#qx_rival_picker_thumb_img').attr('src', getProdImg(rival));
       $('#qx_btn_buy_rival').off('click').on('click', () => {
         this.addToCart(rival.id, 1);
         this.showToast(`✓ [${rival.name}] agregado al carrito`);
@@ -4410,6 +4438,155 @@ ${shareUrl}`;
     closeRadarCompareModal() {
       $('#qx_radar_compare_backdrop').removeClass('active');
       $('#qx_radar_compare_modal').removeClass('active');
+      this.closeArenaPicker();
+    }
+
+    selectRadarBase(baseId) {
+      const base = this.products.find(p => p.id === baseId);
+      if (!base) return;
+      this.compareBaseProduct = base;
+      const rival = this.compareRivalProduct || this.products.find(p => p.id !== base.id);
+
+      const getProdImg = (p) => p.cover || (p.photos && p.photos[0] && (p.photos[0].url || p.photos[0].thumb)) || 'images/flacon_default.png';
+      const getProdPrice = (p) => parseFloat(p.priceWithTax || p.unitPrice || p.price || 0);
+
+      // Base card info
+      $('#qx_compare_base_name').text(base.name);
+      $('#qx_shootout_img_base').attr('src', getProdImg(base));
+      $('#qx_shootout_price_base').text(`$ ${getProdPrice(base).toFixed(2)} MXN`);
+      $('#qx_btn_buy_base').off('click').on('click', () => {
+        this.addToCart(base.id, 1);
+        this.showToast(`✓ [${base.name}] agregado al carrito`);
+      });
+
+      if (rival) {
+        this.selectRadarRival(rival.id);
+      }
+    }
+
+    openArenaPicker(targetSlot = 'rival') {
+      this.arenaPickerSlot = targetSlot;
+      this.arenaActiveFilter = 'ALL';
+
+      const isBase = (targetSlot === 'base');
+      $('#qx_arena_picker_badge').text(isBase ? 'CAMBIAR CONTENDIENTE A' : 'CAMBIAR CONTENDIENTE B');
+      $('#qx_arena_picker_chips .qx-picker-chip').removeClass('active').filter('[data-filter="ALL"]').addClass('active');
+      $('#qx_arena_picker_input').val('');
+      $('#qx_arena_picker_clear').hide();
+
+      $('#qx_arena_picker_backdrop').addClass('active');
+      $('#qx_arena_picker_modal').addClass('active');
+      setTimeout(() => $('#qx_arena_picker_input').focus(), 80);
+
+      this.renderArenaPickerResults('', 'ALL');
+    }
+
+    closeArenaPicker() {
+      $('#qx_arena_picker_backdrop').removeClass('active');
+      $('#qx_arena_picker_modal').removeClass('active');
+    }
+
+    renderArenaPickerResults(query = '', filter = 'ALL') {
+      const container = $('#qx_arena_picker_results').empty();
+      const q = (query || '').toLowerCase().trim();
+      const currentOpposite = (this.arenaPickerSlot === 'base') ? this.compareRivalProduct : this.compareBaseProduct;
+      const oppositeId = currentOpposite ? currentOpposite.id : null;
+
+      const getProdImg = (p) => p.cover || (p.photos && p.photos[0] && (p.photos[0].url || p.photos[0].thumb)) || 'images/flacon_default.png';
+      const getProdPrice = (p) => parseFloat(p.priceWithTax || p.unitPrice || p.price || 0);
+
+      // Filter products: exclude current opposite
+      let list = this.products.filter(p => p.id !== oppositeId);
+
+      // Apply chip filter
+      if (filter === 'AFNAN') {
+        list = list.filter(p => (p.name || '').toLowerCase().includes('afnan'));
+      } else if (filter === 'ARMAF') {
+        list = list.filter(p => (p.name || '').toLowerCase().includes('armaf'));
+      } else if (filter === 'CITRICO') {
+        list = list.filter(p => {
+          const str = ((p.family || '') + ' ' + (p.accords || []).join(' ') + ' ' + (p.notes || '')).toLowerCase();
+          return str.includes('cítric') || str.includes('fresc') || str.includes('limón') || str.includes('bergamot');
+        });
+      } else if (filter === 'AMADERADO') {
+        list = list.filter(p => {
+          const str = ((p.family || '') + ' ' + (p.accords || []).join(' ') + ' ' + (p.notes || '')).toLowerCase();
+          return str.includes('mader') || str.includes('cedr') || str.includes('sándal') || str.includes('vetiver');
+        });
+      } else if (filter === 'DULCE') {
+        list = list.filter(p => {
+          const str = ((p.family || '') + ' ' + (p.accords || []).join(' ') + ' ' + (p.notes || '')).toLowerCase();
+          return str.includes('dulc') || str.includes('vainill') || str.includes('ámbar') || str.includes('tonka');
+        });
+      }
+
+      // Apply search text
+      if (q) {
+        list = list.filter(p => {
+          const name = (p.name || '').toLowerCase();
+          const sku = (p.sku || '').toLowerCase();
+          const fam = (p.family || '').toLowerCase();
+          const cat = (p.category || '').toLowerCase();
+          const notes = (p.notes || '').toLowerCase();
+          const accords = (p.accords || []).join(' ').toLowerCase();
+          return name.includes(q) || sku.includes(q) || fam.includes(q) || cat.includes(q) || notes.includes(q) || accords.includes(q);
+        });
+      }
+
+      $('#qx_arena_picker_count').text(`${list.length} ${list.length === 1 ? 'opción' : 'opciones'}`);
+
+      if (list.length === 0) {
+        container.html(`
+          <div style="padding:40px 20px; text-align:center; color:#94a3b8;">
+            <div style="font-size:32px; margin-bottom:10px;">🔍</div>
+            <div style="font-size:14px; font-weight:700; color:#fff; margin-bottom:4px;">Sin coincidencias</div>
+            <div style="font-size:12px;">Prueba buscando otra marca o ajustando los filtros superiores.</div>
+          </div>
+        `);
+        return;
+      }
+
+      const self = this;
+      list.forEach((p, idx) => {
+        const img = getProdImg(p);
+        const price = getProdPrice(p);
+        const family = p.family || p.category || 'Alta Perfumería';
+        const notesStr = (p.accords && p.accords.length) ? p.accords.slice(0, 3).join(' · ') : (p.notes || 'Fórmula exclusiva');
+        const radar = p.radar || {};
+        const elogios = radar.elogios ? `${radar.elogios}% Elogios` : 'Top Selección';
+
+        const card = $(`
+          <div class="qx-picker-card ${idx === 0 ? 'active' : ''}" data-id="${p.id}" tabindex="0">
+            <div class="qx-picker-card-img-box">
+              <img src="${img}" alt="${self.esc(p.name)}" onerror="this.onerror=null;this.src='images/flacon_default.png';">
+            </div>
+            <div class="qx-picker-card-body">
+              <div class="qx-picker-card-title">${self.esc(p.name)}</div>
+              <div class="qx-picker-card-meta">
+                <span>👑 ${self.esc(family)}</span>
+                <span>· ✨ ${self.esc(elogios)}</span>
+              </div>
+              <div class="qx-picker-card-notes">✦ ${self.esc(notesStr)}</div>
+            </div>
+            <div class="qx-picker-card-action">
+              <div class="qx-picker-card-price">$ ${price.toFixed(2)} MXN</div>
+              <button type="button" class="qx-btn-picker-select">⚔️ Elegir</button>
+            </div>
+          </div>
+        `);
+
+        card.on('click', () => {
+          if (self.arenaPickerSlot === 'base') {
+            self.selectRadarBase(p.id);
+          } else {
+            self.selectRadarRival(p.id);
+          }
+          self.closeArenaPicker();
+          self.showToast(`✓ Contendiente seleccionado: [${p.name}]`);
+        });
+
+        container.append(card);
+      });
     }
 
     bindFiscalIntelligence() {
