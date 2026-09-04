@@ -17,7 +17,15 @@ class StorefrontTenant {
     public $phone = '';
     public $address = '';
     public $description = 'Alta Perfumería & Fragancias Exclusivas';
-    public $headline = 'COLECCIÓN IMPERIAL & ALTA COSECHA 2026';
+    public $headline = 'COLECCIÓN IMPERIAL & {ALTA COSECHA 2026}';
+    public $heroKicker = 'HAUTE COSECHA 2026';
+    public $heroKickerEnabled = true;
+    public $heroKickerIcon = 'sparkle';
+    public $heroTypography = 'imperial_serif';
+    public $heroShader = 'liquid_gold';
+    public $heroShimmer = true;
+    public $heroLetterSpacing = 'wide';
+    public $heroSubheadline = 'Extractos puros de perfumería nicho elaborados artesanalmente en Grasse.';
     public $quantixFrontStore = 'NO';
     public $quantixStorePerfums = 'NO';
     public $isStoreActive = false;
@@ -184,11 +192,36 @@ class StorefrontTenant {
                         if (!empty($decodedApex['tenant_name'])) {
                             $tenant->brandName = $decodedApex['tenant_name'];
                         }
-                        if (!empty($decodedApex['hero_curation']['headline'])) {
-                            $tenant->headline = $decodedApex['hero_curation']['headline'];
-                        }
-                        if (!empty($decodedApex['hero_curation']['subheadline'])) {
-                            $tenant->description = $decodedApex['hero_curation']['subheadline'];
+                        if (!empty($decodedApex['hero_curation']) && is_array($decodedApex['hero_curation'])) {
+                            $hc = $decodedApex['hero_curation'];
+                            if (!empty($hc['headline'])) {
+                                $tenant->headline = $hc['headline'];
+                            }
+                            if (!empty($hc['subheadline'])) {
+                                $tenant->description = $hc['subheadline'];
+                                $tenant->heroSubheadline = $hc['subheadline'];
+                            }
+                            if (isset($hc['kicker'])) {
+                                $tenant->heroKicker = $hc['kicker'];
+                            }
+                            if (isset($hc['kicker_enabled'])) {
+                                $tenant->heroKickerEnabled = (bool)$hc['kicker_enabled'];
+                            }
+                            if (!empty($hc['kicker_icon'])) {
+                                $tenant->heroKickerIcon = $hc['kicker_icon'];
+                            }
+                            if (!empty($hc['typography'])) {
+                                $tenant->heroTypography = $hc['typography'];
+                            }
+                            if (!empty($hc['shader'])) {
+                                $tenant->heroShader = $hc['shader'];
+                            }
+                            if (isset($hc['shimmer'])) {
+                                $tenant->heroShimmer = (bool)$hc['shimmer'];
+                            }
+                            if (!empty($hc['letter_spacing'])) {
+                                $tenant->heroLetterSpacing = $hc['letter_spacing'];
+                            }
                         }
                         if (!empty($decodedApex['theme']['atmosphere_mode'])) {
                             $tenant->theme = strtolower($decodedApex['theme']['atmosphere_mode']);
@@ -221,3 +254,37 @@ class StorefrontTenant {
         return $tenant;
     }
 }
+
+if (!function_exists('renderHeroHeadlineFormatted')) {
+    function renderHeroHeadlineFormatted($rawText) {
+        if (empty($rawText)) return '';
+        // 1. Accent brackets {word}
+        $hasBrackets = preg_match('/\{([^}]+)\}/', $rawText);
+        if ($hasBrackets) {
+            $formatted = preg_replace_callback('/\{([^}]+)\}/', function($m) {
+                return '<span class="qx-title-accent">' . htmlspecialchars($m[1]) . '</span>';
+            }, $rawText);
+        } else {
+            $formatted = htmlspecialchars($rawText);
+        }
+        // 2. Format ampersands (& or &amp;) into italic script spans
+        $formatted = preg_replace('/(\s)&(\s)/', '$1<span class="qx-title-amp">&</span>$2', $formatted);
+        $formatted = preg_replace('/(\s)&amp;(\s)/', '$1<span class="qx-title-amp">&</span>$2', $formatted);
+        return $formatted;
+    }
+}
+
+if (!function_exists('getHeroKickerIconGlyph')) {
+    function getHeroKickerIconGlyph($iconKey) {
+        switch ($iconKey) {
+            case 'crown': return '👑';
+            case 'gem': return '💎';
+            case 'lightning': return '⚡';
+            case 'feather': return '🪶';
+            case 'sparkle': return '✦';
+            case 'none': return '';
+            default: return '✦';
+        }
+    }
+}
+

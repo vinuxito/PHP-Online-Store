@@ -184,8 +184,23 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
 
   <!-- Hero Showcase Banner -->
   <section class="qx-hero" id="qx_hero_section">
-    <h1 class="qx-hero-title"><?php echo htmlspecialchars(!empty($tenant->headline) ? $tenant->headline : $tenant->brandName); ?></h1>
-    <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
+    <!-- Kicker Ribbon / Micro-Badge -->
+    <div class="qx-hero-kicker-wrap" id="qx_hero_kicker_wrap" style="<?php echo !empty($tenant->heroKickerEnabled) ? '' : 'display:none;'; ?>">
+      <span class="qx-hero-kicker" id="qx_hero_kicker">
+        <span class="qx-hero-kicker-icon" id="qx_hero_kicker_icon"><?php echo getHeroKickerIconGlyph($tenant->heroKickerIcon ?? 'sparkle'); ?></span>
+        <span class="qx-hero-kicker-text" id="qx_hero_kicker_text"><?php echo htmlspecialchars($tenant->heroKicker ?? 'HAUTE COSECHA 2026'); ?></span>
+      </span>
+    </div>
+
+    <?php
+      $heroShaderClass = 'qx-shader-' . (!empty($tenant->heroShader) ? $tenant->heroShader : 'liquid_gold');
+      $heroTypoClass = 'qx-typo-' . (!empty($tenant->heroTypography) ? $tenant->heroTypography : 'imperial_serif');
+      $heroTrackClass = 'qx-track-' . (!empty($tenant->heroLetterSpacing) ? $tenant->heroLetterSpacing : 'wide');
+      $heroShimmerClass = !empty($tenant->heroShimmer) ? ' qx-shimmer-active' : '';
+      $heroHeadlineRaw = !empty($tenant->headline) ? $tenant->headline : $tenant->brandName;
+    ?>
+    <h1 class="qx-hero-title <?php echo "{$heroShaderClass} {$heroTypoClass} {$heroTrackClass}{$heroShimmerClass}"; ?>" id="qx_hero_title"><?php echo renderHeroHeadlineFormatted($heroHeadlineRaw); ?></h1>
+    <p class="qx-hero-subtitle" id="qx_hero_subtitle"><?php echo htmlspecialchars(!empty($tenant->heroSubheadline) ? $tenant->heroSubheadline : $tenant->description); ?></p>
     
     <!-- Hero 3D Star Carousel -->
     <?php $showHeroVitrina = !isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina']); ?>
@@ -1870,12 +1885,61 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
             $('#qx_btn_nav_vault, #qx_dock_vault').toggle(Boolean(payload.loyalty_refill_vault.enabled));
           }
         }
-        if (type === 'SYNC_HERO_CURATION') {
-          if (payload.headline) {
-            $('.qx-hero-title, .qx-hero-banner h1').text(payload.headline);
+        function formatHeroHeadlineJs(raw) {
+          if (!raw) return '';
+          let text = String(raw);
+          text = text.replace(/\{([^}]+)\}/g, '<span class="qx-title-accent">$1</span>');
+          text = text.replace(/(\s)&(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
+          text = text.replace(/(\s)&amp;(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
+          return text;
+        }
+
+        function getHeroKickerIconJs(iconKey) {
+          switch (iconKey) {
+            case 'crown': return '👑';
+            case 'gem': return '💎';
+            case 'lightning': return '⚡';
+            case 'feather': return '🪶';
+            case 'sparkle': return '✦';
+            case 'none': return '';
+            default: return '✦';
           }
-          if (payload.subheadline) {
+        }
+
+        if (type === 'SYNC_HERO_CURATION') {
+          if (payload.headline !== undefined) {
+            $('.qx-hero-title, .qx-hero-banner h1').html(formatHeroHeadlineJs(payload.headline));
+          }
+          if (payload.subheadline !== undefined) {
             $('.qx-hero-subtitle, .qx-hero-banner p').text(payload.subheadline);
+          }
+          if (payload.kicker !== undefined) {
+            $('#qx_hero_kicker_text').text(payload.kicker);
+          }
+          if (payload.kicker_icon !== undefined) {
+            $('#qx_hero_kicker_icon').text(getHeroKickerIconJs(payload.kicker_icon));
+          }
+          if (payload.kicker_enabled !== undefined) {
+            $('#qx_hero_kicker_wrap').toggle(Boolean(payload.kicker_enabled));
+          }
+          const $title = $('.qx-hero-title');
+          if (payload.shader) {
+            $title.removeClass(function(i, c) {
+              return (c.match(/(^|\s)qx-shader-\S+/g) || []).join(' ');
+            }).addClass('qx-shader-' + payload.shader);
+          }
+          if (payload.typography) {
+            $title.removeClass(function(i, c) {
+              return (c.match(/(^|\s)qx-typo-\S+/g) || []).join(' ');
+            }).addClass('qx-typo-' + payload.typography);
+          }
+          if (payload.letter_spacing) {
+            $title.removeClass(function(i, c) {
+              return (c.match(/(^|\s)qx-track-\S+/g) || []).join(' ');
+            }).addClass('qx-track-' + payload.letter_spacing);
+          }
+          if (payload.shimmer !== undefined) {
+            $title.toggleClass('qx-shimmer-active', Boolean(payload.shimmer));
           }
         }
 

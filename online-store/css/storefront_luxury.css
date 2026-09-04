@@ -430,6 +430,54 @@ body[data-atmosphere="light"] .qx-hero p {
   font-weight: 600 !important;
 }
 
+body[data-atmosphere="minimalist"] .qx-hero-kicker,
+body[data-atmosphere="light"] .qx-hero-kicker {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+  color: #b45309 !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-liquid_gold,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-liquid_gold {
+  background: linear-gradient(135deg, #78350f 0%, #b45309 30%, #92400e 60%, #b45309 100%) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 1px 2px rgba(120, 53, 15, 0.2)) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-platinum_ice,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-platinum_ice {
+  background: linear-gradient(135deg, #0f172a 0%, #0369a1 40%, #0284c7 70%, #0f172a 100%) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.2)) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-rose_champagne,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-rose_champagne {
+  background: linear-gradient(135deg, #9f1239 0%, #e11d48 40%, #be123c 70%, #881337 100%) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  filter: drop-shadow(0 1px 2px rgba(159, 18, 57, 0.2)) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-obsidian_neon,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-obsidian_neon {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  text-shadow: 0 0 12px rgba(2, 132, 199, 0.4) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-pure_monochrome,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-pure_monochrome {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  text-shadow: none !important;
+}
+
 /* Featured 3D Cards / Hero Stage */
 body[data-atmosphere="minimalist"] .qx-hero-carousel-3d-wrapper,
 body[data-atmosphere="light"] .qx-hero-carousel-3d-wrapper,
@@ -2124,14 +2172,145 @@ body {
   padding: 40px 28px 24px;
   text-align: center;
   background: radial-gradient(circle at 50% -20%, rgba(56, 189, 248, 0.15), transparent 70%);
+  padding: 30px 20px 20px;
 }
 
+/* Kicker Ribbon / Micro-Badge */
+.qx-hero-kicker-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.qx-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+}
+
+.qx-hero-kicker-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Hero Title Core */
 .qx-hero-title {
-  font-size: 36px;
+  font-size: clamp(26px, 4.2vw, 44px);
   font-weight: 800;
-  letter-spacing: -1px;
-  margin-bottom: 8px;
+  line-height: 1.18;
+  margin: 0 auto 12px;
+  max-width: 980px;
+  text-align: center;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Luminescent Shaders */
+.qx-hero-title.qx-shader-liquid_gold {
+  background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(179, 135, 40, 0.35));
+}
+
+.qx-hero-title.qx-shader-platinum_ice {
+  background: linear-gradient(135deg, #cbd5e1 0%, #ffffff 30%, #94a3b8 55%, #38bdf8 80%, #e2e8f0 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(56, 189, 248, 0.35));
+}
+
+.qx-hero-title.qx-shader-rose_champagne {
+  background: linear-gradient(135deg, #f43f5e 0%, #fbcfe8 35%, #fda4af 65%, #e11d48 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(244, 63, 94, 0.3));
+}
+
+.qx-hero-title.qx-shader-obsidian_neon {
+  color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.65), 0 0 32px rgba(56, 189, 248, 0.3);
+}
+
+.qx-hero-title.qx-shader-pure_monochrome {
   color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Shimmer Flow Specular Animation */
+.qx-shimmer-active {
+  animation: qxShimmerFlow 6s linear infinite;
+}
+
+@keyframes qxShimmerFlow {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Typography Families */
+.qx-hero-title.qx-typo-imperial_serif {
+  font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+}
+
+.qx-hero-title.qx-typo-modern_sans {
+  font-family: 'Syne', 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+  font-weight: 800;
+}
+
+.qx-hero-title.qx-typo-monochrome_chic {
+  font-family: 'Bodoni MT', 'Didot', 'Playfair Display', serif;
+  font-weight: 800;
+}
+
+.qx-hero-title.qx-typo-script_accent {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Tracking / Letter Spacing */
+.qx-hero-title.qx-track-normal {
+  letter-spacing: normal;
+}
+
+.qx-hero-title.qx-track-wide {
+  letter-spacing: 0.06em;
+}
+
+.qx-hero-title.qx-track-ultra_wide {
+  letter-spacing: 0.12em;
+}
+
+/* Accent Brackets and Luxury Ampersand */
+.qx-title-accent {
+  display: inline;
+  font-weight: 900;
+  position: relative;
+}
+
+.qx-title-amp {
+  display: inline-block;
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  padding: 0 0.16em;
+  font-size: 1.08em;
+  vertical-align: baseline;
+  opacity: 0.95;
 }
 
 .qx-hero-subtitle {
@@ -2139,6 +2318,7 @@ body {
   color: var(--qx-text-muted);
   max-width: 600px;
   margin: 0 auto 24px;
+  line-height: 1.55;
 }
 
 /* Filter Pills Bar */
