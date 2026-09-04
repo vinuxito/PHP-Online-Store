@@ -182,6 +182,21 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     <div class="qx-stories-container" id="qx_stories_container"></div>
   </section>
 
+  <!-- Hero Showcase Banner -->
+  <section class="qx-hero" id="qx_hero_section">
+    <h1 class="qx-hero-title"><?php echo htmlspecialchars(!empty($tenant->headline) ? $tenant->headline : $tenant->brandName); ?></h1>
+    <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
+    
+    <!-- Hero 3D Star Carousel -->
+    <?php $showHeroVitrina = !isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina']); ?>
+    <div class="qx-hero-carousel-3d-wrapper" id="qx_hero_carousel_wrapper" style="<?php echo $showHeroVitrina ? '' : 'display:none;'; ?>">
+      <button class="qx-3d-nav-arrow prev" id="qx_3d_prev" aria-label="Anterior">‹</button>
+      <div class="qx-3d-stage" id="qx_3d_stage"></div>
+      <button class="qx-3d-nav-arrow next" id="qx_3d_next" aria-label="Siguiente">›</button>
+      <div class="qx-3d-dots" id="qx_3d_dots"></div>
+    </div>
+  </section>
+
   <!-- Hyper-Velocity Commercial Deals Rail (Amazon/MercadoLibre Style) -->
   <?php $showRails = !empty($tenant->modules['horizontal_rails']); ?>
   <section class="qx-deals-rails-section" id="qx_deals_rails_section" style="<?php echo $showRails ? '' : 'display:none;'; ?>">
@@ -202,32 +217,18 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </div>
   </section>
 
-  <!-- Hero Showcase Banner -->
-  <?php $showHero = !isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina']); ?>
-  <section class="qx-hero" id="qx_hero_section" style="<?php echo $showHero ? '' : 'display:none;'; ?>">
-    <h1 class="qx-hero-title"><?php echo htmlspecialchars(!empty($tenant->headline) ? $tenant->headline : $tenant->brandName); ?></h1>
-    <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
-    
-    <!-- Hero 3D Star Carousel -->
-    <div class="qx-hero-carousel-3d-wrapper" id="qx_hero_carousel_wrapper" style="display:none;">
-      <button class="qx-3d-nav-arrow prev" id="qx_3d_prev" aria-label="Anterior">‹</button>
-      <div class="qx-3d-stage" id="qx_3d_stage"></div>
-      <button class="qx-3d-nav-arrow next" id="qx_3d_next" aria-label="Siguiente">›</button>
-      <div class="qx-3d-dots" id="qx_3d_dots"></div>
+  <!-- Category Filter Chips & View Switcher Bar -->
+  <div class="qx-catalog-controls" style="max-width: 1400px; margin: 0 auto; padding: 0 24px 16px;">
+    <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
+    <div class="qx-view-switcher" id="qx_view_switcher">
+      <button type="button" class="qx-view-btn active" data-view="2col" id="qx_view_2col" title="Vista Cuadrícula 2 Columnas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      </button>
+      <button type="button" class="qx-view-btn" data-view="1col" id="qx_view_1col" title="Vista Cinema 1 Columna">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>
+      </button>
     </div>
-    <!-- Category Filter Chips & View Switcher Bar -->
-    <div class="qx-catalog-controls">
-      <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
-      <div class="qx-view-switcher" id="qx_view_switcher">
-        <button type="button" class="qx-view-btn active" data-view="2col" id="qx_view_2col" title="Vista Cuadrícula 2 Columnas">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
-        </button>
-        <button type="button" class="qx-view-btn" data-view="1col" id="qx_view_1col" title="Vista Cinema 1 Columna">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/></svg>
-        </button>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <!-- Main Product Showroom Grid -->
   <main class="qx-main-container">

@@ -2301,6 +2301,20 @@ ${shareUrl}`;
       
       const savedView = localStorage.getItem('qx_catalog_view') || '2col';
       this.setCatalogView(savedView);
+
+      // Cross-tab auto-sync on focus (for side-by-side Director workflows)
+      window.addEventListener('focus', () => {
+        const emisorParam = new URLSearchParams(window.location.search).get('emisor') || '';
+        const url = 'api/catalog.php' + (emisorParam ? `?emisor=${encodeURIComponent(emisorParam)}` : '');
+        $.getJSON(url, (resp) => {
+          if (resp && resp.Tenant && resp.Tenant.modules) {
+            this.updateModules(resp.Tenant.modules);
+            if (resp.Tenant.archetype) {
+              this.setArchetype(resp.Tenant.archetype, resp.Tenant.modules);
+            }
+          }
+        });
+      });
     }
 
     playHaptic(type = 'light') {
@@ -2834,6 +2848,7 @@ ${shareUrl}`;
       }
       if (modules.hero_vitrina !== undefined) {
         if (modules.hero_vitrina) {
+          $('#qx_hero_section').show();
           if (this.heroFeatured && this.heroFeatured.length > 0) {
             $('#qx_hero_carousel_wrapper').show();
             this.update3DCarousel();
@@ -3986,7 +4001,7 @@ ${shareUrl}`;
       this.heroActiveIndex = 0;
       this.heroAutoPlayTimer = null;
 
-      featured.forEach((p, idx) => {
+      items.forEach((p, idx) => {
         const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
         const cardHtml = `
           <div class="qx-3d-card" data-index="${idx}" data-id="${self.esc(p.id)}">
