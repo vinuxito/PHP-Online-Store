@@ -1808,8 +1808,8 @@
       const $selA = $('#qx_select_prod_a').empty();
       const $selB = $('#qx_select_prod_b').empty();
       all.forEach(p => {
-        $selA.append(`<option value="${p.id}" ${p.id == this.prodA.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
-        $selB.append(`<option value="${p.id}" ${p.id == this.prodB.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
+        $selA.append(`<option value="${p.id}" style="background-color:#0b1329; color:#f8fafc;" ${p.id == this.prodA.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
+        $selB.append(`<option value="${p.id}" style="background-color:#0b1329; color:#f8fafc;" ${p.id == this.prodB.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
       });
 
       this.renderStageProducts();
