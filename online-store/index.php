@@ -1906,6 +1906,12 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         if (type === 'REVERT_ATMOSPHERE_PEEK') {
           $('body').attr('data-atmosphere', persistentAtmosphere);
         }
+        if (type === 'SYNC_ATMOSPHERE' || type === 'PEEK_ATMOSPHERE' || type === 'REVERT_ATMOSPHERE_PEEK') {
+          if (window.quantixStore?.crucible && $('#qx_crucible_modal').hasClass('active')) {
+            window.quantixStore.crucible.renderDualRadar();
+            window.quantixStore.crucible.renderFusionState();
+          }
+        }
         if (type === 'SYNC_PRIMARY_COLOR') {
           if (payload) {
             document.documentElement.style.setProperty('--qx-accent', payload);

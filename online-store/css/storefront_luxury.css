@@ -1065,6 +1065,20 @@ body[data-atmosphere="light"] .qx-btn-pmodal-layering {
   border: 1px solid #c084fc !important;
   color: #6b21a8 !important;
 }
+body[data-atmosphere="minimalist"] .qx-btn-pmodal-compare,
+body[data-atmosphere="light"] .qx-btn-pmodal-compare {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  border: 1px solid #38bdf8 !important;
+  color: #0369a1 !important;
+  box-shadow: 0 2px 8px rgba(3, 105, 161, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-btn-pmodal-compare:hover,
+body[data-atmosphere="light"] .qx-btn-pmodal-compare:hover {
+  background: linear-gradient(135deg, #bae6fd 0%, #7dd3fc 100%) !important;
+  border-color: #0284c7 !important;
+  color: #075985 !important;
+  box-shadow: 0 4px 14px rgba(3, 105, 161, 0.22) !important;
+}
 body[data-atmosphere="minimalist"] .qx-btn-pmodal-dismiss,
 body[data-atmosphere="light"] .qx-btn-pmodal-dismiss {
   background: #f8fafc !important;
@@ -1531,6 +1545,219 @@ body[data-atmosphere="minimalist"] .qx-quiz-opt:hover,
 body[data-atmosphere="light"] .qx-quiz-opt:hover {
   background: #eff6ff !important;
   border-color: #3b82f6 !important;
+}
+
+/* --- QUANTUM COMPARISON STUDIO & SENSORY CRUCIBLE (LIGHT) --- */
+body[data-atmosphere="minimalist"] .qx-crucible-backdrop,
+body[data-atmosphere="light"] .qx-crucible-backdrop {
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-modal,
+body[data-atmosphere="light"] .qx-crucible-modal {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.16) !important;
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-header,
+body[data-atmosphere="light"] .qx-crucible-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-title,
+body[data-atmosphere="light"] .qx-crucible-title {
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-badge,
+body[data-atmosphere="light"] .qx-crucible-badge {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-close-btn,
+body[data-atmosphere="light"] .qx-crucible-close-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-close-btn:hover,
+body[data-atmosphere="light"] .qx-crucible-close-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #b91c1c !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-view-modes,
+body[data-atmosphere="light"] .qx-crucible-view-modes {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-tab-btn,
+body[data-atmosphere="light"] .qx-crucible-tab-btn {
+  color: #64748b !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-tab-btn:hover,
+body[data-atmosphere="light"] .qx-crucible-tab-btn:hover {
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-tab-btn.active,
+body[data-atmosphere="light"] .qx-crucible-tab-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-verdict-banner,
+body[data-atmosphere="light"] .qx-crucible-verdict-banner {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%) !important;
+  border: 1px solid rgba(147, 51, 234, 0.25) !important;
+}
+body[data-atmosphere="minimalist"] .qx-verdict-tag,
+body[data-atmosphere="light"] .qx-verdict-tag {
+  color: #7c3aed !important;
+}
+body[data-atmosphere="minimalist"] .qx-verdict-text,
+body[data-atmosphere="light"] .qx-verdict-text {
+  color: #1e293b !important;
+}
+body[data-atmosphere="minimalist"] .qx-verdict-pill,
+body[data-atmosphere="light"] .qx-verdict-pill {
+  background: rgba(37, 99, 235, 0.08) !important;
+  border: 1px solid rgba(37, 99, 235, 0.22) !important;
+  color: #1e40af !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-stage,
+body[data-atmosphere="light"] .qx-crucible-stage {
+  background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #e2e8f0 100%) !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body[data-atmosphere="minimalist"] .qx-stage-layer.layer-b,
+body[data-atmosphere="light"] .qx-stage-layer.layer-b {
+  background: radial-gradient(circle at 75% 50%, rgba(37, 99, 235, 0.06), transparent 60%) !important;
+}
+body[data-atmosphere="minimalist"] .qx-product-selector-pill,
+body[data-atmosphere="light"] .qx-product-selector-pill {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-product-selector-pill label,
+body[data-atmosphere="light"] .qx-product-selector-pill label {
+  color: #2563eb !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-prod-select,
+body[data-atmosphere="light"] .qx-crucible-prod-select {
+  color-scheme: light !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-prod-select option,
+body[data-atmosphere="light"] .qx-crucible-prod-select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:checked,
+body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:hover,
+body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:focus,
+body[data-atmosphere="light"] .qx-crucible-prod-select option:checked,
+body[data-atmosphere="light"] .qx-crucible-prod-select option:hover,
+body[data-atmosphere="light"] .qx-crucible-prod-select option:focus {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+body[data-atmosphere="minimalist"] .qx-stage-info-pill,
+body[data-atmosphere="light"] .qx-stage-info-pill {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+body[data-atmosphere="minimalist"] .qx-stage-name,
+body[data-atmosphere="light"] .qx-stage-name {
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-stage-price,
+body[data-atmosphere="light"] .qx-stage-price {
+  color: #2563eb !important;
+}
+body[data-atmosphere="minimalist"] .qx-btn-stage-choose,
+body[data-atmosphere="light"] .qx-btn-stage-choose {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+body[data-atmosphere="minimalist"] .qx-xray-laser-line,
+body[data-atmosphere="light"] .qx-xray-laser-line {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.2) 0%, #2563eb 50%, rgba(37, 99, 235, 0.2) 100%) !important;
+  box-shadow: 0 0 10px #2563eb !important;
+}
+body[data-atmosphere="minimalist"] .qx-xray-handle,
+body[data-atmosphere="light"] .qx-xray-handle {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.5), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-radar-card,
+body[data-atmosphere="minimalist"] .qx-crucible-diff-card,
+body[data-atmosphere="light"] .qx-crucible-radar-card,
+body[data-atmosphere="light"] .qx-crucible-diff-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04) !important;
+}
+body[data-atmosphere="minimalist"] .qx-crucible-card-header,
+body[data-atmosphere="light"] .qx-crucible-card-header {
+  color: #0f172a !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+body[data-atmosphere="minimalist"] .qx-diff-tag,
+body[data-atmosphere="light"] .qx-diff-tag {
+  color: #7c3aed !important;
+  background: rgba(124, 58, 237, 0.1) !important;
+  border-color: rgba(124, 58, 237, 0.25) !important;
+}
+body[data-atmosphere="minimalist"] .qx-diff-table th,
+body[data-atmosphere="light"] .qx-diff-table th {
+  color: #64748b !important;
+}
+body[data-atmosphere="minimalist"] .qx-diff-table td,
+body[data-atmosphere="light"] .qx-diff-table td {
+  color: #1e293b !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+body[data-atmosphere="minimalist"] .qx-diff-table td.winner-cell,
+body[data-atmosphere="light"] .qx-diff-table td.winner-cell {
+  color: #15803d !important;
+  background: rgba(34, 197, 94, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-fusion-stage-overlay,
+body[data-atmosphere="light"] .qx-fusion-stage-overlay {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+body[data-atmosphere="minimalist"] .qx-fusion-card,
+body[data-atmosphere="light"] .qx-fusion-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1) !important;
+}
+body[data-atmosphere="minimalist"] .qx-fusion-title,
+body[data-atmosphere="light"] .qx-fusion-title {
+  color: #0f172a !important;
+}
+body[data-atmosphere="minimalist"] .qx-fusion-pricing-box,
+body[data-atmosphere="light"] .qx-fusion-pricing-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-tray,
+body[data-atmosphere="light"] .qx-dock-tray {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12) !important;
+}
+body[data-atmosphere="minimalist"] .qx-dock-count-badge,
+body[data-atmosphere="light"] .qx-dock-count-badge {
+  color: #0f172a !important;
 }
 
 /* ==========================================================================
@@ -10052,9 +10279,9 @@ body {
 /* Product Modal Compare Button */
 .qx-btn-pmodal-compare {
   width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
   padding: 12px 18px;
   border-radius: 12px;
   font-size: 13.5px;
@@ -10069,10 +10296,11 @@ body {
 }
 
 .qx-btn-pmodal-compare:hover {
-  background: rgba(56, 189, 248, 0.14);
+  background: rgba(56, 189, 248, 0.2);
   border-color: #38bdf8;
-  color: #38bdf8;
+  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.3);
 }
 
 /* Floating Comparison Dock */
@@ -11154,11 +11382,14 @@ body[data-archetype="maison"] .qx-hero-title {
 /* SAT CFDI 4.0 & COMMERCIAL TRUST RIBBON */
 .qx-trust-ribbon {
   width: 100%;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding: 10px 20px;
   z-index: 850;
+  transition: all 0.3s ease;
 }
 
 .qx-trust-container {
@@ -11200,13 +11431,34 @@ body[data-archetype="maison"] .qx-hero-title {
 
 .qx-trust-text strong {
   font-size: 12px;
-  color: #f8fafc;
+  color: #ffffff;
   font-weight: 700;
 }
 
 .qx-trust-text span {
   font-size: 11px;
-  color: var(--qx-text-muted, #94a3b8);
+  color: #cbd5e1;
+}
+
+body[data-atmosphere="minimalist"] .qx-trust-ribbon,
+body[data-atmosphere="light"] .qx-trust-ribbon {
+  background: rgba(30, 41, 59, 0.7) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-trust-text strong,
+body[data-atmosphere="light"] .qx-trust-text strong {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-trust-text span,
+body[data-atmosphere="light"] .qx-trust-text span {
+  color: #e2e8f0 !important;
 }
 
 /* HYPER-VELOCITY COMMERCIAL DEALS RAIL (Amazon/MercadoLibre Carousel) */

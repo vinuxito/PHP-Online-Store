@@ -1805,12 +1805,22 @@
         this.prodB = all.find(p => p.id != this.prodA.id) || all[0];
       }
 
-      const $selA = $('#qx_select_prod_a').empty();
-      const $selB = $('#qx_select_prod_b').empty();
-      all.forEach(p => {
-        $selA.append(`<option value="${p.id}" style="background-color:#0b1329; color:#f8fafc;" ${p.id == this.prodA.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
-        $selB.append(`<option value="${p.id}" style="background-color:#0b1329; color:#f8fafc;" ${p.id == this.prodB.id ? 'selected' : ''}>${this.storefront.esc(p.name)}</option>`);
-      });
+      const $selA = $('#qx_select_prod_a');
+      const $selB = $('#qx_select_prod_b');
+      const emisorKey = this.storefront.tenant?.emisorId || 'default';
+
+      if ($selA.children('option').length !== all.length || this._lastLoadedEmisor !== emisorKey) {
+        this._lastLoadedEmisor = emisorKey;
+        let optsHtml = '';
+        for (let i = 0; i < all.length; i++) {
+          const p = all[i];
+          optsHtml += `<option value="${p.id}">${this.storefront.esc(p.name)}</option>`;
+        }
+        $selA.html(optsHtml);
+        $selB.html(optsHtml);
+      }
+      $selA.val(this.prodA.id);
+      $selB.val(this.prodB.id);
 
       this.renderStageProducts();
       this.renderAiVerdict();
@@ -1955,6 +1965,11 @@
       let polyA = [];
       let polyB = [];
 
+      const isLightAtmo = $('body').attr('data-atmosphere') === 'minimalist' || $('body').attr('data-atmosphere') === 'light';
+      const gridStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.08)';
+      const lineStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.16)' : 'rgba(255, 255, 255, 0.12)';
+      const textFill = isLightAtmo ? '#475569' : '#94a3b8';
+
       [0.25, 0.5, 0.75, 1.0].forEach(rPct => {
         let ringPoints = [];
         for (let i = 0; i < totalAxes; i++) {
@@ -1963,7 +1978,7 @@
           const y = Math.sin(angle) * radius * rPct;
           ringPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
         }
-        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="${gridStroke}" stroke-width="1"/>`;
       });
 
       const labels = isPerfume 
@@ -1978,11 +1993,11 @@
         const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
-        gridSvg += `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>`;
+        gridSvg += `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${lineStroke}" stroke-width="1"/>`;
         
         const lx = Math.cos(angle) * (radius + 20);
         const ly = Math.sin(angle) * (radius + 14);
-        gridSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="#94a3b8" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central">${labels[i]}</text>`;
+        gridSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="${textFill}" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central">${labels[i]}</text>`;
 
         const valA = (valsA[i] / 100) * radius;
         polyA.push(`${(Math.cos(angle) * valA).toFixed(1)},${(Math.sin(angle) * valA).toFixed(1)}`);
@@ -2018,6 +2033,8 @@
       const totalAxes = 6;
       let gridSvg = '';
       let polyFusion = [];
+      const isLightAtmo = $('body').attr('data-atmosphere') === 'minimalist' || $('body').attr('data-atmosphere') === 'light';
+      const gridStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.1)';
 
       [0.5, 1.0].forEach(rPct => {
         let ringPoints = [];
@@ -2025,7 +2042,7 @@
           const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
           ringPoints.push(`${(Math.cos(angle) * radius * rPct).toFixed(1)},${(Math.sin(angle) * radius * rPct).toFixed(1)}`);
         }
-        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>`;
+        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="${gridStroke}" stroke-width="1"/>`;
       });
 
       for (let i = 0; i < totalAxes; i++) {
