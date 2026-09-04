@@ -214,6 +214,10 @@ class StorefrontTenant {
             } catch (\Exception $e) {}
         }
 
+        if (!empty($_GET['theme'])) {
+            $tenant->theme = strtolower(trim($_GET['theme']));
+        }
+
         return $tenant;
     }
 }

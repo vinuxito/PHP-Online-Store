@@ -1785,9 +1785,266 @@
       this.storefront.showToast('⚖️ Comparativa vaciada');
     }
 
-    openCrucible(prodAId = null, prodBId = null) {
-      const all = this.storefront.products;
+    initAutocomplete() {
+      if (this._autocompleteInitialized) return;
+      this._autocompleteInitialized = true;
+      this.setupAutocompleteSlot('a');
+      this.setupAutocompleteSlot('b');
+
+      const self = this;
+      $(document).on('click', (e) => {
+        if (!$(e.target).closest('#qx_selector_pill_a, #qx_selector_pill_b').length) {
+          self.closeDropdown('a');
+          self.closeDropdown('b');
+        }
+      });
+    }
+
+    setupAutocompleteSlot(slot) {
+      const self = this;
+      const $input = $(`#qx_search_prod_${slot}`);
+      const $spinner = $(`#qx_spinner_prod_${slot}`);
+      const $toggle = $(`#qx_toggle_prod_${slot}`);
+      const $dropdown = $(`#qx_dropdown_prod_${slot}`);
+
+      let searchTimer = null;
+      let activeIndex = -1;
+      let slotResults = [];
+
+      function doSearch(query) {
+        clearTimeout(searchTimer);
+        $spinner.show();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('slug') || '';
+        const emisor = urlParams.get('emisor') || (self.storefront.tenant?.emisorId || '');
+        const otherProd = (slot === 'a') ? self.prodB : self.prodA;
+        const excludeId = otherProd?.id || '';
+
+        let apiUrl = 'api/catalog.php?action=search&limit=15';
+        if (slug) apiUrl += `&slug=${encodeURIComponent(slug)}`;
+        if (emisor) apiUrl += `&emisor=${encodeURIComponent(emisor)}`;
+        if (excludeId) apiUrl += `&exclude_id=${encodeURIComponent(excludeId)}`;
+        if (query && query.trim().length > 0) apiUrl += `&q=${encodeURIComponent(query.trim())}`;
+
+        $.getJSON(apiUrl)
+          .done(function(resp) {
+            $spinner.hide();
+            if (resp && resp.Status === 'OK') {
+              slotResults = resp.Products || [];
+              renderResults(slotResults, query);
+            } else {
+              slotResults = [];
+              renderResults([], query);
+            }
+          })
+          .fail(function() {
+            $spinner.hide();
+            const localAll = self.storefront.products || [];
+            const qLower = (query || '').toLowerCase().trim();
+            const otherProdId = (slot === 'a') ? self.prodB?.id : self.prodA?.id;
+            slotResults = localAll.filter(p => {
+              if (p.id == otherProdId) return false;
+              if (!qLower) return true;
+              return (p.name || '').toLowerCase().includes(qLower) || 
+                     (p.sku || '').toLowerCase().includes(qLower) ||
+                     (p.code || '').toLowerCase().includes(qLower);
+            }).slice(0, 15);
+            renderResults(slotResults, query);
+          });
+      }
+
+      function renderResults(products, query) {
+        activeIndex = -1;
+        if (!products || products.length === 0) {
+          const emptyText = query ? `No se encontraron productos para "${self.storefront.esc(query)}"` : 'No hay productos disponibles';
+          $dropdown.html(`<div class="qx-crucible-dropdown-empty">🔍 ${emptyText}</div>`).addClass('open');
+          return;
+        }
+
+        let html = '';
+        for (let i = 0; i < products.length; i++) {
+          const p = products[i];
+          const photo = (p.photos && p.photos.length) ? (p.photos[0].thumb || p.photos[0].url) : (p.cover || '');
+          const meta = [];
+          if (p.sku) meta.push(`SKU: ${self.storefront.esc(p.sku)}`);
+          if (p.category) meta.push(self.storefront.esc(p.category));
+          const metaText = meta.join(' • ');
+
+          html += `
+            <div class="qx-crucible-dropdown-item" data-idx="${i}" data-id="${p.id}">
+              <img src="${photo}" alt="" class="qx-crucible-item-thumb" onerror="this.src='https://media.evinux.net/no-image.svg'">
+              <div class="qx-crucible-item-info">
+                <div class="qx-crucible-item-name" title="${self.storefront.esc(p.name)}">${self.storefront.esc(p.name)}</div>
+                <div class="qx-crucible-item-meta">${metaText}</div>
+              </div>
+              <div class="qx-crucible-item-price">$ ${self.storefront.formatMoney(p.priceWithTax)}</div>
+            </div>
+          `;
+        }
+        $dropdown.html(html).addClass('open');
+
+        $dropdown.find('.qx-crucible-dropdown-item').on('click', function(e) {
+          e.stopPropagation();
+          const idx = $(this).data('idx');
+          const chosen = slotResults[idx];
+          if (chosen) {
+            self.selectProduct(slot, chosen);
+          }
+        });
+      }
+
+      $input.on('focus', function() {
+        $(this).select();
+        self.closeDropdown(slot === 'a' ? 'b' : 'a');
+        const curProd = (slot === 'a') ? self.prodA : self.prodB;
+        const val = $(this).val();
+        if (curProd && val === curProd.name) {
+          doSearch('');
+        } else {
+          doSearch(val);
+        }
+      });
+
+      $input.on('click', function() {
+        if (!$dropdown.hasClass('open')) {
+          const curProd = (slot === 'a') ? self.prodA : self.prodB;
+          const val = $(this).val();
+          if (curProd && val === curProd.name) {
+            doSearch('');
+          } else {
+            doSearch(val);
+          }
+        }
+      });
+
+      $input.on('input', function() {
+        const val = $(this).val();
+        clearTimeout(searchTimer);
+        $spinner.show();
+        searchTimer = setTimeout(() => {
+          doSearch(val);
+        }, 220);
+      });
+
+      $toggle.on('click', function(e) {
+        e.stopPropagation();
+        if ($dropdown.hasClass('open')) {
+          self.closeDropdown(slot);
+        } else {
+          self.closeDropdown(slot === 'a' ? 'b' : 'a');
+          $input.focus();
+          doSearch('');
+        }
+      });
+
+      $input.on('keydown', function(e) {
+        if (!$dropdown.hasClass('open')) {
+          if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            doSearch($(this).val());
+            e.preventDefault();
+          }
+          return;
+        }
+
+        const $items = $dropdown.find('.qx-crucible-dropdown-item');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeIndex = Math.min(activeIndex + 1, $items.length - 1);
+          highlightActive();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeIndex = Math.max(activeIndex - 1, 0);
+          highlightActive();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeIndex >= 0 && slotResults[activeIndex]) {
+            self.selectProduct(slot, slotResults[activeIndex]);
+          }
+        } else if (e.key === 'Escape') {
+          self.closeDropdown(slot);
+        }
+      });
+
+      function highlightActive() {
+        const $items = $dropdown.find('.qx-crucible-dropdown-item');
+        $items.removeClass('active');
+        if (activeIndex >= 0 && activeIndex < $items.length) {
+          const $target = $items.eq(activeIndex).addClass('active');
+          const dTop = $dropdown.scrollTop();
+          const dHeight = $dropdown.height();
+          const itemTop = $target.position().top + dTop;
+          const itemHeight = $target.outerHeight();
+          if (itemTop < dTop) {
+            $dropdown.scrollTop(itemTop);
+          } else if (itemTop + itemHeight > dTop + dHeight) {
+            $dropdown.scrollTop(itemTop + itemHeight - dHeight);
+          }
+        }
+      }
+    }
+
+    closeDropdown(slot) {
+      const $dropdown = $(`#qx_dropdown_prod_${slot}`);
+      $dropdown.removeClass('open');
+      const curProd = (slot === 'a') ? this.prodA : this.prodB;
+      if (curProd && curProd.name) {
+        $(`#qx_search_prod_${slot}`).val(curProd.name);
+      }
+    }
+
+    selectProduct(slot, product) {
+      if (!product) return;
+
+      if (!this.storefront.products.some(p => p.id == product.id)) {
+        this.storefront.products.push(product);
+      }
+
+      if (slot === 'a') {
+        this.prodA = product;
+        $('#qx_search_prod_a').val(product.name);
+      } else {
+        this.prodB = product;
+        $('#qx_search_prod_b').val(product.name);
+      }
+
+      $(`#qx_dropdown_prod_${slot}`).removeClass('open');
+
+      this.renderStageProducts();
+      this.renderAiVerdict();
+      this.renderDualRadar();
+      this.renderSpecDiffTable();
+      this.renderFusionState();
+
+      this.playAudioResonance();
+
+      const url = new URL(window.location);
+      url.searchParams.set('compare', `${this.prodA.id},${this.prodB.id}`);
+      window.history.replaceState({}, '', url);
+    }
+
+    async openCrucible(prodAId = null, prodBId = null) {
+      this.initAutocomplete();
+      const all = this.storefront.products || [];
       if (!all || all.length === 0) return;
+
+      // Handle direct links or shared compares with products not in initial batch
+      if (prodAId && !all.some(p => p.id == prodAId)) {
+        try {
+          const resp = await $.getJSON(`api/catalog.php?action=get_product&id=${encodeURIComponent(prodAId)}`);
+          if (resp && resp.Product) {
+            all.push(resp.Product);
+          }
+        } catch (e) {}
+      }
+      if (prodBId && !all.some(p => p.id == prodBId)) {
+        try {
+          const resp = await $.getJSON(`api/catalog.php?action=get_product&id=${encodeURIComponent(prodBId)}`);
+          if (resp && resp.Product) {
+            all.push(resp.Product);
+          }
+        } catch (e) {}
+      }
 
       if (prodAId) {
         this.prodA = all.find(p => p.id == prodAId) || all[0];
@@ -1805,22 +2062,11 @@
         this.prodB = all.find(p => p.id != this.prodA.id) || all[0];
       }
 
-      const $selA = $('#qx_select_prod_a');
-      const $selB = $('#qx_select_prod_b');
-      const emisorKey = this.storefront.tenant?.emisorId || 'default';
+      if (this.prodA) $('#qx_search_prod_a').val(this.prodA.name);
+      if (this.prodB) $('#qx_search_prod_b').val(this.prodB.name);
 
-      if ($selA.children('option').length !== all.length || this._lastLoadedEmisor !== emisorKey) {
-        this._lastLoadedEmisor = emisorKey;
-        let optsHtml = '';
-        for (let i = 0; i < all.length; i++) {
-          const p = all[i];
-          optsHtml += `<option value="${p.id}">${this.storefront.esc(p.name)}</option>`;
-        }
-        $selA.html(optsHtml);
-        $selB.html(optsHtml);
-      }
-      $selA.val(this.prodA.id);
-      $selB.val(this.prodB.id);
+      this.closeDropdown('a');
+      this.closeDropdown('b');
 
       this.renderStageProducts();
       this.renderAiVerdict();
@@ -1842,6 +2088,8 @@
     }
 
     closeCrucible() {
+      this.closeDropdown('a');
+      this.closeDropdown('b');
       $('#qx_crucible_backdrop').removeClass('active');
       $('#qx_crucible_modal').removeClass('active');
       $('body').css('overflow', '');
@@ -2144,12 +2392,7 @@ ${shareUrl}`;
         self.setMode(mode);
       });
 
-      $('#qx_select_prod_a').on('change', function() {
-        self.openCrucible($(this).val(), self.prodB.id);
-      });
-      $('#qx_select_prod_b').on('change', function() {
-        self.openCrucible(self.prodA.id, $(this).val());
-      });
+      self.initAutocomplete();
 
       $('#qx_btn_choose_a').on('click', () => {
         self.storefront.addToCart(self.prodA, 1);

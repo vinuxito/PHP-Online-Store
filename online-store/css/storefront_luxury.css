@@ -1645,27 +1645,75 @@ body[data-atmosphere="minimalist"] .qx-product-selector-pill label,
 body[data-atmosphere="light"] .qx-product-selector-pill label {
   color: #2563eb !important;
 }
-body[data-atmosphere="minimalist"] .qx-crucible-prod-select,
-body[data-atmosphere="light"] .qx-crucible-prod-select {
-  color-scheme: light !important;
+body[data-atmosphere="minimalist"] .qx-crucible-search-input,
+body[data-atmosphere="light"] .qx-crucible-search-input {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   color: #0f172a !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
 }
-body[data-atmosphere="minimalist"] .qx-crucible-prod-select option,
-body[data-atmosphere="light"] .qx-crucible-prod-select option {
-  background-color: #ffffff !important;
+
+body[data-atmosphere="minimalist"] .qx-crucible-search-input:focus,
+body[data-atmosphere="light"] .qx-crucible-search-input:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  background: #ffffff !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-search-toggle,
+body[data-atmosphere="light"] .qx-crucible-search-toggle {
+  color: #64748b !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-search-toggle:hover,
+body[data-atmosphere="light"] .qx-crucible-search-toggle:hover {
+  color: #2563eb !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown,
+body[data-atmosphere="light"] .qx-crucible-dropdown {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown-item,
+body[data-atmosphere="light"] .qx-crucible-dropdown-item {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown-item:hover,
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown-item.active,
+body[data-atmosphere="light"] .qx-crucible-dropdown-item:hover,
+body[data-atmosphere="light"] .qx-crucible-dropdown-item.active {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-item-thumb,
+body[data-atmosphere="light"] .qx-crucible-item-thumb {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-item-name,
+body[data-atmosphere="light"] .qx-crucible-item-name {
   color: #0f172a !important;
 }
-body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:checked,
-body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:hover,
-body[data-atmosphere="minimalist"] .qx-crucible-prod-select option:focus,
-body[data-atmosphere="light"] .qx-crucible-prod-select option:checked,
-body[data-atmosphere="light"] .qx-crucible-prod-select option:hover,
-body[data-atmosphere="light"] .qx-crucible-prod-select option:focus {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
+
+body[data-atmosphere="minimalist"] .qx-crucible-item-meta,
+body[data-atmosphere="light"] .qx-crucible-item-meta {
+  color: #64748b !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-item-price,
+body[data-atmosphere="light"] .qx-crucible-item-price {
+  color: #0284c7 !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown-empty,
+body[data-atmosphere="light"] .qx-crucible-dropdown-empty {
+  color: #64748b !important;
 }
 body[data-atmosphere="minimalist"] .qx-stage-info-pill,
 body[data-atmosphere="light"] .qx-stage-info-pill {
@@ -10698,14 +10746,14 @@ body {
   position: absolute;
   top: 16px;
   left: 20px;
-  z-index: 20;
+  z-index: 35;
   background: rgba(11, 19, 41, 0.95) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(56, 189, 248, 0.35) !important;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 5px 14px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -10725,43 +10773,177 @@ body {
   font-weight: 800 !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
+  cursor: pointer;
+  user-select: none;
 }
 
-.qx-crucible-prod-select {
-  color-scheme: dark !important;
+/* Crucible AJAX Autocomplete Search Elements */
+.qx-crucible-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.qx-crucible-search-input {
   background: #0f172a !important;
   border: 1px solid rgba(56, 189, 248, 0.4) !important;
   color: #f8fafc !important;
   border-radius: 8px !important;
-  padding: 6px 12px !important;
-  font-size: 12.5px !important;
+  padding: 5px 28px 5px 10px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
   outline: none !important;
-  cursor: pointer !important;
-  max-width: 240px !important;
-  transition: all 0.2s ease !important;
+  width: 210px !important;
+  max-width: 250px !important;
+  text-overflow: ellipsis !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.qx-crucible-prod-select:hover,
-.qx-crucible-prod-select:focus {
+.qx-crucible-search-input:focus {
   border-color: #38bdf8 !important;
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
   background: #0b1329 !important;
+  width: 260px !important;
 }
 
-.qx-crucible-prod-select option {
-  background-color: #0b1329 !important;
-  color: #f8fafc !important;
-  padding: 10px 14px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
+.qx-crucible-search-spinner {
+  position: absolute;
+  right: 22px;
+  font-size: 11px;
+  animation: qxSearchSpin 1s linear infinite;
+  pointer-events: none;
 }
 
-.qx-crucible-prod-select option:checked,
-.qx-crucible-prod-select option:hover,
-.qx-crucible-prod-select option:focus {
-  background-color: #1e293b !important;
+@keyframes qxSearchSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.qx-crucible-search-toggle {
+  position: absolute;
+  right: 6px;
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  padding: 2px 4px !important;
+  line-height: 1 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.qx-crucible-search-toggle:hover {
   color: #38bdf8 !important;
+}
+
+/* Floating Glassmorphic Dropdown */
+.qx-crucible-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 330px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(11, 19, 41, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.15);
+  z-index: 100;
+  padding: 6px;
+  display: none;
+}
+
+.qx-product-selector-pill.right .qx-crucible-dropdown {
+  left: auto;
+  right: 0;
+}
+
+.qx-crucible-dropdown.open {
+  display: block;
+  animation: qxDropdownFade 0.15s ease-out;
+}
+
+@keyframes qxDropdownFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.qx-crucible-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.qx-crucible-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.qx-crucible-dropdown-item:hover,
+.qx-crucible-dropdown-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.qx-crucible-item-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.qx-crucible-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qx-crucible-item-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qx-crucible-item-meta {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qx-crucible-item-price {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #38bdf8;
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+.qx-crucible-dropdown-empty {
+  padding: 16px 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .qx-stage-img-wrap {

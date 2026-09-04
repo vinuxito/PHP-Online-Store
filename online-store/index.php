@@ -2041,12 +2041,30 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
       <!-- Central Interactive Crucible Stage -->
       <div class="qx-crucible-stage" id="qx_crucible_stage">
         
+        <!-- Left Product A Selector Pill -->
+        <div class="qx-product-selector-pill" id="qx_selector_pill_a">
+          <label for="qx_search_prod_a">Producto A:</label>
+          <div class="qx-crucible-search-wrap" id="qx_search_wrap_a">
+            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_a" placeholder="Buscar producto o SKU..." autocomplete="off" spellcheck="false">
+            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_a" style="display:none;">⌛</span>
+            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_a" title="Desplegar opciones">▾</button>
+            <div class="qx-crucible-dropdown" id="qx_dropdown_prod_a"></div>
+          </div>
+        </div>
+
+        <!-- Right Product B Selector Pill -->
+        <div class="qx-product-selector-pill right" id="qx_selector_pill_b">
+          <label for="qx_search_prod_b">Producto B:</label>
+          <div class="qx-crucible-search-wrap" id="qx_search_wrap_b">
+            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_b" placeholder="Buscar producto o SKU..." autocomplete="off" spellcheck="false">
+            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_b" style="display:none;">⌛</span>
+            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_b" title="Desplegar opciones">▾</button>
+            <div class="qx-crucible-dropdown" id="qx_dropdown_prod_b"></div>
+          </div>
+        </div>
+
         <!-- Left / Bottom Layer (Product A) -->
         <div class="qx-stage-layer layer-a" id="qx_stage_layer_a">
-          <div class="qx-product-selector-pill">
-            <label>Producto A:</label>
-            <select class="qx-crucible-prod-select" id="qx_select_prod_a"></select>
-          </div>
           <div class="qx-stage-img-wrap">
             <img id="qx_stage_img_a" src="" alt="Producto A" class="qx-stage-img">
           </div>
@@ -2059,10 +2077,6 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
 
         <!-- Right / Overlay Layer (Product B) with Clip-Path Laser Curtain -->
         <div class="qx-stage-layer layer-b" id="qx_stage_layer_b">
-          <div class="qx-product-selector-pill right">
-            <label>Producto B:</label>
-            <select class="qx-crucible-prod-select" id="qx_select_prod_b"></select>
-          </div>
           <div class="qx-stage-img-wrap">
             <img id="qx_stage_img_b" src="" alt="Producto B" class="qx-stage-img">
           </div>
