@@ -1670,11 +1670,22 @@ body[data-atmosphere="light"] .qx-crucible-search-toggle:hover {
   color: #2563eb !important;
 }
 
+body[data-atmosphere="minimalist"] .qx-crucible-search-spinner,
+body[data-atmosphere="light"] .qx-crucible-search-spinner {
+  border-color: rgba(37, 99, 235, 0.2) !important;
+  border-top-color: #2563eb !important;
+}
+
 body[data-atmosphere="minimalist"] .qx-crucible-dropdown,
 body[data-atmosphere="light"] .qx-crucible-dropdown {
   background: rgba(255, 255, 255, 0.98) !important;
   border: 1px solid #cbd5e1 !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-crucible-dropdown::-webkit-scrollbar-thumb,
+body[data-atmosphere="light"] .qx-crucible-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
 }
 
 body[data-atmosphere="minimalist"] .qx-crucible-dropdown-item,
@@ -10719,7 +10730,7 @@ body {
   background: radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
 }
 
@@ -10730,6 +10741,8 @@ body {
   align-items: center;
   justify-content: center;
   padding: 16px;
+  border-radius: 17px;
+  overflow: hidden;
 }
 
 .qx-stage-layer.layer-a {
@@ -10793,8 +10806,8 @@ body {
   font-size: 12px !important;
   font-weight: 700 !important;
   outline: none !important;
-  width: 210px !important;
-  max-width: 250px !important;
+  width: 250px !important;
+  max-width: 320px !important;
   text-overflow: ellipsis !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
@@ -10803,14 +10816,18 @@ body {
   border-color: #38bdf8 !important;
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.4) !important;
   background: #0b1329 !important;
-  width: 260px !important;
+  width: 280px !important;
 }
 
 .qx-crucible-search-spinner {
   position: absolute;
-  right: 22px;
-  font-size: 11px;
-  animation: qxSearchSpin 1s linear infinite;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(56, 189, 248, 0.25);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: qxSearchSpin 0.7s linear infinite;
   pointer-events: none;
 }
 
@@ -10844,8 +10861,8 @@ body {
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  width: 330px;
-  max-height: 280px;
+  width: 350px;
+  max-height: 300px;
   overflow-y: auto;
   background: rgba(11, 19, 41, 0.98);
   backdrop-filter: blur(20px);
@@ -10856,6 +10873,17 @@ body {
   z-index: 100;
   padding: 6px;
   display: none;
+}
+
+.qx-crucible-dropdown::-webkit-scrollbar {
+  width: 5px;
+}
+.qx-crucible-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+.qx-crucible-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 999px;
 }
 
 .qx-product-selector-pill.right .qx-crucible-dropdown {

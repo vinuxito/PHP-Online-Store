@@ -1810,9 +1810,15 @@
       let searchTimer = null;
       let activeIndex = -1;
       let slotResults = [];
+      let searchSeq = 0;
+      let currentXhr = null;
 
       function doSearch(query) {
         clearTimeout(searchTimer);
+        if (currentXhr && currentXhr.readyState !== 4) {
+          currentXhr.abort();
+        }
+        const seq = ++searchSeq;
         $spinner.show();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -1827,8 +1833,9 @@
         if (excludeId) apiUrl += `&exclude_id=${encodeURIComponent(excludeId)}`;
         if (query && query.trim().length > 0) apiUrl += `&q=${encodeURIComponent(query.trim())}`;
 
-        $.getJSON(apiUrl)
+        currentXhr = $.getJSON(apiUrl)
           .done(function(resp) {
+            if (seq !== searchSeq) return;
             $spinner.hide();
             if (resp && resp.Status === 'OK') {
               slotResults = resp.Products || [];
@@ -1838,7 +1845,9 @@
               renderResults([], query);
             }
           })
-          .fail(function() {
+          .fail(function(jqXHR, textStatus) {
+            if (textStatus === 'abort') return;
+            if (seq !== searchSeq) return;
             $spinner.hide();
             const localAll = self.storefront.products || [];
             const qLower = (query || '').toLowerCase().trim();
@@ -1895,7 +1904,9 @@
       }
 
       $input.on('focus', function() {
+        const inputEl = this;
         $(this).select();
+        setTimeout(() => { inputEl.scrollLeft = 0; }, 10);
         self.closeDropdown(slot === 'a' ? 'b' : 'a');
         const curProd = (slot === 'a') ? self.prodA : self.prodB;
         const val = $(this).val();
@@ -1989,7 +2000,11 @@
       $dropdown.removeClass('open');
       const curProd = (slot === 'a') ? this.prodA : this.prodB;
       if (curProd && curProd.name) {
-        $(`#qx_search_prod_${slot}`).val(curProd.name);
+        const inputEl = $(`#qx_search_prod_${slot}`)[0];
+        if (inputEl) {
+          inputEl.value = curProd.name;
+          inputEl.scrollLeft = 0;
+        }
       }
     }
 
@@ -2002,10 +2017,12 @@
 
       if (slot === 'a') {
         this.prodA = product;
-        $('#qx_search_prod_a').val(product.name);
+        const inputA = $('#qx_search_prod_a')[0];
+        if (inputA) { inputA.value = product.name; inputA.scrollLeft = 0; }
       } else {
         this.prodB = product;
-        $('#qx_search_prod_b').val(product.name);
+        const inputB = $('#qx_search_prod_b')[0];
+        if (inputB) { inputB.value = product.name; inputB.scrollLeft = 0; }
       }
 
       $(`#qx_dropdown_prod_${slot}`).removeClass('open');
@@ -2062,8 +2079,14 @@
         this.prodB = all.find(p => p.id != this.prodA.id) || all[0];
       }
 
-      if (this.prodA) $('#qx_search_prod_a').val(this.prodA.name);
-      if (this.prodB) $('#qx_search_prod_b').val(this.prodB.name);
+      if (this.prodA) {
+        const elA = $('#qx_search_prod_a')[0];
+        if (elA) { elA.value = this.prodA.name; elA.scrollLeft = 0; }
+      }
+      if (this.prodB) {
+        const elB = $('#qx_search_prod_b')[0];
+        if (elB) { elB.value = this.prodB.name; elB.scrollLeft = 0; }
+      }
 
       this.closeDropdown('a');
       this.closeDropdown('b');

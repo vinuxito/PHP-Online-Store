@@ -2045,9 +2045,9 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-product-selector-pill" id="qx_selector_pill_a">
           <label for="qx_search_prod_a">Producto A:</label>
           <div class="qx-crucible-search-wrap" id="qx_search_wrap_a">
-            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_a" placeholder="Buscar producto o SKU..." autocomplete="off" spellcheck="false">
-            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_a" style="display:none;">⌛</span>
-            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_a" title="Desplegar opciones">▾</button>
+            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_a" placeholder="Buscar por nombre o SKU..." autocomplete="off" spellcheck="false">
+            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_a" style="display:none;"></span>
+            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_a" title="Desplegar catálogo">▾</button>
             <div class="qx-crucible-dropdown" id="qx_dropdown_prod_a"></div>
           </div>
         </div>
@@ -2056,9 +2056,9 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <div class="qx-product-selector-pill right" id="qx_selector_pill_b">
           <label for="qx_search_prod_b">Producto B:</label>
           <div class="qx-crucible-search-wrap" id="qx_search_wrap_b">
-            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_b" placeholder="Buscar producto o SKU..." autocomplete="off" spellcheck="false">
-            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_b" style="display:none;">⌛</span>
-            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_b" title="Desplegar opciones">▾</button>
+            <input type="text" class="qx-crucible-search-input" id="qx_search_prod_b" placeholder="Buscar por nombre o SKU..." autocomplete="off" spellcheck="false">
+            <span class="qx-crucible-search-spinner" id="qx_spinner_prod_b" style="display:none;"></span>
+            <button type="button" class="qx-crucible-search-toggle" id="qx_toggle_prod_b" title="Desplegar catálogo">▾</button>
             <div class="qx-crucible-dropdown" id="qx_dropdown_prod_b"></div>
           </div>
         </div>
