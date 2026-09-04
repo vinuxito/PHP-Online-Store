@@ -10886,3 +10886,620 @@ body {
     height: 320px;
   }
 }
+
+/* =========================================================================
+ * QUANTIX MORPHING COMMERCIAL ARCHITECTURES — APEX MULTI-ARCHETYPE ENGINE
+ * ========================================================================= */
+
+/* Continuous Density Dynamic Interpolation */
+:root {
+  --qx-density: 0.5;
+}
+
+.qx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(320px - (110px * var(--qx-density, 0.5))), 1fr)) !important;
+  gap: calc(28px - (14px * var(--qx-density, 0.5))) !important;
+  transition: gap 0.25s cubic-bezier(0.16, 1, 0.3, 1), grid-template-columns 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-card {
+  padding: calc(16px - (8px * var(--qx-density, 0.5))) !important;
+  border-radius: calc(18px - (8px * var(--qx-density, 0.5))) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-card-media {
+  height: calc(300px - (120px * var(--qx-density, 0.5))) !important;
+  min-height: calc(300px - (120px * var(--qx-density, 0.5))) !important;
+}
+
+.qx-card-title {
+  font-size: calc(16px - (3px * var(--qx-density, 0.5))) !important;
+  line-height: calc(22px - (4px * var(--qx-density, 0.5))) !important;
+}
+
+.qx-card-price {
+  font-size: calc(18px - (3px * var(--qx-density, 0.5))) !important;
+}
+
+/* ARCHETYPE I: HAUTE MAISON (Default Luxury Atelier) */
+body[data-archetype="maison"] .qx-card {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ARCHETYPE II: TITAN COMMERCIAL (Amazon / MercadoLibre Hyper-Velocity) */
+body[data-archetype="titan"] .qx-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+body[data-archetype="titan"] .qx-card:hover {
+  border-color: var(--qx-accent, #38bdf8);
+  box-shadow: 0 8px 24px -4px rgba(56, 189, 248, 0.25);
+  transform: translateY(-2px);
+}
+body[data-archetype="titan"] .qx-card-title {
+  font-weight: 700;
+  color: #f8fafc;
+}
+body[data-archetype="titan"] .qx-card-price {
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+/* ARCHETYPE III: NORDIC MONOLITH (Pure Minimalist / Apple / Aesop) */
+body[data-archetype="nordic"] {
+  letter-spacing: -0.01em;
+}
+body[data-archetype="nordic"] .qx-card {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  border-radius: 4px !important;
+}
+body[data-archetype="nordic"] .qx-card:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: none !important;
+}
+body[data-archetype="nordic"] .qx-card-zoom-badge,
+body[data-archetype="nordic"] .qx-shield-badge {
+  display: none !important;
+}
+body[data-archetype="nordic"] .qx-card-title {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  text-transform: none;
+}
+body[data-archetype="nordic"] .qx-btn-add-cart {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+body[data-archetype="nordic"] .qx-btn-add-cart:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* ARCHETYPE IV: DYNAMIC SOCIAL DROP (TikTok / High-Conversion Drops) */
+body[data-archetype="social"] .qx-card {
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: linear-gradient(180deg, rgba(30, 20, 35, 0.9) 0%, rgba(15, 10, 20, 0.95) 100%);
+  box-shadow: 0 10px 28px -8px rgba(244, 63, 94, 0.25);
+}
+body[data-archetype="social"] .qx-card-media {
+  aspect-ratio: 9 / 12;
+}
+body[data-archetype="social"] .qx-btn-add-cart {
+  background: linear-gradient(135deg, #f43f5e 0%, #a855f7 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4) !important;
+  animation: qx-pulse-btn 2.5s infinite;
+}
+
+@keyframes qx-pulse-btn {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); box-shadow: 0 6px 18px rgba(244, 63, 94, 0.6); }
+}
+
+/* FLASH DEALS URGENCY BANNER */
+.qx-flash-deals-banner {
+  width: 100%;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.95) 45%, rgba(127, 29, 29, 0.95) 100%);
+  color: #ffffff;
+  padding: 10px 20px;
+  position: relative;
+  z-index: 900;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.qx-flash-deals-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.qx-flash-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qx-flash-flame {
+  font-size: 20px;
+  animation: qx-flash-bounce 1s infinite alternate;
+}
+
+@keyframes qx-flash-bounce {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-2px) scale(1.2); }
+}
+
+.qx-flash-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.qx-flash-tag {
+  background: #ffffff;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.qx-flash-timer-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-timer-label {
+  font-size: 12px;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.qx-timer-clock {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.qx-timer-unit {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 6px;
+  border-radius: 4px;
+  min-width: 24px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.qx-timer-sep {
+  opacity: 0.8;
+}
+
+.qx-flash-coupon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-coupon-code {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.qx-coupon-copy-btn {
+  background: #ffffff;
+  color: #991b1b;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qx-coupon-copy-btn:hover {
+  background: #fee2e2;
+  transform: scale(1.04);
+}
+
+/* SAT CFDI 4.0 & COMMERCIAL TRUST RIBBON */
+.qx-trust-ribbon {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 20px;
+  z-index: 850;
+}
+
+.qx-trust-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .qx-trust-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .qx-trust-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.qx-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qx-trust-icon {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.qx-trust-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.qx-trust-text strong {
+  font-size: 12px;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.qx-trust-text span {
+  font-size: 11px;
+  color: var(--qx-text-muted, #94a3b8);
+}
+
+/* HYPER-VELOCITY COMMERCIAL DEALS RAIL (Amazon/MercadoLibre Carousel) */
+.qx-deals-rails-section {
+  max-width: 1400px;
+  margin: 20px auto 30px auto;
+  padding: 0 20px;
+}
+
+.qx-deals-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.qx-deals-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qx-deals-badge {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #f59e0b;
+  letter-spacing: 0.5px;
+}
+
+.qx-deals-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.qx-deals-nav-arrows {
+  display: flex;
+  gap: 8px;
+}
+
+.qx-deals-arrow {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qx-deals-arrow:hover {
+  background: var(--qx-accent, #38bdf8);
+  border-color: var(--qx-accent, #38bdf8);
+  color: #0f172a;
+}
+
+.qx-deals-track-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--qx-radius-lg, 16px);
+  padding: 4px 0;
+}
+
+.qx-deals-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 8px 4px 16px 4px;
+}
+
+.qx-deals-track::-webkit-scrollbar {
+  display: none;
+}
+
+.qx-rail-card {
+  flex: 0 0 240px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.qx-rail-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.5);
+}
+
+.qx-rail-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 2;
+}
+
+.qx-rail-img-wrap {
+  width: 100%;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.qx-rail-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.qx-rail-card:hover .qx-rail-img {
+  transform: scale(1.06);
+}
+
+.qx-rail-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qx-rail-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.qx-rail-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.qx-rail-old-price {
+  font-size: 12px;
+  color: var(--qx-text-muted, #94a3b8);
+  text-decoration: line-through;
+}
+
+.qx-rail-add-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.qx-rail-add-btn:hover {
+  background: var(--qx-accent, #38bdf8);
+  color: #0f172a;
+}
+
+/* DYNAMIC LIVE SOCIAL PROOF TICKER */
+.qx-social-proof-ticker {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6), 0 0 20px rgba(244, 63, 94, 0.2);
+  z-index: 92000;
+  max-width: 380px;
+  transform: translateY(100px);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-social-proof-ticker.active {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.qx-social-proof-avatar {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.qx-social-proof-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.qx-social-proof-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qx-social-proof-meta {
+  font-size: 11px;
+  color: #a78bfa;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.qx-social-proof-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.qx-social-proof-close:hover {
+  color: #ffffff;
+}
+
+/* Card Archetype Inlays */
+.qx-titan-urgency {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0 4px 0;
+}
+
+.qx-titan-badge {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.qx-titan-rating {
+  font-size: 11px;
+  color: #fbbf24;
+  font-weight: 700;
+}
+
+.qx-titan-rating small {
+  color: var(--qx-text-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.qx-titan-shipping {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.qx-social-stock {
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qx-social-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.qx-social-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #f43f5e 0%, #fb923c 100%);
+  border-radius: 999px;
+}
+
+.qx-social-stock-text {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fb7185;
+}
+
+

@@ -163,6 +163,15 @@ class StorefrontTenant {
                 $tenant->logo = $deMap['STORE_LOGO_URL'];
             }
             $tenant->heroBg = $deMap['STORE_HERO_BG'] ?? 'obsidian';
+            $tenant->archetype = strtolower($deMap['STORE_ARCHETYPE'] ?? 'maison');
+            $tenant->density = floatval($deMap['STORE_COMMERCIAL_DENSITY'] ?? 0.5);
+            $tenant->modules = json_decode($deMap['STORE_COMMERCIAL_MODULES'] ?? '{}', true) ?: [
+                'flash_deals' => true,
+                'horizontal_rails' => true,
+                'cfdi_trust' => true,
+                'hero_vitrina' => true
+            ];
+
             // Load Quantix Apex Command Tower configuration
             $tenant->apexConfig = null;
             try {
@@ -187,6 +196,18 @@ class StorefrontTenant {
                         if (!empty($decodedApex['theme']['primary_color'])) {
                             $tenant->primaryColor = $decodedApex['theme']['primary_color'];
                         }
+                        if (!empty($decodedApex['archetype'])) {
+                            $tenant->archetype = strtolower($decodedApex['archetype']);
+                        } else {
+                            $tenant->archetype = $deMap['STORE_ARCHETYPE'] ?? 'maison';
+                        }
+                        $tenant->density = floatval($decodedApex['density'] ?? ($deMap['STORE_COMMERCIAL_DENSITY'] ?? 0.5));
+                        $tenant->modules = $decodedApex['modules'] ?? (json_decode($deMap['STORE_COMMERCIAL_MODULES'] ?? '{}', true) ?: [
+                            'flash_deals' => true,
+                            'horizontal_rails' => true,
+                            'cfdi_trust' => true,
+                            'hero_vitrina' => true
+                        ]);
                         $tenant->isStoreActive = true; // Enabled when configured via Apex
                     }
                 }

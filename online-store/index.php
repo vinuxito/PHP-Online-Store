@@ -30,7 +30,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>">
+<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
@@ -116,13 +116,95 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </div>
   </header>
 
+  <!-- Flash Deals Urgency Rail (Titan & Commercial Velocity) -->
+  <?php $showFlash = !empty($tenant->modules['flash_deals']); ?>
+  <section class="qx-flash-deals-banner" id="qx_flash_deals_banner" style="<?php echo $showFlash ? '' : 'display:none;'; ?>">
+    <div class="qx-flash-deals-inner">
+      <div class="qx-flash-left">
+        <span class="qx-flash-flame">⚡</span>
+        <span class="qx-flash-title">OFERTAS RELÁMPAGO DE TEMPORADA</span>
+        <span class="qx-flash-tag">TIEMPO LIMITADO</span>
+      </div>
+      <div class="qx-flash-timer-wrapper">
+        <span class="qx-timer-label">Termina en:</span>
+        <div class="qx-timer-clock">
+          <span class="qx-timer-unit" id="qx_deal_hours">04</span><span class="qx-timer-sep">:</span>
+          <span class="qx-timer-unit" id="qx_deal_mins">28</span><span class="qx-timer-sep">:</span>
+          <span class="qx-timer-unit" id="qx_deal_secs">19</span>
+        </div>
+      </div>
+      <div class="qx-flash-coupon">
+        <span class="qx-coupon-code" id="qx_flash_coupon_code">FLASH20</span>
+        <button type="button" class="qx-coupon-copy-btn" id="qx_btn_copy_coupon" title="Copiar cupón de descuento">
+          <span>Copiar Cupón</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAT CFDI 4.0 & Commercial Trust Ribbon -->
+  <?php $showTrust = !empty($tenant->modules['cfdi_trust']); ?>
+  <div class="qx-trust-ribbon" id="qx_trust_bar" style="<?php echo $showTrust ? '' : 'display:none;'; ?>">
+    <div class="qx-trust-container">
+      <div class="qx-trust-item">
+        <span class="qx-trust-icon">🏛️</span>
+        <div class="qx-trust-text">
+          <strong>Facturación CFDI 4.0</strong>
+          <span>Inmediata y 100% deducible SAT</span>
+        </div>
+      </div>
+      <div class="qx-trust-item">
+        <span class="qx-trust-icon">🛡️</span>
+        <div class="qx-trust-text">
+          <strong>Garantía Auténtica</strong>
+          <span>Producto 100% original directo de emisor</span>
+        </div>
+      </div>
+      <div class="qx-trust-item">
+        <span class="qx-trust-icon">⚡</span>
+        <div class="qx-trust-text">
+          <strong>Envíos Express</strong>
+          <span>Entrega asegurada a todo México</span>
+        </div>
+      </div>
+      <div class="qx-trust-item">
+        <span class="qx-trust-icon">💳</span>
+        <div class="qx-trust-text">
+          <strong>Pago Seguro</strong>
+          <span>Cifrado bancario SSL 256-Bit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Boutique Stories Bar (Social Commerce) -->
   <section class="qx-stories-section">
     <div class="qx-stories-container" id="qx_stories_container"></div>
   </section>
 
+  <!-- Hyper-Velocity Commercial Deals Rail (Amazon/MercadoLibre Style) -->
+  <?php $showRails = !empty($tenant->modules['horizontal_rails']); ?>
+  <section class="qx-deals-rails-section" id="qx_deals_rails_section" style="<?php echo $showRails ? '' : 'display:none;'; ?>">
+    <div class="qx-deals-header">
+      <div class="qx-deals-headline">
+        <span class="qx-deals-badge">🚀 MÁS VENDIDOS & DESTACADOS</span>
+        <h2 class="qx-deals-title">Ofertas Más Calientes del Catálogo</h2>
+      </div>
+      <div class="qx-deals-nav-arrows">
+        <button type="button" class="qx-deals-arrow prev" id="qx_deals_prev" aria-label="Desplazar a la izquierda">‹</button>
+        <button type="button" class="qx-deals-arrow next" id="qx_deals_next" aria-label="Desplazar a la derecha">›</button>
+      </div>
+    </div>
+    <div class="qx-deals-track-container">
+      <div class="qx-deals-track" id="qx_deals_track">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </section>
+
   <!-- Hero Showcase Banner -->
-  <section class="qx-hero">
+  <?php $showHero = !isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina']); ?>
+  <section class="qx-hero" id="qx_hero_section" style="<?php echo $showHero ? '' : 'display:none;'; ?>">
     <h1 class="qx-hero-title"><?php echo htmlspecialchars(!empty($tenant->headline) ? $tenant->headline : $tenant->brandName); ?></h1>
     <p class="qx-hero-subtitle"><?php echo htmlspecialchars($tenant->description); ?></p>
     
@@ -1836,6 +1918,24 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
             window.quantixStore.renderGrid(true);
           }
         }
+        if (type === 'SYNC_ARCHETYPE') {
+          const archetype = (typeof payload === 'object' ? payload.archetype : payload) || 'maison';
+          $('body').attr('data-archetype', archetype);
+          if (window.quantixStore && window.quantixStore.setArchetype) {
+            window.quantixStore.setArchetype(archetype, payload ? payload.modules : null);
+          }
+        }
+        if (type === 'SYNC_COMMERCIAL_DENSITY') {
+          const density = parseFloat((payload && payload.density !== undefined) ? payload.density : payload);
+          document.documentElement.style.setProperty('--qx-density', density);
+          document.body.style.setProperty('--qx-density', density);
+        }
+        if (type === 'SYNC_COMMERCIAL_MODULES') {
+          const modules = (payload && payload.modules) ? payload.modules : payload;
+          if (window.quantixStore && window.quantixStore.updateModules) {
+            window.quantixStore.updateModules(modules);
+          }
+        }
       }
     });
   </script>
@@ -2001,5 +2101,15 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
 
     </div>
   </div>
+
+  <!-- Dynamic Live Social Proof Ticker -->
+  <aside class="qx-social-proof-ticker" id="qx_social_proof_ticker" style="display:none;">
+    <div class="qx-social-proof-avatar">🔥</div>
+    <div class="qx-social-proof-content">
+      <div class="qx-social-proof-title" id="qx_social_proof_text">Alguien en Ciudad de México acaba de ordenar</div>
+      <div class="qx-social-proof-meta" id="qx_social_proof_meta">Hace 3 minutos • Compra Verificada</div>
+    </div>
+    <button type="button" class="qx-social-proof-close" id="qx_social_proof_close" aria-label="Cerrar">&times;</button>
+  </aside>
 </body>
 </html>

@@ -2755,6 +2755,21 @@ ${shareUrl}`;
           if (resp.Status === 'OK') {
             self.tenant = resp.Tenant;
             self.products = resp.Products || [];
+            if (self.tenant) {
+              if (self.tenant.archetype) {
+                self.setArchetype(self.tenant.archetype, self.tenant.modules);
+              }
+              if (self.tenant.density !== undefined) {
+                document.documentElement.style.setProperty('--qx-density', self.tenant.density);
+                document.body.style.setProperty('--qx-density', self.tenant.density);
+              }
+              if (self.tenant.modules) {
+                self.updateModules(self.tenant.modules);
+              }
+            }
+            self.initFlashDeals();
+            self.renderDealsRail(self.products);
+            self.initSocialProofTicker();
             self.renderHero3DCarousel(resp.Featured || []);
             self.renderCategories(resp.Categories || []);
             self.applyFilters();
@@ -2766,6 +2781,183 @@ ${shareUrl}`;
         .fail(function(xhr) {
           $('#qx_product_grid').html('<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error al conectar con la tienda.</div>');
         });
+    }
+
+    setArchetype(archetype = 'maison', modules = null) {
+      this.currentArchetype = archetype;
+      $('body').attr('data-archetype', archetype);
+
+      if (modules) {
+        this.updateModules(modules);
+      } else {
+        if (archetype === 'titan') {
+          $('#qx_flash_deals_banner').show();
+          $('#qx_deals_rails_section').show();
+          $('#qx_trust_bar').show();
+        } else if (archetype === 'nordic') {
+          $('#qx_flash_deals_banner').hide();
+          $('#qx_deals_rails_section').hide();
+          $('#qx_trust_bar').hide();
+        } else if (archetype === 'social') {
+          $('#qx_flash_deals_banner').show();
+          $('#qx_deals_rails_section').show();
+        }
+      }
+      this.renderGrid(true);
+    }
+
+    updateModules(modules) {
+      if (!modules) return;
+      if (modules.flash_deals !== undefined) {
+        $('#qx_flash_deals_banner').toggle(Boolean(modules.flash_deals));
+      }
+      if (modules.horizontal_rails !== undefined) {
+        $('#qx_deals_rails_section').toggle(Boolean(modules.horizontal_rails));
+      }
+      if (modules.cfdi_trust !== undefined) {
+        $('#qx_trust_bar').toggle(Boolean(modules.cfdi_trust));
+      }
+      if (modules.hero_vitrina !== undefined) {
+        $('#qx_hero_section').toggle(Boolean(modules.hero_vitrina));
+      }
+    }
+
+    initFlashDeals() {
+      const self = this;
+      if (this.flashTimerInterval) {
+        clearInterval(this.flashTimerInterval);
+      }
+
+      let targetTime = Date.now() + (4 * 3600 + 32 * 60 + 15) * 1000;
+
+      function updateClock() {
+        const remaining = Math.max(0, targetTime - Date.now());
+        const totalSecs = Math.floor(remaining / 1000);
+        const hours = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        const secs = totalSecs % 60;
+
+        $('#qx_deal_hours').text(String(hours).padStart(2, '0'));
+        $('#qx_deal_mins').text(String(mins).padStart(2, '0'));
+        $('#qx_deal_secs').text(String(secs).padStart(2, '0'));
+
+        if (remaining <= 0) {
+          targetTime = Date.now() + 6 * 3600 * 1000;
+        }
+      }
+
+      updateClock();
+      this.flashTimerInterval = setInterval(updateClock, 1000);
+
+      $('#qx_btn_copy_coupon').off('click').on('click', function() {
+        const code = $('#qx_flash_coupon_code').text().trim() || 'FLASH20';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(() => {
+            self.showToast(`🎟️ Cupón "${code}" copiado al portapapeles`);
+            $(this).find('span').text('¡Copiado!');
+            setTimeout(() => {
+              $('#qx_btn_copy_coupon span').text('Copiar Cupón');
+            }, 2000);
+          }).catch(() => {
+            self.showToast(`🎟️ Cupón: ${code}`);
+          });
+        } else {
+          self.showToast(`🎟️ Cupón: ${code}`);
+        }
+      });
+    }
+
+    renderDealsRail(products) {
+      const self = this;
+      const track = $('#qx_deals_track');
+      if (!track.length) return;
+      track.empty();
+
+      const featured = (products && products.length) ? products.slice(0, 10) : [];
+      if (!featured.length) {
+        $('#qx_deals_rails_section').hide();
+        return;
+      }
+
+      featured.forEach((p, idx) => {
+        const photos = p.photos && p.photos.length ? p.photos : [{ thumb: p.cover, url: p.cover }];
+        const imgUrl = photos[0].url || photos[0].thumb || p.cover;
+        const discountPercent = 10 + (idx % 3) * 5;
+        const oldPrice = p.priceWithTax ? (p.priceWithTax * (1 + discountPercent / 100)).toFixed(2) : '0.00';
+
+        const card = $(`
+          <div class="qx-rail-card" data-id="${p.id}">
+            <span class="qx-rail-badge">-${discountPercent}% OFF</span>
+            <div class="qx-rail-img-wrap">
+              <img class="qx-rail-img" src="${self.esc(imgUrl)}" alt="${self.esc(p.name)}" loading="lazy">
+            </div>
+            <div class="qx-rail-title" title="${self.esc(p.name)}">${self.esc(p.name)}</div>
+            <div class="qx-rail-price-row">
+              <span class="qx-rail-price">$ ${self.formatMoney(p.priceWithTax)}</span>
+              <span class="qx-rail-old-price">$ ${self.formatMoney(oldPrice)}</span>
+            </div>
+            <button type="button" class="qx-rail-add-btn">
+              ⚡ Agregar
+            </button>
+          </div>
+        `);
+
+        card.find('.qx-rail-img-wrap, .qx-rail-title').on('click', () => {
+          self.openProductModal(p);
+        });
+
+        card.find('.qx-rail-add-btn').on('click', (e) => {
+          e.stopPropagation();
+          self.addToCart(p, 1);
+          self.showToast(`⚡ ${p.name} agregado al carrito`);
+        });
+
+        track.append(card);
+      });
+
+      $('#qx_deals_prev').off('click').on('click', () => {
+        track.animate({ scrollLeft: track.scrollLeft() - 320 }, 250);
+      });
+      $('#qx_deals_next').off('click').on('click', () => {
+        track.animate({ scrollLeft: track.scrollLeft() + 320 }, 250);
+      });
+    }
+
+    initSocialProofTicker() {
+      const self = this;
+      const ticker = $('#qx_social_proof_ticker');
+      if (!ticker.length) return;
+
+      const cities = ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Querétaro', 'Mérida', 'Cancún'];
+      const actions = ['acaba de ordenar', 'agregó a su bolsa', 'compró con envío express'];
+
+      function showNextNotification() {
+        if (!self.products || !self.products.length) return;
+        const prod = self.products[Math.floor(Math.random() * self.products.length)];
+        const city = cities[Math.floor(Math.random() * cities.length)];
+        const act = actions[Math.floor(Math.random() * actions.length)];
+        const mins = Math.floor(Math.random() * 8) + 1;
+
+        $('#qx_social_proof_text').text(`Alguien en ${city} ${act} ${prod.name}`);
+        $('#qx_social_proof_meta').text(`Hace ${mins} minutos • Compra Verificada SAT CFDI 4.0`);
+
+        ticker.addClass('active');
+
+        setTimeout(() => {
+          ticker.removeClass('active');
+        }, 4500);
+      }
+
+      $('#qx_social_proof_close').off('click').on('click', function(e) {
+        e.stopPropagation();
+        ticker.removeClass('active');
+      });
+
+      setTimeout(() => {
+        showNextNotification();
+        if (self.socialTickerInterval) clearInterval(self.socialTickerInterval);
+        self.socialTickerInterval = setInterval(showNextNotification, 18000);
+      }, 6000);
     }
 
     renderCategories(categories) {
@@ -2930,6 +3122,26 @@ ${shareUrl}`;
       });
 
       // Card Content
+      const currentArchetype = $('body').attr('data-archetype') || (self.tenant && self.tenant.archetype) || 'maison';
+      let urgencyHtml = '';
+      if (currentArchetype === 'titan') {
+        urgencyHtml = `
+          <div class="qx-titan-urgency">
+            <span class="qx-titan-badge">⚡ FLASH DEAL</span>
+            <span class="qx-titan-rating">★★★★★ <small>(98)</small></span>
+          </div>
+          <div class="qx-titan-shipping">🚚 Envío FULL Mañana</div>
+        `;
+      } else if (currentArchetype === 'social') {
+        const remaining = 3 + (Math.abs((p.id || 1) * 7) % 8);
+        urgencyHtml = `
+          <div class="qx-social-stock">
+            <div class="qx-social-bar"><div class="qx-social-progress" style="width: ${Math.min(92, 100 - remaining * 7)}%;"></div></div>
+            <span class="qx-social-stock-text">🔥 Quedan solo ${remaining} piezas</span>
+          </div>
+        `;
+      }
+
       const body = $(`
         <div class="qx-card-body">
           <div class="qx-card-meta">
@@ -2937,6 +3149,7 @@ ${shareUrl}`;
             ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
           </div>
           <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
+          ${urgencyHtml}
           <div class="qx-card-footer">
             <div class="qx-card-price-block">
               <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>

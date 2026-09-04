@@ -218,7 +218,15 @@ try {
             'address'     => $tenant->address,
             'quantixStorePerfums' => $tenant->quantixStorePerfums,
             'featureMatrix'=> $tenant->apexConfig['feature_matrix'] ?? [],
-            'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13
+            'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13,
+            'archetype'   => $tenant->archetype ?? 'maison',
+            'density'     => $tenant->density ?? 0.5,
+            'modules'     => $tenant->modules ?? [
+                'flash_deals' => true,
+                'horizontal_rails' => true,
+                'cfdi_trust' => true,
+                'hero_vitrina' => true
+            ]
         ],
         'Categories' => $categories,
         'Featured'   => $featuredProducts,
