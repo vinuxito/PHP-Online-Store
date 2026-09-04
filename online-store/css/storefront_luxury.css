@@ -446,6 +446,16 @@ body[data-atmosphere="light"] .qx-hero-title.qx-shader-liquid_gold {
   filter: drop-shadow(0 1px 2px rgba(120, 53, 15, 0.2)) !important;
 }
 
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-liquid_gold *,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-liquid_gold * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
 body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-platinum_ice,
 body[data-atmosphere="light"] .qx-hero-title.qx-shader-platinum_ice {
   background: linear-gradient(135deg, #0f172a 0%, #0369a1 40%, #0284c7 70%, #0f172a 100%) !important;
@@ -455,6 +465,16 @@ body[data-atmosphere="light"] .qx-hero-title.qx-shader-platinum_ice {
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.2)) !important;
 }
 
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-platinum_ice *,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-platinum_ice * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
 body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-rose_champagne,
 body[data-atmosphere="light"] .qx-hero-title.qx-shader-rose_champagne {
   background: linear-gradient(135deg, #9f1239 0%, #e11d48 40%, #be123c 70%, #881337 100%) !important;
@@ -462,6 +482,16 @@ body[data-atmosphere="light"] .qx-hero-title.qx-shader-rose_champagne {
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   filter: drop-shadow(0 1px 2px rgba(159, 18, 57, 0.2)) !important;
+}
+
+body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-rose_champagne *,
+body[data-atmosphere="light"] .qx-hero-title.qx-shader-rose_champagne * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 body[data-atmosphere="minimalist"] .qx-hero-title.qx-shader-obsidian_neon,
@@ -2225,6 +2255,15 @@ body {
   filter: drop-shadow(0 2px 10px rgba(179, 135, 40, 0.35));
 }
 
+.qx-hero-title.qx-shader-liquid_gold * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
 .qx-hero-title.qx-shader-platinum_ice {
   background: linear-gradient(135deg, #cbd5e1 0%, #ffffff 30%, #94a3b8 55%, #38bdf8 80%, #e2e8f0 100%);
   background-size: 200% auto;
@@ -2233,12 +2272,30 @@ body {
   filter: drop-shadow(0 2px 10px rgba(56, 189, 248, 0.35));
 }
 
+.qx-hero-title.qx-shader-platinum_ice * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
 .qx-hero-title.qx-shader-rose_champagne {
   background: linear-gradient(135deg, #f43f5e 0%, #fbcfe8 35%, #fda4af 65%, #e11d48 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 10px rgba(244, 63, 94, 0.3));
+}
+
+.qx-hero-title.qx-shader-rose_champagne * {
+  background: inherit !important;
+  background-size: inherit !important;
+  background-position: inherit !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
 .qx-hero-title.qx-shader-obsidian_neon {
@@ -2295,21 +2352,30 @@ body {
   letter-spacing: 0.12em;
 }
 
+/* Hero Title Child Elements */
+.qx-hero-title * {
+  display: inline !important;
+  position: static !important;
+}
+
 /* Accent Brackets and Luxury Ampersand */
 .qx-title-accent {
-  display: inline;
-  font-weight: 900;
-  position: relative;
+  display: inline !important;
+  position: static !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+  letter-spacing: 0.03em !important;
 }
 
 .qx-title-amp {
-  display: inline-block;
-  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-weight: 400;
-  padding: 0 0.16em;
-  font-size: 1.08em;
-  vertical-align: baseline;
+  display: inline !important;
+  position: static !important;
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+  padding: 0 0.18em !important;
+  font-size: 1.08em !important;
+  vertical-align: baseline !important;
   opacity: 0.95;
 }
 

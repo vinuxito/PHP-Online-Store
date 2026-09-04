@@ -2029,7 +2029,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
               $('.qx-brand-title').text(payload.brandName);
             }
             if (payload.headline) {
-              $('.qx-hero-title').text(payload.headline);
+              $('.qx-hero-title').html(formatHeroHeadlineJs(payload.headline));
             }
             if (payload.subheadline) {
               $('.qx-hero-subtitle').text(payload.subheadline);
