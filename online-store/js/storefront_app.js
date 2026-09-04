@@ -2783,6 +2783,21 @@ ${shareUrl}`;
         });
     }
 
+    applyIndustryPreset(preset) {
+      if (!preset) return;
+      if (preset.archetype) {
+        this.setArchetype(preset.archetype, preset.modules);
+      }
+      if (preset.modules) {
+        this.updateModules(preset.modules);
+      }
+      if (preset.density !== undefined) {
+        document.documentElement.style.setProperty('--qx-density', preset.density);
+        document.body.style.setProperty('--qx-density', preset.density);
+      }
+      this.showToast(`🏢 Proyección Activa: ${preset.industryTitle || preset.brandName}`);
+    }
+
     setArchetype(archetype = 'maison', modules = null) {
       this.currentArchetype = archetype;
       $('body').attr('data-archetype', archetype);

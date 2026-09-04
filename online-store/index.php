@@ -1936,6 +1936,38 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
             window.quantixStore.updateModules(modules);
           }
         }
+        if (type === 'SYNC_INDUSTRY_PRESET') {
+          if (payload) {
+            if (payload.atmosphere) {
+              persistentAtmosphere = payload.atmosphere;
+              $('body').attr('data-atmosphere', payload.atmosphere);
+            }
+            if (payload.primaryColor) {
+              document.documentElement.style.setProperty('--qx-accent', payload.primaryColor);
+              document.documentElement.style.setProperty('--qx-accent-gradient', `linear-gradient(135deg, ${payload.primaryColor} 0%, #2563eb 100%)`);
+            }
+            if (payload.archetype) {
+              $('body').attr('data-archetype', payload.archetype);
+            }
+            if (payload.density !== undefined) {
+              const d = parseFloat(payload.density);
+              document.documentElement.style.setProperty('--qx-density', d);
+              document.body.style.setProperty('--qx-density', d);
+            }
+            if (payload.brandName) {
+              $('.qx-brand-title').text(payload.brandName);
+            }
+            if (payload.headline) {
+              $('.qx-hero-title').text(payload.headline);
+            }
+            if (payload.subheadline) {
+              $('.qx-hero-subtitle').text(payload.subheadline);
+            }
+            if (window.quantixStore && window.quantixStore.applyIndustryPreset) {
+              window.quantixStore.applyIndustryPreset(payload);
+            }
+          }
+        }
       }
     });
   </script>
