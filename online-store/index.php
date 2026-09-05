@@ -23,6 +23,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
   <title><?php echo htmlspecialchars($tenant->brandName); ?> — Boutique Oficial</title>
   <meta name="description" content="<?php echo htmlspecialchars($tenant->description); ?>">
   <link rel="stylesheet" href="css/storefront_luxury.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_luxury.css'); ?>">
+  <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
   <style>
     :root {
       --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
@@ -2714,5 +2715,6 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </div>
     <button type="button" class="qx-social-proof-close" id="qx_social_proof_close" aria-label="Cerrar">&times;</button>
   </aside>
+  <script src="js/filemon_cockpit.js?v=<?php echo filemtime(__DIR__ . '/js/filemon_cockpit.js'); ?>"></script>
 </body>
 </html>
