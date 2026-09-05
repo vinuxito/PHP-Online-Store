@@ -4,6 +4,7 @@ Real-time, ultra-luxury, and multi-archetype e-commerce storefront platform desi
 
 ## Architecture & Integration
 - **Platform:** PHP 7.4+ Procedural & OOP Backend / Modern Vanilla JS & jQuery Frontend.
+- **Master Developer Codex:** Complete operational playbook, workflows, and 10 Commandments documented in `/lamp/www/cfdadmin/docs/CODEX_MASTER_HANDBOOK.md` and `/lamp/www/cfdadmin/docs/codex/WORKFLOWS_PLAYBOOK.md`.
 - **Master Director Control:** Governed via `/lamp/www/cfdadmin/storefront_master.php` through real-time bidirectional `postMessage` synchronization (`GlassTwinBridge`).
 - **Archetype Isolation:** Multi-tenant support for Haute Perfumerie (`Mistiq`), Industrial Electrical/Hardware (`Gersol`), and Generic Retail, fully isolated without domain or terminology bleed.
 - **Fiscal Compliance:** SAT CFDI 4.0 ready with dynamic RFC validation (Persona Moral vs Física vs Público en General/Extranjero).
