@@ -19,8 +19,8 @@ Real-time, ultra-luxury, and multi-archetype e-commerce storefront platform desi
 - **Targeted Test Suite:** Verified 100% green (14/14 PASS) via `/lamp/www/cfdadmin/tests/e2e/test_filemon_prime_assistant.mjs`.
 - **Verification Documentation:**
   - Memory: `/lamp/www/cfdadmin/docs/memories/session-2026-09-05-filemon-prime-realtime-assistant.md`
-  - HTML Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-filemon-prime-realtime-assistant.html`
-  - Markdown Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-filemon-prime-realtime-assistant.md`
+  - HTML Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-filemon-prime-realtime-assistant-verification.html`
+  - Markdown Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-filemon-prime-realtime-assistant-verification.md`
   - Plan Index: `/lamp/www/cfdadmin/docs/plans/filemon-prime-realtime-assistant/INDEX.md`
 
 ## Previous Upgrade: Quantix Spatial AR WebXR Quick-Look & Mobile Holographic QR Bridge (2026-09-05)
