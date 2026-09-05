@@ -34,10 +34,18 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Catalog View Switcher:** 2-Column Luxury Masonry vs 1-Column Cinema mode toggle with `localStorage` persistence.
    - **Web Haptics & Gesture Interception:** Silent vibration feedback (`navigator.vibrate`) and mobile back-gesture (`popstate`) trapping to prevent accidental app exits.
 
+7. **Maître D' Hero Stage Typography Atelier & Haute Shaders (Capítulo IV)**
+   - **Live Interactive Preview Plaque:** Real-time editorial typography canvas in Store Director mirroring the storefront hero headline with dual-theme preview toggle.
+   - **Dynamic Token Parsing:** Instant `{accent}` keyword wrapping with metallic shaders and calligraphic ampersand `&` styling (`Playfair Display Italic`).
+   - **5 Luminescent GPU Shaders:** Liquid Gold (`liquid_gold`), Platinum Ice (`platinum_ice`), Rose Champagne (`rose_champagne`), Obsidian Neon (`obsidian_neon`), and Pure Monochrome (`pure_monochrome`) with 60 FPS specular shimmer.
+   - **Dual-Theme High Contrast (WCAG AAA):** Dynamic chromatic adaptation ensuring 100% character visibility across Obsidian and Apple Pure Light themes.
+   - **1-Click Haute Aura Presets:** Instant seasonal curations ("Otoño Opulento", "Solarium", "Maison Prestige", "Noir Privé") with haptic chime and Glass Twin live sync at 120 FPS.
+
 ## Verification & Testing
 
 Automated Playwright test suite:
 ```bash
+node /lamp/www/cfdadmin/tests/e2e/test_hero_typography_atelier.mjs
 node /lamp/www/cfdadmin/tests/e2e/vx-quantix-storefront-e2e.mjs
 node /lamp/www/cfdadmin/tests/e2e/vx-storefront-maitre-d-e2e.mjs
 ```
