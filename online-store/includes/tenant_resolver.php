@@ -40,6 +40,16 @@ class StorefrontTenant {
         return !empty($this->studio3DConfig['enabled']);
     }
 
+    public function isAREnabled() {
+        $cfg = $this->getStudio3DConfig();
+        return !empty($cfg['enabled']) && !empty($cfg['ar_calibration']['enabled']);
+    }
+
+    public function getARCalibration() {
+        $cfg = $this->getStudio3DConfig();
+        return $cfg['ar_calibration'] ?? [];
+    }
+
     public function getStudio3DConfig() {
         $cfg = $this->studio3DConfig ?: [];
         if (!isset($cfg['enabled'])) $cfg['enabled'] = false;
@@ -104,6 +114,26 @@ class StorefrontTenant {
         if (!empty($cfg['custom_hotspots']) && is_array($cfg['custom_hotspots'])) {
             $cfg['custom_hotspots'] = array_values($cfg['custom_hotspots']);
         }
+
+        // AR Spatial Calibration defaults
+        if (!isset($cfg['ar_calibration']) || !is_array($cfg['ar_calibration'])) {
+            $cfg['ar_calibration'] = [
+                'enabled' => true,
+                'anchor' => 'surface',
+                'height_mm' => $this->isPerfumery() ? 150 : 240,
+                'width_mm' => $this->isPerfumery() ? 65 : 120,
+                'depth_mm' => $this->isPerfumery() ? 65 : 120,
+                'lock_scale' => true
+            ];
+        } else {
+            if (!isset($cfg['ar_calibration']['enabled'])) $cfg['ar_calibration']['enabled'] = true;
+            if (!isset($cfg['ar_calibration']['anchor'])) $cfg['ar_calibration']['anchor'] = 'surface';
+            if (!isset($cfg['ar_calibration']['height_mm'])) $cfg['ar_calibration']['height_mm'] = $this->isPerfumery() ? 150 : 240;
+            if (!isset($cfg['ar_calibration']['width_mm'])) $cfg['ar_calibration']['width_mm'] = $this->isPerfumery() ? 65 : 120;
+            if (!isset($cfg['ar_calibration']['depth_mm'])) $cfg['ar_calibration']['depth_mm'] = $this->isPerfumery() ? 65 : 120;
+            if (!isset($cfg['ar_calibration']['lock_scale'])) $cfg['ar_calibration']['lock_scale'] = true;
+        }
+
         return $cfg;
     }
 

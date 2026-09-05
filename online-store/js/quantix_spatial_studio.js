@@ -31,8 +31,18 @@
         allow_zoom: true,
         allow_explode: true,
         finishes: [],
-        hotspots: []
+        hotspots: [],
+        ar_calibration: {}
       }, domConfig, userConfig);
+
+      this.arCalibration = Object.assign({
+        enabled: true,
+        anchor: 'surface',
+        height_mm: 150,
+        width_mm: 65,
+        depth_mm: 65,
+        lock_scale: true
+      }, this.config.ar_calibration || {});
 
       this.container = this.wrapper.querySelector('#qx_studio_canvas_container') || this.wrapper;
       this.hotspotsLayer = this.wrapper.querySelector('#qx_studio_hotspots_layer');
@@ -75,6 +85,7 @@
       this.initHotspots();
       this.initShelfAndFinishes();
       this.bindEvents();
+      this.initARBridge();
       this.initVisibilityObserver();
 
       this.animate = this.animate.bind(this);
@@ -749,6 +760,7 @@
       }
 
       this.updatePriceDisplay();
+      this.updateARVariant(finish);
     }
 
     updatePriceDisplay() {
@@ -1014,6 +1026,206 @@
 
     setLightingPreset(preset) {
       this.applyLightingPreset(preset);
+    }
+
+    // =========================================================================
+    // Spatial AR WebXR Quick-Look & Holographic QR Bridge Engine
+    // =========================================================================
+
+    initARBridge() {
+      const arBtn = this.wrapper.querySelector('#qx_btn_3d_ar');
+      const arPill = this.wrapper.querySelector('#qx_btn_ar_pill');
+      const modal = document.getElementById('qx_modal_ar_bridge');
+      const closeBtn = document.getElementById('qx_ar_modal_close');
+      const backdrop = document.getElementById('qx_ar_modal_backdrop');
+      const mobileBtn = document.getElementById('qx_btn_launch_mobile_ar');
+
+      if (arBtn) {
+        arBtn.addEventListener('click', () => this.openARBridge());
+      }
+      if (arPill) {
+        arPill.addEventListener('click', () => this.openARBridge());
+      }
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => this.closeARBridge());
+      }
+      if (backdrop) {
+        backdrop.addEventListener('click', () => this.closeARBridge());
+      }
+      if (mobileBtn) {
+        mobileBtn.addEventListener('click', () => this.launchMobileAR());
+      }
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+          this.closeARBridge();
+        }
+      });
+    }
+
+    openARBridge() {
+      const modal = document.getElementById('qx_modal_ar_bridge');
+      if (!modal) return;
+
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+
+      if (window.QuantixHapticAudio) {
+        window.QuantixHapticAudio.playCrystalChime();
+      }
+
+      const isMobile = window.innerWidth < 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const mobileBox = document.getElementById('qx_ar_mobile_direct_box');
+      if (mobileBox) {
+        mobileBox.style.display = isMobile ? 'block' : 'none';
+      }
+
+      const activeFinish = this.activeFinish || (this.config.finishes && this.config.finishes[0]);
+      if (activeFinish) {
+        this.updateARVariant(activeFinish);
+      } else {
+        this.generateARQRCode();
+      }
+    }
+
+    closeARBridge() {
+      const modal = document.getElementById('qx_modal_ar_bridge');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+      }
+      if (window.QuantixHapticAudio) {
+        window.QuantixHapticAudio.playDialTick();
+      }
+    }
+
+    generateARQRCode() {
+      const img = document.getElementById('qx_ar_qr_img');
+      const spinner = document.getElementById('qx_ar_qr_spinner');
+
+      if (spinner) spinner.style.display = 'flex';
+      if (img) img.style.opacity = '0.3';
+
+      const origin = window.location.origin;
+      const pathname = window.location.pathname;
+      const finish = this.activeFinish ? this.activeFinish.id : (this.config.finishes && this.config.finishes[0] ? this.config.finishes[0].id : 'default');
+      const modelSrc = this.customModelUrl ? 'custom' : 'procedural';
+      const modelUrl = this.customModelUrl || '';
+      const heightMm = this.arCalibration.height_mm || 150;
+      const anchor = this.arCalibration.anchor || 'surface';
+      const lockScale = this.arCalibration.lock_scale ? 1 : 0;
+
+      const query = `ar_launch=1&finish=${encodeURIComponent(finish)}&model_src=${encodeURIComponent(modelSrc)}&scale_mm=${heightMm}&anchor=${anchor}&lock_scale=${lockScale}${modelUrl ? `&model_url=${encodeURIComponent(modelUrl)}` : ''}`;
+      const fullTargetUrl = `${origin}${pathname}?${query}`;
+
+      const isDirectorHost = window.location.pathname.startsWith('/cfdadmin') || window.location.hostname === 'evinux.net';
+      const qrEndpoint = isDirectorHost
+        ? `/cfdadmin/ajax/store_ar_qr.php?url=${encodeURIComponent(fullTargetUrl)}`
+        : `/api/store_ar_qr.php?url=${encodeURIComponent(fullTargetUrl)}`;
+
+      fetch(qrEndpoint)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.data_url) {
+            if (img) {
+              img.src = data.data_url;
+              img.setAttribute('data-payload', fullTargetUrl);
+              img.style.opacity = '1';
+            }
+            if (spinner) spinner.style.display = 'none';
+          } else {
+            console.warn('QuantixSpatialStudio: Failed to generate AR QR code', data);
+            if (spinner) spinner.style.display = 'none';
+            if (img) img.style.opacity = '1';
+          }
+        })
+        .catch(err => {
+          console.error('QuantixSpatialStudio: Error fetching AR QR code', err);
+          if (spinner) spinner.style.display = 'none';
+          if (img) img.style.opacity = '1';
+        });
+    }
+
+    updateARVariant(finish) {
+      const label = document.getElementById('qx_ar_active_variant_label');
+      if (label && finish) {
+        const heightMm = this.arCalibration.height_mm || 150;
+        label.textContent = `Acabado Activo: ${finish.name || finish.id} • ${heightMm} mm`;
+      }
+
+      const modal = document.getElementById('qx_modal_ar_bridge');
+      if (modal && modal.style.display !== 'none') {
+        this.generateARQRCode();
+      }
+    }
+
+    launchMobileAR() {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isAndroid = /Android/i.test(navigator.userAgent);
+
+      if (window.QuantixHapticAudio) {
+        window.QuantixHapticAudio.playCrystalChime();
+      }
+
+      if (isIOS) {
+        const usdzUrl = this.customModelUrl
+          ? this.customModelUrl.replace(/\.glb$/i, '.usdz')
+          : new URL('tests/fixtures/sample_horlogerie_chrono.usdz', window.location.origin).href;
+        
+        const link = document.getElementById('qx_ios_ar_native_link');
+        if (link) {
+          link.href = usdzUrl;
+          link.click();
+        }
+      } else {
+        // Android Google Scene Viewer Intent
+        const glbUrl = this.customModelUrl
+          ? new URL(this.customModelUrl, window.location.href).href
+          : new URL('tests/fixtures/sample_horlogerie_chrono.glb', window.location.origin).href;
+        
+        const title = encodeURIComponent(document.title || 'Quantix 3D Model');
+        const resizable = this.arCalibration.lock_scale ? 'false' : 'true';
+        const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_only&title=${title}&resizable=${resizable}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`;
+
+        window.location.href = intentUrl;
+      }
+    }
+
+    applyARCalibration(settings) {
+      this.arCalibration = Object.assign(this.arCalibration, settings);
+      
+      const arBtn = this.wrapper.querySelector('#qx_btn_3d_ar');
+      const arPill = this.wrapper.querySelector('#qx_btn_ar_pill');
+
+      if (this.arCalibration.enabled === false) {
+        if (arBtn) arBtn.style.display = 'none';
+        if (arPill) arPill.style.display = 'none';
+      } else {
+        if (arBtn) arBtn.style.display = '';
+        if (arPill) arPill.style.display = '';
+      }
+
+      const activeFinish = this.activeFinish || (this.config.finishes && this.config.finishes[0]);
+      if (activeFinish) {
+        this.updateARVariant(activeFinish);
+      }
+    }
+
+    handleAutoARLaunch(params) {
+      if (params.get('finish')) {
+        this.applyFinish(params.get('finish'));
+      }
+      if (params.get('scale_mm')) {
+        this.arCalibration.height_mm = parseInt(params.get('scale_mm'), 10) || 150;
+      }
+      if (params.get('anchor')) {
+        this.arCalibration.anchor = params.get('anchor');
+      }
+      if (params.get('lock_scale')) {
+        this.arCalibration.lock_scale = params.get('lock_scale') === '1';
+      }
+
+      this.openARBridge();
     }
 
     destroy() {

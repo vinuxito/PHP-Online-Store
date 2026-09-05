@@ -272,7 +272,14 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_in" title="Acercar">🔍+</button>
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_out" title="Alejar">🔍-</button>
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_reset" title="Restaurar Ángulo">↩</button>
+        <button type="button" class="qx-tool-btn qx-ar-glow-tool" id="qx_btn_3d_ar" title="Ver en mi Espacio (Realidad Aumentada)">📱 AR</button>
       </div>
+
+      <!-- Top-Right AR Trigger Pill -->
+      <button type="button" id="qx_btn_ar_pill" class="qx-ar-pill-trigger" title="Ver en Realidad Aumentada">
+        <span class="qx-ar-pill-icon">✦</span>
+        <span class="qx-ar-pill-text">Ver en mi Espacio (AR)</span>
+      </button>
 
       <!-- 3D Hotspot Screen-Space Projection Layer -->
       <div id="qx_studio_hotspots_layer" class="qx-studio-hotspots-layer"></div>
@@ -303,6 +310,66 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           </div>
           <button type="button" class="qx-btn-studio-add" id="qx_btn_studio_add">
             🛍️ Agregar a la Orden
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Native iOS AR Quick Look Anchor -->
+    <a id="qx_ios_ar_native_link" rel="ar" href="" style="display:none;" aria-hidden="true">
+      <img id="qx_ios_ar_native_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E" alt="AR Quick Look">
+    </a>
+
+    <!-- Frosted-Glass Holographic AR QR Bridge Modal -->
+    <div id="qx_modal_ar_bridge" class="qx-modal-ar-bridge" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="qx_ar_modal_title">
+      <div class="qx-ar-modal-backdrop" id="qx_ar_modal_backdrop"></div>
+      <div class="qx-ar-modal-card">
+        <button type="button" class="qx-ar-modal-close" id="qx_ar_modal_close" aria-label="Cerrar modal">✕</button>
+        
+        <div class="qx-ar-modal-header">
+          <div class="qx-ar-badge-pill">✦ REALIDAD AUMENTADA 1:1</div>
+          <h3 class="qx-ar-modal-title" id="qx_ar_modal_title">Proyecta en tu Espacio Físico</h3>
+          <p class="qx-ar-modal-desc">Escanea este holograma con la cámara de tu smartphone para ver el modelo a escala real en tu mesa o piso.</p>
+        </div>
+
+        <div class="qx-ar-qr-frame">
+          <div class="qx-ar-qr-inner" id="qx_ar_qr_container">
+            <img id="qx_ar_qr_img" src="" alt="Código QR Realidad Aumentada" class="qx-ar-qr-image" />
+            <div id="qx_ar_qr_spinner" class="qx-ar-qr-spinner" style="display:none;">
+              <div class="qx-spinner-ring"></div>
+            </div>
+          </div>
+          <div class="qx-ar-qr-scanline"></div>
+        </div>
+
+        <div class="qx-ar-variant-badge" id="qx_ar_variant_badge">
+          <span class="qx-ar-dot"></span>
+          <span id="qx_ar_active_variant_label">Acabado Activo: Liquid Gold 24k</span>
+        </div>
+
+        <div class="qx-ar-steps-guide">
+          <div class="qx-ar-step-item">
+            <span class="qx-step-num">1</span>
+            <span class="qx-step-text">Abre la cámara de tu iPhone o smartphone Android</span>
+          </div>
+          <div class="qx-ar-step-item">
+            <span class="qx-step-num">2</span>
+            <span class="qx-step-text">Apunta hacia el código y toca la notificación emergente</span>
+          </div>
+          <div class="qx-ar-step-item">
+            <span class="qx-step-num">3</span>
+            <span class="qx-step-text">Apunta hacia una superficie plana para anclar el modelo en 3D</span>
+          </div>
+        </div>
+
+        <div class="qx-ar-compat-row">
+          <span class="qx-compat-tag">🍏 Apple AR Quick Look (LiDAR)</span>
+          <span class="qx-compat-tag">🤖 Google Scene Viewer (ARCore)</span>
+        </div>
+
+        <div class="qx-ar-mobile-action" id="qx_ar_mobile_direct_box" style="display:none; margin-top:14px;">
+          <button type="button" id="qx_btn_launch_mobile_ar" class="qx-btn-launch-ar">
+            🚀 Proyectar en este dispositivo
           </button>
         </div>
       </div>
@@ -2298,6 +2365,17 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           }
         }
 
+        if (type === 'SYNC_AR_CALIBRATION') {
+          if (window.spatialStudio && payload) {
+            window.spatialStudio.applyARCalibration(payload);
+          }
+          if (payload && payload.enabled === false) {
+            $('#qx_btn_3d_ar, #qx_btn_ar_pill').hide();
+          } else {
+            $('#qx_btn_3d_ar, #qx_btn_ar_pill').show();
+          }
+        }
+
         if (type === 'REQ_3D_CAMERA_POSE') {
           if (window.spatialStudio && window.parent) {
             window.parent.postMessage({
@@ -2315,6 +2393,16 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
       if (studioWrap && $(studioWrap).is(':visible')) {
         if (typeof QuantixSpatialStudio !== 'undefined') {
           window.spatialStudio = new QuantixSpatialStudio(studioWrap);
+
+          // Check for mobile AR autolaunch query parameters
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('ar_launch') === '1') {
+            setTimeout(function() {
+              if (window.spatialStudio && typeof window.spatialStudio.handleAutoARLaunch === 'function') {
+                window.spatialStudio.handleAutoARLaunch(urlParams);
+              }
+            }, 600);
+          }
         }
       }
     });

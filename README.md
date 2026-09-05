@@ -8,7 +8,21 @@ Real-time, ultra-luxury, and multi-archetype e-commerce storefront platform desi
 - **Archetype Isolation:** Multi-tenant support for Haute Perfumerie (`Mistiq`), Industrial Electrical/Hardware (`Gersol`), and Generic Retail, fully isolated without domain or terminology bleed.
 - **Fiscal Compliance:** SAT CFDI 4.0 ready with dynamic RFC validation (Persona Moral vs Física vs Público en General/Extranjero).
 
-## Latest Upgrade: Quantix Holo-Vault Custom 3D Asset Upload & GLTF Ingestion Pipeline (2026-09-05)
+## Latest Upgrade: Quantix Spatial AR WebXR Quick-Look & Mobile Holographic QR Bridge (2026-09-05)
+- **Desktop Holographic QR Bridge:** Frosted-glass modal (`#qx_modal_ar_bridge`) with self-hosted dynamic QR code generation (`/api/store_ar_qr.php`) using local `phpqrcode`.
+- **Dynamic PBR Variant Sync:** Instant QR regeneration upon selecting finishes (e.g. Liquid Gold 24k) passing `&ar_variant=liquid_gold&auto_ar=1`.
+- **Native Android Google Scene Viewer:** Direct intent protocol handoff (`intent://arvr.google.com/scene-viewer/1.0...`) with calibrated scale and `ar_only` mode, zero app install required.
+- **Native iOS Apple Quick Look:** WebKit `rel="ar"` anchor pipe serving standards-compliant USDZ models (`model/vnd.usdz+zip`) at 60 FPS with TrueDepth sensor integration.
+- **Director Real-World Millimeter Calibration:** Master toggle, millimeter scale inputs (Z, X, Y), anchor geometry selector (`surface` / `floor`), quick presets, and 1:1 scale locking in Capítulo IV.
+- **Glass Twin Real-Time Synchronization:** Emits `SYNC_AR_CALIBRATION` across the iframe bridge with zero reload.
+- **Targeted Test Suite:** Verified 100% green via `/lamp/www/cfdadmin/tests/e2e/test_spatial_ar_webxr_pipeline.mjs`.
+- **Verification Documentation:**
+  - Memory: `/lamp/www/cfdadmin/docs/memories/session-2026-09-05-spatial-ar-webxr-pipeline.md`
+  - HTML Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-spatial-ar-webxr-pipeline-verification.html`
+  - Markdown Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-spatial-ar-webxr-pipeline-verification.md`
+  - Plan Index: `/lamp/www/cfdadmin/docs/plans/spatial-ar-webxr-and-holographic-qr-bridge/INDEX.md`
+
+## Previous Upgrade: Quantix Holo-Vault Custom 3D Asset Upload & GLTF Ingestion Pipeline (2026-09-05)
 - **Holo-Vault Drag-and-Drop Ingestion:** Direct tenant `.gltf` / `.glb` 3D model ingestion in Store Director (Capítulo IV) with 0ms client-side blob preview.
 - **Zero-CDN Vendor Independence:** Self-hosted `GLTFLoader.js`, `DRACOLoader.js`, and local Draco WASM decoders (`draco_decoder.wasm`, `draco_wasm_wrapper.js`) served directly from local Apache.
 - **Security Shield & Hardened Isolation:** Dual binary magic-byte verification (`0x46546C67`), 15MB file ceiling, multi-tenant directory segregation, and `.htaccess` script execution lock (`php_flag engine off`).
