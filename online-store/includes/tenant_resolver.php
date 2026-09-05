@@ -222,6 +222,18 @@ class StorefrontTenant {
                             if (!empty($hc['letter_spacing'])) {
                                 $tenant->heroLetterSpacing = $hc['letter_spacing'];
                             }
+                            if (!empty($hc['circadian']) && is_array($hc['circadian'])) {
+                                $tenant->heroCircadian = $hc['circadian'];
+                            }
+                            if (!empty($hc['runway_defile']) && is_array($hc['runway_defile'])) {
+                                $tenant->heroRunwayDefile = $hc['runway_defile'];
+                            }
+                            if (!empty($hc['allocation_vault']) && is_array($hc['allocation_vault'])) {
+                                $tenant->heroAllocationVault = $hc['allocation_vault'];
+                            }
+                            if (!empty($hc['wax_seal']) && is_array($hc['wax_seal'])) {
+                                $tenant->heroWaxSeal = $hc['wax_seal'];
+                            }
                         }
                         if (!empty($decodedApex['theme']['atmosphere_mode'])) {
                             $tenant->theme = strtolower($decodedApex['theme']['atmosphere_mode']);
@@ -258,17 +270,11 @@ class StorefrontTenant {
 if (!function_exists('renderHeroHeadlineFormatted')) {
     function renderHeroHeadlineFormatted($rawText) {
         if (empty($rawText)) return '';
-        // 1. Accent brackets {word}
-        $hasBrackets = preg_match('/\{([^}]+)\}/', $rawText);
-        if ($hasBrackets) {
-            $formatted = preg_replace_callback('/\{([^}]+)\}/', function($m) {
-                return '<span class="qx-title-accent">' . htmlspecialchars($m[1]) . '</span>';
-            }, $rawText);
-        } else {
-            $formatted = htmlspecialchars($rawText);
-        }
-        // 2. Format ampersands (& or &amp;) into italic script spans
-        $formatted = preg_replace('/(\s)&(\s)/', '$1<span class="qx-title-amp">&</span>$2', $formatted);
+        // 1. Escape entire text first so any HTML tags or malicious entities are neutralized
+        $safeText = htmlspecialchars($rawText, ENT_QUOTES, 'UTF-8');
+        // 2. Safely transform escaped brackets {word} into accent spans
+        $formatted = preg_replace('/\{([^}]+)\}/', '<span class="qx-title-accent">$1</span>', $safeText);
+        // 3. Format ampersands (&amp;) into italic script spans
         $formatted = preg_replace('/(\s)&amp;(\s)/', '$1<span class="qx-title-amp">&</span>$2', $formatted);
         return $formatted;
     }
@@ -285,6 +291,69 @@ if (!function_exists('getHeroKickerIconGlyph')) {
             case 'none': return '';
             default: return '✦';
         }
+    }
+}
+
+if (!function_exists('qxResolveCircadianState')) {
+    function qxResolveCircadianState($heroCuration, $clientHour = null) {
+        if (empty($heroCuration) || !is_array($heroCuration)) return null;
+
+        $tzName = !empty($heroCuration['circadian']['maison_timezone']) 
+            ? $heroCuration['circadian']['maison_timezone'] 
+            : 'America/Mexico_City';
+        try {
+            $tz = new DateTimeZone($tzName);
+        } catch (Exception $e) {
+            $tz = new DateTimeZone('America/Mexico_City');
+        }
+        $now = new DateTime('now', $tz);
+        $currentHour = ($clientHour !== null) ? intval($clientHour) : intval($now->format('G'));
+        $currentTimestamp = $now->getTimestamp();
+
+        // 1. Check Runway Défilé for active scheduled scene override
+        if (!empty($heroCuration['runway_defile']) && is_array($heroCuration['runway_defile'])) {
+            foreach ($heroCuration['runway_defile'] as $scene) {
+                if (!empty($scene['start_at']) && !empty($scene['end_at'])) {
+                    $startTs = strtotime($scene['start_at']);
+                    $endTs = strtotime($scene['end_at']);
+                    if ($startTs && $endTs && $currentTimestamp >= $startTs && $currentTimestamp <= $endTs) {
+                        return [
+                            'type' => 'runway_scene',
+                            'scene' => $scene,
+                            'phase_key' => 'runway',
+                            'hour' => $currentHour
+                        ];
+                    }
+                }
+            }
+        }
+
+        // 2. If Circadian mode is active, resolve solar phase
+        if (!empty($heroCuration['circadian']['enabled'])) {
+            $phases = $heroCuration['circadian']['phases'] ?? [];
+            if ($currentHour >= 6 && $currentHour <= 11) {
+                $phaseKey = 'aube';
+            } else if ($currentHour >= 12 && $currentHour <= 17) {
+                $phaseKey = 'zenith';
+            } else if ($currentHour >= 18 && $currentHour <= 21) {
+                $phaseKey = 'crepuscule';
+            } else {
+                $phaseKey = 'nuit';
+            }
+            return [
+                'type' => 'circadian',
+                'phase_key' => $phaseKey,
+                'phase_data' => $phases[$phaseKey] ?? null,
+                'hour' => $currentHour
+            ];
+        }
+
+        // 3. Fallback to Baseline
+        return [
+            'type' => 'baseline',
+            'phase_key' => 'baseline',
+            'hour' => $currentHour
+        ];
     }
 }
 

@@ -184,6 +184,60 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
 
   <!-- Hero Showcase Banner -->
   <section class="qx-hero" id="qx_hero_section">
+    <!-- Circadian Atmospheric Backdrop -->
+    <div class="qx-hero-circadian-backdrop" id="qx_hero_circadian_backdrop" aria-hidden="true">
+      <div class="qx-circadian-glow-orb qx-orb-primary"></div>
+      <div class="qx-circadian-glow-orb qx-orb-secondary"></div>
+    </div>
+
+    <!-- Vernissage Wax Seal VIP Gate (if active) -->
+    <div class="qx-vernissage-curtain" id="qx_vernissage_curtain" style="<?php echo (!empty($tenant->heroWaxSeal['enabled']) && empty($_SESSION['qx_vip_unlocked'])) ? '' : 'display:none;'; ?>">
+      <div class="qx-vernissage-seal-container">
+        <div class="qx-wax-seal" id="qx_btn_wax_seal" role="button" tabindex="0" title="Romper sello de gala">
+          <svg class="qx-wax-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="#781113" stroke="#b45309" stroke-width="2.5" />
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="2,2" />
+            <path d="M32 60 L32 46 L40 52 L50 38 L60 52 L68 46 L68 60 Z" fill="#fbbf24" />
+            <circle cx="50" cy="62" r="2.5" fill="#fbbf24" />
+          </svg>
+          <div class="qx-wax-ribbon"></div>
+        </div>
+        <div class="qx-vernissage-heading"><?php echo htmlspecialchars($tenant->heroWaxSeal['secret_headline'] ?? 'COLECCIÓN EN RESERVA PRIVADA'); ?></div>
+        <div class="qx-vernissage-sub">Acceso restringido para miembros del Salón Sommelier</div>
+        <div class="qx-vernissage-input-row" id="qx_vernissage_input_row" style="display:none; margin-bottom: 12px;">
+          <input type="text" id="qx_inp_store_vip_key" class="qx-vip-input" placeholder="Ingresa Llave VIP...">
+          <button type="button" class="qx-btn-unlock-vip" id="qx_btn_submit_vip_key">Entrar</button>
+        </div>
+        <button type="button" class="qx-btn-enter-key" id="qx_btn_enter_vip_key">Presentar Llave de Oro</button>
+      </div>
+    </div>
+
+    <!-- Mechanical Allocation Vault -->
+    <?php
+      $vaultEnabled = !empty($tenant->heroAllocationVault['enabled']);
+      $currFlacon = max(1, min(999, intval($tenant->heroAllocationVault['current_flacon'] ?? 7)));
+      $totalFlacons = max(1, min(9999, intval($tenant->heroAllocationVault['total_flacons'] ?? 50)));
+      $strFlacon = str_pad(strval($currFlacon), 2, '0', STR_PAD_LEFT);
+      $digits = str_split($strFlacon);
+      $batchCode = $tenant->heroAllocationVault['batch_code'] ?? 'BATCH Nº 04';
+      $vaultLabel = $tenant->heroAllocationVault['label'] ?? 'COSECHA PRIVADA';
+    ?>
+    <div class="qx-allocation-vault-wrap" id="qx_allocation_vault_wrap" style="<?php echo $vaultEnabled ? '' : 'display:none;'; ?>">
+      <div class="qx-vault-capsule">
+        <span class="qx-vault-batch-tag" id="qx_vault_batch_tag"><?php echo htmlspecialchars($batchCode); ?></span>
+        <span class="qx-vault-sep">•</span>
+        <span class="qx-vault-label">FLACON</span>
+        <div class="qx-tumbler-drum" id="qx_tumbler_drum">
+          <?php foreach ($digits as $idx => $d): ?>
+            <div class="qx-drum-slot" id="qx_drum_slot_<?php echo $idx; ?>"><?php echo htmlspecialchars($d); ?></div>
+          <?php endforeach; ?>
+        </div>
+        <span class="qx-vault-total" id="qx_vault_total">/ <?php echo $totalFlacons; ?></span>
+        <span class="qx-vault-sep">•</span>
+        <span class="qx-vault-status-badge" id="qx_vault_status_badge"><?php echo htmlspecialchars($vaultLabel); ?></span>
+      </div>
+    </div>
+
     <!-- Kicker Ribbon / Micro-Badge -->
     <div class="qx-hero-kicker-wrap" id="qx_hero_kicker_wrap" style="<?php echo !empty($tenant->heroKickerEnabled) ? '' : 'display:none;'; ?>">
       <span class="qx-hero-kicker" id="qx_hero_kicker">
@@ -1887,11 +1941,16 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         }
         function formatHeroHeadlineJs(raw) {
           if (!raw) return '';
-          let text = String(raw);
-          text = text.replace(/\{([^}]+)\}/g, '<span class="qx-title-accent">$1</span>');
-          text = text.replace(/(\s)&(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
-          text = text.replace(/(\s)&amp;(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
-          return text;
+          // 1. Escape HTML entities first to protect DOM from XSS
+          const div = document.createElement('div');
+          div.textContent = String(raw);
+          let safe = div.innerHTML;
+
+          // 2. Parse brackets {word} and ampersands
+          safe = safe.replace(/\{([^}]+)\}/g, '<span class="qx-title-accent">$1</span>');
+          safe = safe.replace(/(\s)&amp;(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
+          safe = safe.replace(/(\s)&(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
+          return safe;
         }
 
         function getHeroKickerIconJs(iconKey) {
@@ -2039,8 +2098,197 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
             }
           }
         }
+
+        if (type === 'SYNC_CIRCADIAN_HOUR') {
+          if (payload && payload.phase) {
+            $('body').removeClass('qx-circadian-aube qx-circadian-zenith qx-circadian-crepuscule qx-circadian-nuit')
+                     .addClass('qx-circadian-' + payload.phase);
+            if (payload.shader) {
+              $('.qx-hero-title').removeClass(function(i, c) {
+                return (c.match(/(^|\s)qx-shader-\S+/g) || []).join(' ');
+              }).addClass('qx-shader-' + payload.shader);
+            }
+            if (payload.kicker) {
+              $('#qx_hero_kicker_text').text(payload.kicker);
+            }
+            if (payload.kicker_icon) {
+              $('#qx_hero_kicker_icon').text(getHeroKickerIconJs(payload.kicker_icon));
+            }
+          }
+        }
+
+        if (type === 'SYNC_ALLOCATION_STATE') {
+          if (payload) {
+            $('#qx_allocation_vault_wrap').toggle(Boolean(payload.enabled));
+            if (payload.batch_code) $('#qx_vault_batch_tag').text(payload.batch_code);
+            if (payload.label) $('#qx_vault_status_badge').text(payload.label);
+            if (payload.total_flacons) $('#qx_vault_total').text('/ ' + payload.total_flacons);
+            if (payload.current_flacon !== undefined) {
+              const cf = Math.max(1, Math.min(999, parseInt(payload.current_flacon, 10) || 1));
+              const strVal = String(cf).padStart(2, '0');
+              const $drum = $('#qx_tumbler_drum');
+              $drum.empty();
+              for (let i = 0; i < strVal.length; i++) {
+                const $slot = $('<div class="qx-drum-slot qx-drum-roll"></div>').text(strVal[i]);
+                $drum.append($slot);
+              }
+              setTimeout(() => {
+                $('.qx-drum-slot').removeClass('qx-drum-roll');
+              }, 400);
+              if (window.qxAudio && window.qxAudio.playRatchetClick) {
+                window.qxAudio.playRatchetClick();
+              }
+            }
+          }
+        }
+
+        if (type === 'SYNC_WAX_SEAL_STATE') {
+          if (payload) {
+            $('#qx_vernissage_curtain').toggle(Boolean(payload.enabled));
+            if (payload.secret_headline) {
+              $('.qx-vernissage-heading').text(payload.secret_headline);
+            }
+          }
+        }
+
+        if (type === 'TEST_WAX_SEAL_UNVEIL') {
+          if (window.qxUnlockWaxSeal) {
+            window.qxUnlockWaxSeal();
+          }
+        }
+
+        if (type === 'SIMULATE_GYROSCOPE_TILT') {
+          if (payload && payload.lightX !== undefined) {
+            const h = document.getElementById('qx_hero_title');
+            if (h) {
+              h.style.setProperty('--qx-light-x', payload.lightX);
+              h.style.setProperty('--qx-light-y', payload.lightY || 0);
+            }
+          }
+        }
       }
     });
+  </script>
+
+  <script>
+    // Audio Synthesizer for Typographic Resonance and Mechanical Haptics
+    const qxAudio = {
+      ctx: null,
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (e) {
+          this.ctx = null;
+        }
+      },
+      playCrystalChime(freq = 432.0) {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.6);
+
+          if (navigator.vibrate) navigator.vibrate(8);
+        } catch (e) {}
+      },
+      playRatchetClick() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.03);
+
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.035);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } catch (e) {}
+      }
+    };
+    window.qxAudio = qxAudio;
+
+    // Desktop Mousemove (rAF throttled) & Mobile Gyroscope Raytracing
+    (function() {
+      const heroTitle = document.getElementById('qx_hero_title');
+      if (heroTitle) {
+        let ticking = false;
+        document.addEventListener('mousemove', function(e) {
+          if (!ticking) {
+            window.requestAnimationFrame(function() {
+              const rect = heroTitle.getBoundingClientRect();
+              const cx = rect.left + rect.width / 2;
+              const normX = Math.max(-1, Math.min(1, (e.clientX - cx) / (window.innerWidth / 2)));
+              heroTitle.style.setProperty('--qx-light-x', normX.toFixed(3));
+              ticking = false;
+            });
+            ticking = true;
+          }
+        }, { passive: true });
+
+        window.addEventListener('deviceorientation', function(e) {
+          if (e && e.gamma !== null && e.gamma !== undefined && !isNaN(e.gamma)) {
+            const normX = Math.max(-1, Math.min(1, e.gamma / 45));
+            heroTitle.style.setProperty('--qx-light-x', normX.toFixed(3));
+          }
+        }, { passive: true });
+      }
+
+      // Typographic resonance on hover
+      $(document).on('mouseenter', '.qx-title-accent, .qx-title-amp', function() {
+        const isAmp = $(this).hasClass('qx-title-amp');
+        qxAudio.playCrystalChime(isAmp ? 540.0 : 432.0);
+      });
+
+      // Wax Seal VIP unlocking
+      window.qxUnlockWaxSeal = function() {
+        const curtain = document.getElementById('qx_vernissage_curtain');
+        if (!curtain) return;
+        qxAudio.playCrystalChime(576.0);
+        setTimeout(() => qxAudio.playCrystalChime(864.0), 120);
+        curtain.classList.add('unlocked');
+        setTimeout(() => { curtain.style.display = 'none'; }, 800);
+      };
+
+      $('#qx_btn_wax_seal, #qx_btn_enter_vip_key').on('click', function() {
+        $('#qx_vernissage_input_row').slideDown(200);
+        $('#qx_inp_store_vip_key').focus();
+      });
+
+      $('#qx_btn_submit_vip_key').on('click', function() {
+        const key = ($('#qx_inp_store_vip_key').val() || '').trim().toUpperCase();
+        if (key.length > 0) {
+          window.qxUnlockWaxSeal();
+        } else {
+          $('#qx_inp_store_vip_key').css('border-color', '#f43f5e');
+          setTimeout(() => $('#qx_inp_store_vip_key').css('border-color', 'rgba(212, 175, 55, 0.5)'), 1000);
+        }
+      });
+    })();
   </script>
 
   <!-- Floating Quantum Comparison Dock -->

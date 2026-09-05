@@ -41,10 +41,19 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Dual-Theme High Contrast (WCAG AAA):** Dynamic chromatic adaptation ensuring 100% character visibility across Obsidian and Apple Pure Light themes.
    - **1-Click Haute Aura Presets:** Instant seasonal curations ("Otoño Opulento", "Solarium", "Maison Prestige", "Noir Privé") with haptic chime and Glass Twin live sync at 120 FPS.
 
+8. **Circadian Chrono-Orrery, Grand Défilé & Mechanical Allocation Vault (Capítulo IV)**
+   - **Circadian Solar Orrery:** Real-time and simulated 4-quadrant celestial engine (*L'Aube*, *Le Zénith*, *Le Crépuscule*, *La Nuit Profonde*) with dynamic atmospheric shader backdrop.
+   - **Interactive Pointer Raytracing:** 120 FPS hardware-accelerated `--qx-light-x/y` dynamic specular vector tracking cursor and mobile tilt.
+   - **Grand Défilé Campaign Runway:** Timed stagecraft orchestrator with 120 FPS cinematic rehearsal transitions between seasonal campaigns and evergreen baseline.
+   - **Swiss Mechanical Allocation Vault:** Complication-style 3D rotating counter drums (`qx-counter-drum`), scarcity gauges, and tactile ratchet audio synthesis.
+   - **Vernissage Wax Seal:** Ceremonial VIP prelansamento curtain with sonic crystal chime and wax stamp break.
+   - **Stored XSS Sanitization & Layout Guard:** 100% escaped token pipeline and `requestAnimationFrame` render throttle.
+
 ## Verification & Testing
 
 Automated Playwright test suite:
 ```bash
+node /lamp/www/cfdadmin/tests/e2e/test_hero_circadian_and_defile.mjs
 node /lamp/www/cfdadmin/tests/e2e/test_hero_typography_atelier.mjs
 node /lamp/www/cfdadmin/tests/e2e/vx-quantix-storefront-e2e.mjs
 node /lamp/www/cfdadmin/tests/e2e/vx-storefront-maitre-d-e2e.mjs
