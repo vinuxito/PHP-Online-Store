@@ -2969,6 +2969,29 @@ ${shareUrl}`;
         }
       });
 
+      // SAT RFC Dynamic Validation & Regimen Filtering (Step 3)
+      $('#qx_cfdi_rfc').on('input', function() {
+        const rfc = $(this).val().trim().toUpperCase();
+        $(this).val(rfc);
+        const badge = $('#qx_rfc_type_badge');
+        const regimenSel = $('#qx_cfdi_regimen');
+        if (rfc.length === 12) {
+          badge.html('✓ Persona Moral (Empresa)').css({ display: 'inline-block', color: '#34d399', fontWeight: '700', fontSize: '11px', marginBottom: '6px' }).show();
+          regimenSel.find('option').show();
+          regimenSel.find('option[value="605"]').hide(); // Sueldos no aplica a Moral
+          if (regimenSel.val() === '605') regimenSel.val('601');
+        } else if (rfc.length === 13) {
+          badge.html('✓ Persona Física (Particular)').css({ display: 'inline-block', color: '#34d399', fontWeight: '700', fontSize: '11px', marginBottom: '6px' }).show();
+          regimenSel.find('option').show();
+          regimenSel.find('option[value="601"]').hide(); // General Morales no aplica a Física
+          if (regimenSel.val() === '601') regimenSel.val('612');
+        } else if (rfc.length > 0) {
+          badge.html('Escribe 12 dígitos (Moral) o 13 (Física)').css({ display: 'inline-block', color: '#fbbf24', fontWeight: '600', fontSize: '11px', marginBottom: '6px' }).show();
+        } else {
+          badge.hide();
+        }
+      });
+
       // Order Submit Form
       $('#qx_checkout_form').on('submit', function(e) {
         e.preventDefault();
@@ -3330,7 +3353,23 @@ ${shareUrl}`;
       }
 
       if (!this.filteredProducts || this.filteredProducts.length === 0) {
-        grid.html('<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--qx-text-muted)">No se encontraron productos coincidentes.</div>');
+        const isGlobalEmpty = (!this.products || this.products.length === 0);
+        if (isGlobalEmpty) {
+          const waPhone = (this.tenant && this.tenant.supportPhone) ? this.tenant.supportPhone.replace(/[^0-9]/g, '') : '';
+          const waHref = waPhone ? `https://wa.me/${waPhone}?text=Hola%20deseo%20información%20sobre%20sus%20productos` : 'https://wa.me/?text=Hola%20deseo%20información%20sobre%20sus%20productos';
+          grid.html(`
+            <div class="qx-catalog-empty" id="qx_catalog_empty_state" style="grid-column:1/-1; text-align:center; padding:80px 20px; color:var(--qx-text-muted);">
+              <div style="font-size:48px; margin-bottom:14px;">🏛️</div>
+              <h3 style="color:#ffffff; font-size:19px; font-weight:800; margin-bottom:8px;">Catálogo en Preparación</h3>
+              <p style="font-size:13.5px; max-width:480px; margin:0 auto 24px; line-height:1.5;">Estamos afinando nuestro catálogo de piezas maestras. Muy pronto estarán disponibles para ti.</p>
+              <a href="${waHref}" target="_blank" class="qx-btn-contact-store" style="display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border-radius:999px; background:var(--qx-emerald); color:#ffffff; text-decoration:none; font-size:13px; font-weight:700;">
+                <span>💬 Contactar por WhatsApp</span>
+              </a>
+            </div>
+          `);
+        } else {
+          grid.html('<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--qx-text-muted)">No se encontraron productos coincidentes con los filtros seleccionados.</div>');
+        }
         $('#qx_infinite_sentinel').remove();
         return;
       }
@@ -3624,6 +3663,10 @@ ${shareUrl}`;
       this.saveCart();
     }
 
+    updateCartDrawer() {
+      this.renderCartUI();
+    }
+
     renderCartUI() {
       const self = this;
       const list = $('#qx_cart_list');
@@ -3633,12 +3676,20 @@ ${shareUrl}`;
 
       if (this.cart.items.length === 0) {
         list.html(`
-          <div class="qx-cart-empty">
-            <div style="font-size:38px; margin-bottom:12px">🛍️</div>
-            <div style="font-weight:700; color:#fff; margin-bottom:6px">Tu carrito está vacío</div>
-            <div style="font-size:13px">Explora el catálogo y agrega tus productos favoritos.</div>
+          <div class="qx-cart-empty" style="text-align:center; padding:32px 16px;">
+            <div style="font-size:42px; margin-bottom:12px">🛍️</div>
+            <div style="font-weight:700; color:#fff; font-size:16px; margin-bottom:6px">Tu carrito está vacío</div>
+            <div style="font-size:13px; color:var(--qx-text-muted); margin-bottom:20px">Explora nuestro catálogo oficial y agrega tus productos favoritos.</div>
+            <button type="button" class="qx-btn-empty-explore" id="qx_btn_empty_explore" style="display:inline-flex; align-items:center; gap:8px; padding:10px 22px; background:linear-gradient(135deg, #d4af37, #b3860b); color:#0b1329; font-weight:800; border-radius:999px; border:none; cursor:pointer; font-size:13px; box-shadow:0 4px 14px rgba(212,175,55,0.3);">
+              <span>✨ Explorar Catálogo</span>
+            </button>
           </div>
         `);
+        $('#qx_btn_empty_explore').on('click', () => {
+          self.closeCart();
+          const target = document.getElementById('qx_product_grid') || document.getElementById('qx_hero_section');
+          if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
         $('#qx_cart_upsell').hide();
         $('#qx_cart_subtotal').text('$ 0.00');
         $('#qx_cart_iva').text('$ 0.00');
@@ -4135,9 +4186,35 @@ ${shareUrl}`;
       `);
     }
 
+    showCheckoutAlert(msg, type = 'error') {
+      const el = $('#qx_checkout_alert');
+      if (!el.length) return;
+      const isErr = type === 'error';
+      el.css({
+        display: 'block',
+        background: isErr ? 'rgba(244, 63, 94, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+        border: isErr ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+        color: isErr ? '#f43f5e' : '#34d399'
+      }).html(`
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span>${isErr ? '⚠️' : '✓'}</span>
+          <span>${this.esc(msg)}</span>
+        </div>
+      `);
+      const form = document.getElementById('qx_checkout_form');
+      if (form) form.scrollTop = 0;
+    }
+
     submitOrder() {
       const self = this;
       const submitBtn = $('#qx_btn_place_order');
+      $('#qx_checkout_alert').hide();
+
+      if (!this.cart.items.length) {
+        this.showCheckoutAlert('Tu carrito está vacío. Agrega al menos un producto para continuar.', 'error');
+        return;
+      }
+
       submitBtn.prop('disabled', true).text('Procesando Pedido...');
 
       const orderData = {
@@ -4168,15 +4245,26 @@ ${shareUrl}`;
           self.cart.items = [];
           self.saveCart();
           self.closeCheckout();
+          try {
+            localStorage.setItem('qx_last_order', JSON.stringify({
+              folio: resp.OrderFolio,
+              folioQFS: resp.folioQFS,
+              total: resp.Total,
+              customerName: resp.CustomerName,
+              paymentMethod: resp.PaymentMethod,
+              receiptUrl: resp.receiptUrl,
+              date: new Date().toISOString()
+            }));
+          } catch(e) {}
           self.showOrderSuccessModal(resp);
         } else {
-          alert('Error al procesar pedido: ' + (resp.Error || 'Intente nuevamente'));
+          self.showCheckoutAlert(resp.Error || 'Error al procesar pedido. Revisa tus datos e intenta nuevamente.', 'error');
           submitBtn.prop('disabled', false).text('Confirmar y Pagar Orden');
         }
       })
       .fail(function() {
-        alert('Error de conexión al procesar la orden.');
-        submitBtn.prop('disabled', false).text('Confirmar y Pagar Orden');
+        self.showCheckoutAlert('Hubo una interrupción momentánea de conexión. Tus datos están a salvo; pulsa Reintentar.', 'error');
+        submitBtn.prop('disabled', false).text('Reintentar Pago');
       });
     }
 
@@ -4531,6 +4619,7 @@ ${shareUrl}`;
     }
 
     renderSpotlightResults(query) {
+      const self = this;
       const container = $('#qx_spotlight_results').empty();
       const q = (query || '').toLowerCase().trim();
       let matches = this.products;
@@ -4548,12 +4637,22 @@ ${shareUrl}`;
       }
 
       if (matches.length === 0) {
-        container.html('<div style="padding:24px; text-align:center; color:var(--qx-text-muted); font-size:13px;">No se encontraron artículos para esta búsqueda.</div>');
+        container.html(`
+          <div class="qx-spotlight-empty" style="padding:32px 16px; text-align:center;">
+            <div style="font-size:32px; margin-bottom:10px;">🔍</div>
+            <div style="color:#fff; font-weight:700; font-size:14px; margin-bottom:6px;">Sin resultados para "${self.esc(q)}"</div>
+            <div style="color:var(--qx-text-muted); font-size:12.5px; margin-bottom:16px;">Intenta buscar por clave SAT, código o categoría general.</div>
+            <button type="button" class="qx-btn-clear-search" id="qx_btn_clear_spotlight" style="padding:7px 18px; border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid var(--qx-border); color:#cbd5e1; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s ease;">✕ Limpiar Búsqueda</button>
+          </div>
+        `);
+        container.find('#qx_btn_clear_spotlight').on('click', () => {
+          $('#qx_spotlight_input').val('').focus();
+          self.renderSpotlightResults('');
+        });
         return;
       }
 
       const displayList = matches.slice(0, 7);
-      const self = this;
 
       displayList.forEach((p, idx) => {
         const item = $(`
@@ -5171,7 +5270,15 @@ ${shareUrl}`;
         const rfc = $(this).val().toUpperCase().trim();
         $(this).val(rfc);
 
-        if (rfc.length === 12) {
+        if (rfc === 'XAXX010101000') {
+          $('#qx_rfc_type_badge').text('🌐 Público en General').show();
+          regimenSelect.html('<option value="616" selected>616 — Sin obligaciones fiscales</option>');
+          usoSelect.html('<option value="S01" selected>S01 — Sin efectos fiscales</option>');
+        } else if (rfc === 'XEXX010101000') {
+          $('#qx_rfc_type_badge').text('✈ Extranjero').show();
+          regimenSelect.html('<option value="616" selected>616 — Sin obligaciones fiscales</option>');
+          usoSelect.html('<option value="S01" selected>S01 — Sin efectos fiscales</option>');
+        } else if (rfc.length === 12) {
           // Persona Moral
           $('#qx_rfc_type_badge').text('🏢 Persona Moral').show();
           regimenSelect.html(`
@@ -6333,6 +6440,7 @@ ${shareUrl}`;
 
   $(function() {
     window.quantixStore = new QuantixStorefront();
+    window.StorefrontApp = window.quantixStore;
   });
 
 })(window, jQuery);

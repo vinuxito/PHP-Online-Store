@@ -26,6 +26,28 @@
   --qx-radius-md: 14px;
   --qx-radius-lg: 20px;
   --qx-radius-xl: 28px;
+
+  /* Universal Design System Tokens (Step 7) */
+  --qx-sys-bg: var(--qx-bg);
+  --qx-sys-surface: var(--qx-surface);
+  --qx-sys-surface-glass: var(--qx-surface-glass);
+  --qx-sys-border: var(--qx-border);
+  --qx-sys-border-gold: rgba(212, 175, 55, 0.4);
+  --qx-sys-text-primary: var(--qx-text);
+  --qx-sys-text-secondary: var(--qx-text-muted);
+  --qx-sys-text-muted: var(--qx-text-dim);
+  --qx-sys-gold: var(--qx-gold);
+  --qx-sys-emerald: var(--qx-emerald);
+  --qx-sys-ruby: var(--qx-rose);
+  --qx-sys-focus-ring: 0 0 0 3px rgba(212, 175, 55, 0.6);
+  --qx-sys-radius: var(--qx-radius-md);
+  --qx-sys-transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Universal Keyboard Focus Ring (WCAG AAA) */
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.6) !important;
 }
 
 /* ==========================================================================
@@ -2663,6 +2685,9 @@ body {
   top: 0;
   right: 0;
   bottom: 0;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
   width: 100%;
   max-width: 460px;
   background: var(--qx-surface);

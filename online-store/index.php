@@ -310,13 +310,14 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     <div class="qx-drawer-header">
       <div class="qx-drawer-title">
         <span>🛍️</span>
-        <span>Bolsa de Compras</span>
+        <span id="qx_cart_drawer_title"><?php echo htmlspecialchars($tenant->cartTitle ?? ($tenant->isPerfumery() ? 'Bolsa de Compras' : 'Carrito de Compras')); ?></span>
       </div>
       <button type="button" class="qx-drawer-close" id="qx_cart_close">&times;</button>
     </div>
 
     <div class="qx-cart-list" id="qx_cart_list"></div>
 
+    <?php if ($tenant->isPerfumery()): ?>
     <!-- Sensory Atelier: Smart Decant Upsell Card -->
     <div class="qx-cart-upsell" id="qx_cart_upsell" style="display:none;">
       <div class="qx-upsell-header">
@@ -332,8 +333,10 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         <button type="button" class="qx-btn-upsell-add" id="qx_btn_upsell_add">+ Agregar</button>
       </div>
     </div>
+    <?php endif; ?>
 
     <div class="qx-cart-footer">
+      <?php if ($tenant->isPerfumery()): ?>
       <!-- Decant Passport Cash-Back Voucher Row -->
       <div class="qx-voucher-apply-box" id="qx_cart_voucher_box">
         <div class="qx-voucher-input-wrap">
@@ -345,6 +348,7 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
           <button type="button" id="qx_btn_remove_voucher" class="qx-btn-remove-voucher" title="Quitar cupón">✕</button>
         </div>
       </div>
+      <?php endif; ?>
 
       <div class="qx-summary-row">
         <span>Subtotal</span>
@@ -384,6 +388,9 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </div>
 
     <form id="qx_checkout_form" style="display:flex; flex-direction:column; flex:1; overflow-y:auto; padding:20px 24px;">
+      <!-- In-Drawer Polite Alert Banner (Step 3) -->
+      <div class="qx-checkout-alert" id="qx_checkout_alert" style="display:none; padding:12px 16px; border-radius:var(--qx-radius-md); font-size:13px; font-weight:600; margin-bottom:16px; line-height:1.5;"></div>
+
       <div id="qx_checkout_summary" style="background:rgba(255,255,255,0.04); border:1px solid var(--qx-border); border-radius:var(--qx-radius-md); padding:14px; margin-bottom:16px;"></div>
 
       <div class="qx-form-group">

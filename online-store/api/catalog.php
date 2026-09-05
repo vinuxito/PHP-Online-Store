@@ -23,7 +23,11 @@ if (!$tenant->isStoreActive) {
 
 $db = get_store_db();
 
-function format_catalog_product($p, $mediaByProduct) {
+function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
+    global $tenant;
+    $t = $tenantOverride ?: $tenant;
+    $isPerfumery = ($t && method_exists($t, 'isPerfumery')) ? $t->isPerfumery() : false;
+
     $pId = $p['ProductoID'];
     $cat = trim($p['categoria'] ?: 'General');
     $prodMedia = $mediaByProduct[$pId] ?? ['fotos' => [], 'docs' => []];
@@ -64,15 +68,15 @@ function format_catalog_product($p, $mediaByProduct) {
 
     $cleanDesc = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '&nbsp;'], [' ', ' ', ' ', ' '], $p['descripcion'] ?? '')));
 
-    $hasDecant = ($p['TieneDecant'] ?? 'SI') !== 'NO';
-    $decantPrice = !empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2);
+    $hasDecant = $isPerfumery ? (($p['TieneDecant'] ?? 'SI') !== 'NO') : false;
+    $decantPrice = $hasDecant ? (!empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2)) : 0;
     $auraColor = !empty($p['AuraColor']) ? $p['AuraColor'] : 'cyan';
     $auraParticles = !empty($p['AuraParticulas']) ? $p['AuraParticulas'] : 'breeze';
-    $autoIsolate = ($p['AutoIsolate'] ?? 'SI') !== 'NO';
-    $family = $p['FamiliaOlfativa'] ?? '';
-    $accords = json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: [];
+    $autoIsolate = $isPerfumery ? (($p['AutoIsolate'] ?? 'SI') !== 'NO') : false;
+    $family = $isPerfumery ? ($p['FamiliaOlfativa'] ?? '') : '';
+    $accords = $isPerfumery ? (json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: []) : [];
 
-    $radar = [
+    $radar = $isPerfumery ? [
         'proyeccion'     => (int)($p['RadarProyeccion'] ?: 7),
         'longevidad'     => (float)($p['RadarLongevidad'] ?: 8.0),
         'elogios'        => (int)($p['RadarElogios'] ?: 85),
@@ -80,7 +84,7 @@ function format_catalog_product($p, $mediaByProduct) {
         'dulzorFrescura' => (int)($p['RadarDulzorFrescura'] ?? 0),
         'tempMin'        => (int)($p['RadarTempMin'] ?: 15),
         'tempMax'        => (int)($p['RadarTempMax'] ?: 30)
-    ];
+    ] : null;
 
     return [
         'id'           => $p['ProductoID'],

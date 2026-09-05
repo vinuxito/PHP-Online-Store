@@ -26,9 +26,14 @@ class StorefrontTenant {
     public $heroShimmer = true;
     public $heroLetterSpacing = 'wide';
     public $heroSubheadline = 'Extractos puros de perfumería nicho elaborados artesanalmente en Grasse.';
+    public $cartTitle = 'Carrito de Compras';
     public $quantixFrontStore = 'NO';
     public $quantixStorePerfums = 'NO';
     public $isStoreActive = false;
+
+    public function isPerfumery() {
+        return ($this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false);
+    }
 
     public static function resolve() {
         $tenant = new self();
@@ -257,6 +262,28 @@ class StorefrontTenant {
                     }
                 }
             } catch (\Exception $e) {}
+        }
+
+        // Industry-Aware Defaults (Zero Perfume Leak for Non-Perfumery Tenants)
+        if ($tenant->isPerfumery()) {
+            $tenant->cartTitle = 'Bolsa de Compras';
+            if (empty($tenant->heroKicker)) {
+                $tenant->heroKicker = 'HAUTE COSECHA ' . date('Y');
+            }
+            if (empty($tenant->headline)) {
+                $tenant->headline = 'COLECCIÓN IMPERIAL & {ALTA COSECHA ' . date('Y') . '}';
+            }
+        } else {
+            $tenant->cartTitle = 'Carrito de Compras';
+            if (empty($tenant->heroKicker) || trim($tenant->heroKicker) === 'HAUTE COSECHA 2026') {
+                $tenant->heroKicker = 'ALTA DISPONIBILIDAD & ENVÍO EXPRESS';
+            }
+            if (empty($tenant->headline) || trim($tenant->headline) === 'COLECCIÓN IMPERIAL & {ALTA COSECHA 2026}') {
+                $tenant->headline = strtoupper($tenant->brandName) . ' & {CATÁLOGO OFICIAL}';
+            }
+            if (empty($tenant->heroSubheadline) || strpos($tenant->heroSubheadline, 'Grasse') !== false) {
+                $tenant->heroSubheadline = 'Catálogo de alta disponibilidad con timbrado CFDI 4.0 SAT inmediato y garantía directa.';
+            }
         }
 
         if (!empty($_GET['theme'])) {
