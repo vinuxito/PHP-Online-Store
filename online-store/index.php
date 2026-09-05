@@ -256,8 +256,59 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     <h1 class="qx-hero-title <?php echo "{$heroShaderClass} {$heroTypoClass} {$heroTrackClass}{$heroShimmerClass}"; ?>" id="qx_hero_title"><?php echo renderHeroHeadlineFormatted($heroHeadlineRaw); ?></h1>
     <p class="qx-hero-subtitle" id="qx_hero_subtitle"><?php echo htmlspecialchars(!empty($tenant->heroSubheadline) ? $tenant->heroSubheadline : $tenant->description); ?></p>
     
+    <!-- Quantix Holo-Studio 3D Interactive Spatial Showcase -->
+    <?php 
+      $studio3DActive = $tenant->isStudio3DEnabled();
+      $studio3DConfig = $tenant->getStudio3DConfig();
+      $showHeroVitrina = (!isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina'])) && !$studio3DActive;
+    ?>
+    <div id="qx_studio_3d_wrapper" class="qx-studio-3d-wrapper" data-config="<?php echo htmlspecialchars(json_encode($studio3DConfig), ENT_QUOTES, 'UTF-8'); ?>" style="<?php echo $studio3DActive ? '' : 'display:none;'; ?>">
+      <div id="qx_studio_canvas_container" class="qx-studio-canvas-container"></div>
+      
+      <!-- Left Floating Tools Dock -->
+      <div class="qx-studio-tools-dock" id="qx_studio_tools_dock">
+        <button type="button" class="qx-tool-btn active" id="qx_btn_3d_orbit" title="Giro Automático">🔄</button>
+        <button type="button" class="qx-tool-btn" id="qx_btn_3d_explode" title="Vista Desglosada">🥞</button>
+        <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_in" title="Acercar">🔍+</button>
+        <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_out" title="Alejar">🔍-</button>
+        <button type="button" class="qx-tool-btn" id="qx_btn_3d_reset" title="Restaurar Ángulo">↩</button>
+      </div>
+
+      <!-- 3D Hotspot Screen-Space Projection Layer -->
+      <div id="qx_studio_hotspots_layer" class="qx-studio-hotspots-layer"></div>
+
+      <!-- Floating Bottom Control Shelf -->
+      <div class="qx-studio-shelf-bar" id="qx_studio_shelf_bar">
+        <div class="qx-shelf-finish-group">
+          <span class="qx-shelf-title">Colección de Acabados</span>
+          <div class="qx-shelf-swatches" id="qx_shelf_swatches">
+            <!-- Rendered dynamically by quantix_spatial_studio.js -->
+          </div>
+        </div>
+        <div class="qx-shelf-specs-group" id="qx_shelf_specs">
+          <?php if ($tenant->isPerfumery()): ?>
+            <span class="qx-spec-pill">✦ 35% Extrait</span>
+            <span class="qx-spec-pill">🧪 Maceración 6M</span>
+            <span class="qx-spec-pill">🏛️ CFDI 4.0 SAT</span>
+          <?php else: ?>
+            <span class="qx-spec-pill">🛡️ IP67 Hermético</span>
+            <span class="qx-spec-pill">⚡ Bobina 180°C</span>
+            <span class="qx-spec-pill">🏛️ CFDI 4.0 SAT</span>
+          <?php endif; ?>
+        </div>
+        <div class="qx-shelf-cta-group">
+          <div class="qx-shelf-price-box">
+            <span class="qx-shelf-currency">MXN</span>
+            <span class="qx-shelf-price-val" id="qx_studio_price_val">$ <?php echo $tenant->isPerfumery() ? '4,250' : '1,850'; ?></span>
+          </div>
+          <button type="button" class="qx-btn-studio-add" id="qx_btn_studio_add">
+            🛍️ Agregar a la Orden
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Hero 3D Star Carousel -->
-    <?php $showHeroVitrina = !isset($tenant->modules['hero_vitrina']) || !empty($tenant->modules['hero_vitrina']); ?>
     <div class="qx-hero-carousel-3d-wrapper" id="qx_hero_carousel_wrapper" style="<?php echo $showHeroVitrina ? '' : 'display:none;'; ?>">
       <button class="qx-3d-nav-arrow prev" id="qx_3d_prev" aria-label="Anterior">‹</button>
       <div class="qx-3d-stage" id="qx_3d_stage"></div>
@@ -1914,6 +1965,9 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
     </button>
   </nav>
 
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/quantix_haptic_audio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_haptic_audio.js') ? filemtime(__DIR__ . '/js/quantix_haptic_audio.js') : '1'; ?>"></script>
+  <script src="js/quantix_spatial_studio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_spatial_studio.js') ? filemtime(__DIR__ . '/js/quantix_spatial_studio.js') : '1'; ?>"></script>
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
     // Quantix Glass Twin Live Simulator Synchronization Listener
@@ -2172,6 +2226,75 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
               h.style.setProperty('--qx-light-y', payload.lightY || 0);
             }
           }
+        }
+
+        if (type === 'SYNC_3D_STUDIO_STATE') {
+          if (payload) {
+            const isEnabled = Boolean(payload.enabled);
+            $('#qx_studio_3d_wrapper').toggle(isEnabled);
+            $('#qx_hero_carousel_wrapper').toggle(!isEnabled);
+            if (isEnabled) {
+              if (!window.spatialStudio) {
+                if (typeof QuantixSpatialStudio !== 'undefined') {
+                  window.spatialStudio = new QuantixSpatialStudio('qx_studio_3d_wrapper', payload);
+                }
+              } else {
+                window.spatialStudio.config = Object.assign(window.spatialStudio.config, payload);
+                if (payload.archetype_model) {
+                  window.spatialStudio.config.archetype_model = payload.archetype_model;
+                  window.spatialStudio.buildModel();
+                }
+                if (payload.lighting_preset) {
+                  window.spatialStudio.setLightingPreset(payload.lighting_preset);
+                }
+                if (payload.finishes) {
+                  window.spatialStudio.config.finishes = payload.finishes;
+                  window.spatialStudio.initShelfAndFinishes();
+                }
+                if (payload.hotspots) {
+                  window.spatialStudio.config.hotspots = payload.hotspots;
+                  window.spatialStudio.initHotspots();
+                }
+              }
+            }
+          }
+        }
+
+        if (type === 'SYNC_3D_FINISH') {
+          if (window.spatialStudio && payload && payload.finishId) {
+            window.spatialStudio.applyFinish(payload.finishId);
+          }
+        }
+
+        if (type === 'SYNC_3D_EXPLODE') {
+          if (window.spatialStudio && payload) {
+            window.spatialStudio.setExploded(Boolean(payload.isExploded));
+          }
+        }
+
+        if (type === 'SYNC_3D_LIGHTING') {
+          if (window.spatialStudio && payload && payload.lighting) {
+            window.spatialStudio.setLightingPreset(payload.lighting);
+          }
+        }
+
+        if (type === 'REQ_3D_CAMERA_POSE') {
+          if (window.spatialStudio && window.parent) {
+            window.parent.postMessage({
+              source: 'QUANTIX_GLASS_TWIN_SIMULATOR',
+              type: 'RESP_3D_CAMERA_POSE',
+              payload: window.spatialStudio.getCameraPose()
+            }, '*');
+          }
+        }
+      }
+    });
+
+    $(function() {
+      const studioWrap = document.getElementById('qx_studio_3d_wrapper');
+      if (studioWrap && $(studioWrap).is(':visible')) {
+        if (typeof QuantixSpatialStudio !== 'undefined') {
+          window.spatialStudio = new QuantixSpatialStudio(studioWrap);
         }
       }
     });

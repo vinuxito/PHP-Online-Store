@@ -12517,5 +12517,429 @@ body.qx-circadian-nuit .qx-orb-secondary {
   margin-left: 6px;
 }
 
+/* ==========================================================================
+   QUANTIX HOLO-STUDIO 3D INTERACTIVE SPATIAL SHOWCASE
+   ========================================================================== */
 
+.qx-studio-3d-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  height: 540px;
+  margin: 18px auto 28px;
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 35%, rgba(30, 41, 59, 0.45) 0%, rgba(10, 15, 29, 0.95) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  z-index: 10;
+}
 
+body[data-atmosphere="light"] .qx-studio-3d-wrapper,
+body[data-atmosphere="minimalist"] .qx-studio-3d-wrapper {
+  background: radial-gradient(circle at 50% 35%, rgba(241, 245, 249, 0.8) 0%, rgba(226, 232, 240, 0.95) 100%);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
+.qx-studio-canvas-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: grab;
+}
+
+.qx-studio-canvas-container:active {
+  cursor: grabbing;
+}
+
+/* Left Floating Tools Dock */
+.qx-studio-tools-dock {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 30;
+}
+
+.qx-tool-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-tool-btn:hover {
+  transform: scale(1.1);
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(212, 175, 55, 0.5);
+  color: #fbbf24;
+}
+
+.qx-tool-btn.active {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.25), rgba(180, 83, 9, 0.25));
+  border-color: #d4af37;
+  color: #fbbf24;
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.4);
+}
+
+body[data-atmosphere="light"] .qx-tool-btn,
+body[data-atmosphere="minimalist"] .qx-tool-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* 3D Hotspot Screen-Space Layer */
+.qx-studio-hotspots-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.qx-hotspot-pin {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  margin-left: -14px;
+  margin-top: -14px;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: opacity 0.25s ease, transform 0.05s linear;
+}
+
+.qx-hotspot-pin.occluded {
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.qx-hotspot-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 10px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.6);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-hotspot-pin:hover .qx-hotspot-dot,
+.qx-hotspot-pin.active .qx-hotspot-dot {
+  transform: scale(1.4);
+  background: #ffffff;
+  box-shadow: 0 0 14px #ffffff, 0 0 24px #fbbf24;
+}
+
+.qx-hotspot-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(251, 191, 36, 0.8);
+  animation: qx-hotspot-pulse 2s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes qx-hotspot-pulse {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Hotspot Callout Popover Card */
+.qx-hotspot-card {
+  position: absolute;
+  left: 36px;
+  top: -24px;
+  width: 250px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px) scale(0.95);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.qx-hotspot-pin.active .qx-hotspot-card {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0) scale(1);
+}
+
+.qx-hotspot-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 4px;
+  letter-spacing: 0.02em;
+}
+
+.qx-hotspot-card-desc {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #cbd5e1;
+}
+
+.qx-hotspot-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.qx-hotspot-close:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Floating Bottom Control Shelf */
+.qx-studio-shelf-bar {
+  position: absolute;
+  bottom: 18px;
+  left: 20px;
+  right: 20px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 30;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+body[data-atmosphere="light"] .qx-studio-shelf-bar,
+body[data-atmosphere="minimalist"] .qx-studio-shelf-bar {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.qx-shelf-finish-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qx-shelf-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+body[data-atmosphere="light"] .qx-shelf-title,
+body[data-atmosphere="minimalist"] .qx-shelf-title {
+  color: #64748b;
+}
+
+.qx-shelf-swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-swatch-item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(30, 41, 59, 0.6);
+  border: 2px solid transparent;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.qx-swatch-item:hover {
+  transform: scale(1.15);
+  border-color: rgba(251, 191, 36, 0.5);
+}
+
+.qx-swatch-item.active {
+  transform: scale(1.2);
+  border-color: #fbbf24;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);
+}
+
+.qx-swatch-dot {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+.qx-shelf-specs-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qx-spec-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+body[data-atmosphere="light"] .qx-spec-pill,
+body[data-atmosphere="minimalist"] .qx-spec-pill {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: #334155;
+}
+
+.qx-shelf-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qx-shelf-price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.qx-shelf-currency {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.qx-shelf-price-val {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fbbf24;
+  letter-spacing: -0.02em;
+}
+
+body[data-atmosphere="light"] .qx-shelf-price-val,
+body[data-atmosphere="minimalist"] .qx-shelf-price-val {
+  color: #b45309;
+}
+
+.qx-btn-studio-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0b1329;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.qx-btn-studio-add:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+}
+
+.qx-btn-studio-add:active {
+  transform: translateY(1px);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 900px) {
+  .qx-shelf-specs-group {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .qx-studio-3d-wrapper {
+    height: 430px;
+    border-radius: 20px;
+    margin: 12px auto 20px;
+  }
+  .qx-studio-tools-dock {
+    left: 12px;
+    gap: 8px;
+  }
+  .qx-tool-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+  .qx-studio-shelf-bar {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .qx-shelf-finish-group {
+    width: 100%;
+    justify-content: center;
+  }
+  .qx-shelf-cta-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

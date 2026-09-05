@@ -30,9 +30,69 @@ class StorefrontTenant {
     public $quantixFrontStore = 'NO';
     public $quantixStorePerfums = 'NO';
     public $isStoreActive = false;
+    public $studio3DConfig = null;
 
     public function isPerfumery() {
         return ($this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false);
+    }
+
+    public function isStudio3DEnabled() {
+        return !empty($this->studio3DConfig['enabled']);
+    }
+
+    public function getStudio3DConfig() {
+        $cfg = $this->studio3DConfig ?: [];
+        if (!isset($cfg['enabled'])) $cfg['enabled'] = false;
+        if (!isset($cfg['auto_orbit'])) $cfg['auto_orbit'] = true;
+        if (!isset($cfg['auto_orbit_speed'])) $cfg['auto_orbit_speed'] = 1.2;
+        if (!isset($cfg['allow_zoom'])) $cfg['allow_zoom'] = true;
+        if (!isset($cfg['allow_explode'])) $cfg['allow_explode'] = true;
+
+        if ($this->isPerfumery()) {
+            if (empty($cfg['archetype_model'])) {
+                $cfg['archetype_model'] = 'perfume_flacon_imperial';
+            }
+            if (empty($cfg['lighting_preset'])) {
+                $cfg['lighting_preset'] = 'studio_softbox';
+            }
+            if (empty($cfg['finishes'])) {
+                $cfg['finishes'] = [
+                    ['id' => 'obsidian_stealth', 'name' => 'Obsidian Stealth', 'color' => '#111827', 'roughness' => 0.20, 'metalness' => 0.80, 'clearcoat' => 0.90, 'price_delta' => 0],
+                    ['id' => 'liquid_gold', 'name' => 'Liquid Gold 24k', 'color' => '#D4AF37', 'roughness' => 0.10, 'metalness' => 0.95, 'clearcoat' => 1.00, 'price_delta' => 350],
+                    ['id' => 'titanium_frost', 'name' => 'Titanium Frost', 'color' => '#E2E8F0', 'roughness' => 0.35, 'metalness' => 0.60, 'clearcoat' => 0.50, 'price_delta' => 0],
+                    ['id' => 'rose_champagne', 'name' => 'Rose Champagne', 'color' => '#FDA4AF', 'roughness' => 0.15, 'metalness' => 0.85, 'clearcoat' => 0.80, 'price_delta' => 200]
+                ];
+            }
+            if (empty($cfg['hotspots'])) {
+                $cfg['hotspots'] = [
+                    ['id' => 'hs_cap', 'label' => 'Tapa Zamak Magnética', 'description' => 'Aleación pesada pulida a mano con sellado hermético al vacío.', 'position' => [0.0, 0.85, 0.0], 'camera_target' => [0.0, 0.85, 1.2]],
+                    ['id' => 'hs_heart', 'label' => 'Concentración Extrait 35%', 'description' => 'Formulación de alta maceración artesanal con aceites puros.', 'position' => [0.0, 0.15, 0.25], 'camera_target' => [0.0, 0.15, 1.4]],
+                    ['id' => 'hs_base', 'label' => 'Autenticidad & Batch SAT', 'description' => 'Grabado láser al ácido con número de lote e invoice fiscal SAT.', 'position' => [0.0, -0.65, 0.0], 'camera_target' => [0.0, -0.65, 1.2]]
+                ];
+            }
+        } else {
+            if (empty($cfg['archetype_model']) || $cfg['archetype_model'] === 'perfume_flacon_imperial') {
+                $cfg['archetype_model'] = 'industrial_solenoid_valve';
+            }
+            if (empty($cfg['lighting_preset'])) {
+                $cfg['lighting_preset'] = 'studio_softbox';
+            }
+            if (empty($cfg['finishes'])) {
+                $cfg['finishes'] = [
+                    ['id' => 'danfoss_blue', 'name' => 'Danfoss Blue Enamel', 'color' => '#0284c7', 'roughness' => 0.3, 'metalness' => 0.7, 'clearcoat' => 0.8, 'price_delta' => 0],
+                    ['id' => 'cast_iron_gray', 'name' => 'Cast Iron Slate', 'color' => '#334155', 'roughness' => 0.6, 'metalness' => 0.5, 'clearcoat' => 0.2, 'price_delta' => 0],
+                    ['id' => 'brass_valve', 'name' => 'Forged Brass Alloy', 'color' => '#b45309', 'roughness' => 0.25, 'metalness' => 0.9, 'clearcoat' => 0.6, 'price_delta' => 150]
+                ];
+            }
+            if (empty($cfg['hotspots'])) {
+                $cfg['hotspots'] = [
+                    ['id' => 'hs_seal', 'label' => 'Junta Hermética IP67', 'description' => 'Resistencia certificada contra polvos finos y humedad extrema.', 'position' => [0.0, 0.6, 0.0], 'camera_target' => [0.0, 0.6, 1.2]],
+                    ['id' => 'hs_coil', 'label' => 'Bobinado de Cobre Clase H', 'description' => 'Aislamiento térmico continuo hasta 180°C bajo carga inductiva.', 'position' => [0.0, 0.1, 0.25], 'camera_target' => [0.0, 0.1, 1.4]],
+                    ['id' => 'hs_sat', 'label' => 'Clave SAT 40141600', 'description' => 'Válvulas y solenoides industriales con timbrado CFDI 4.0 inmediato.', 'position' => [0.0, -0.5, 0.0], 'camera_target' => [0.0, -0.5, 1.2]]
+                ];
+            }
+        }
+        return $cfg;
     }
 
     public static function resolve() {
@@ -259,9 +319,15 @@ class StorefrontTenant {
                             'hero_vitrina' => true
                         ]);
                         $tenant->isStoreActive = true; // Enabled when configured via Apex
+                        $tenant->studio3DConfig = $decodedApex['studio_3d'] ?? ($decodedApex['hero_curation']['studio_3d'] ?? null);
                     }
                 }
             } catch (\Exception $e) {}
+        }
+
+        if (isset($_GET['studio_3d'])) {
+            if (!is_array($tenant->studio3DConfig)) $tenant->studio3DConfig = [];
+            $tenant->studio3DConfig['enabled'] = ($_GET['studio_3d'] === '1' || $_GET['studio_3d'] === 'true');
         }
 
         // Industry-Aware Defaults (Zero Perfume Leak for Non-Perfumery Tenants)

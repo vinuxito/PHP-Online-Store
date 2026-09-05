@@ -3582,6 +3582,7 @@ ${shareUrl}`;
       let itemName = product.name;
       let itemPriceWithTax = product.priceWithTax;
 
+      const customFinish = options.customFinish || null;
       if (isDecant) {
         itemId = `${product.id}__decant`;
         itemName = `${product.name} (Decant 5ml)`;
@@ -3590,6 +3591,12 @@ ${shareUrl}`;
         itemId = `${product.id}__sub_${freqMonths}m`;
         itemName = `${product.name} (Auto-Recarga Cada ${freqMonths} Meses)`;
         itemPriceWithTax = Math.round(product.priceWithTax * (1 - discountPct / 100));
+      } else if (customFinish) {
+        itemId = `${product.id}__finish_${customFinish.id}`;
+        itemName = `${product.name} (Acabado ${customFinish.name})`;
+        if (customFinish.priceDelta) {
+          itemPriceWithTax += Number(customFinish.priceDelta);
+        }
       }
 
       const vatRate = product.vatRate || 16;
@@ -3611,6 +3618,7 @@ ${shareUrl}`;
           priceWithTax: itemPriceWithTax,
           isDecant: isDecant,
           isSubscription: isSubscription,
+          customFinish: customFinish,
           frequencyMonths: freqMonths,
           discountPct: discountPct,
           qty: qty
@@ -3712,12 +3720,13 @@ ${shareUrl}`;
         const duoBadge = item.isDuoPack ? (item.isDecant ? `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🧪 Dueto Decants (15% OFF)</span>` : `<span style="display:inline-block; font-size:10px; font-weight:800; background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(236,72,153,0.25)); color:#f5d0fe; border:1px solid rgba(216,180,254,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">🎁 Duo Pack (15% OFF)</span>`) : '';
         const subBadge = item.isSubscription ? `<span class="qx-cart-item-refill-badge">🔄 Auto-Recarga (12% OFF)</span>` : '';
         const giftBadge = item.isGift ? `<span class="qx-cart-free-atomizer-badge">🎁 CORTESÍA $0.00</span>` : '';
+        const finishBadge = item.customFinish ? `<span class="qx-cart-finish-badge" style="display:inline-block; font-size:10px; font-weight:800; background:rgba(212,175,55,0.18); color:#fbbf24; border:1px solid rgba(212,175,55,0.4); padding:1px 6px; border-radius:999px; margin-left:4px;">✦ ${self.esc(item.customFinish.name)}</span>` : '';
 
         const row = $(`
           <div class="qx-cart-item">
             <img class="qx-cart-item-img" src="${self.esc(item.thumb)}" alt="">
             <div class="qx-cart-item-info">
-              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge} ${subBadge} ${giftBadge}</div>
+              <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge} ${subBadge} ${giftBadge} ${finishBadge}</div>
               <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
             </div>
             <div class="qx-cart-stepper">
