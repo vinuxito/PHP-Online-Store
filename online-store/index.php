@@ -1966,6 +1966,8 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
   </nav>
 
   <script src="js/vendor/three.min.js"></script>
+  <script src="js/vendor/DRACOLoader.js"></script>
+  <script src="js/vendor/GLTFLoader.js"></script>
   <script src="js/quantix_haptic_audio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_haptic_audio.js') ? filemtime(__DIR__ . '/js/quantix_haptic_audio.js') : '1'; ?>"></script>
   <script src="js/quantix_spatial_studio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_spatial_studio.js') ? filemtime(__DIR__ . '/js/quantix_spatial_studio.js') : '1'; ?>"></script>
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
@@ -2275,6 +2277,24 @@ $isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier'
         if (type === 'SYNC_3D_LIGHTING') {
           if (window.spatialStudio && payload && payload.lighting) {
             window.spatialStudio.setLightingPreset(payload.lighting);
+          }
+        }
+
+        if (type === 'SYNC_3D_CUSTOM_MODEL') {
+          if (window.spatialStudio && payload) {
+            window.spatialStudio.loadCustomModel(payload.url, payload.name, payload.hotspots);
+          }
+        }
+
+        if (type === 'SYNC_3D_CUSTOM_HOTSPOTS') {
+          if (window.spatialStudio && payload && payload.hotspots) {
+            window.spatialStudio.setCustomHotspots(payload.hotspots);
+          }
+        }
+
+        if (type === 'SYNC_3D_RESET_PROCEDURAL') {
+          if (window.spatialStudio) {
+            window.spatialStudio.resetToProcedural();
           }
         }
 

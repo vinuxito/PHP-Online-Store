@@ -208,15 +208,183 @@
       }
       this.parts = {};
 
+      const isCustomGltf = Boolean(this.config.custom_model_url && this.config.model_source !== 'procedural');
       const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
+
+      if (isCustomGltf) {
+        this.loadCustomGltfModel(this.config.custom_model_url, isIndustrial);
+      } else if (isIndustrial) {
+        this.buildIndustrialSolenoid();
+        this.buildGroundShadow(-0.38);
+      } else {
+        this.buildPerfumeFlacon();
+        this.buildGroundShadow(-0.68);
+      }
+    }
+
+    loadCustomGltfModel(url, fallbackIsIndustrial) {
+      if (!url) {
+        this.fallbackToProcedural(fallbackIsIndustrial);
+        return;
+      }
+
+      if (typeof THREE.GLTFLoader === 'undefined') {
+        console.warn('[QuantixSpatialStudio] GLTFLoader unavailable. Falling back to procedural geometry.');
+        this.fallbackToProcedural(fallbackIsIndustrial);
+        return;
+      }
+
+      this.setLoadingState(true);
+
+      try {
+        let dracoLoader = null;
+        if (typeof THREE.DRACOLoader !== 'undefined') {
+          dracoLoader = new THREE.DRACOLoader();
+          dracoLoader.setDecoderPath('js/vendor/draco/');
+        }
+
+        const loader = new THREE.GLTFLoader();
+        if (dracoLoader) {
+          loader.setDRACOLoader(dracoLoader);
+        }
+
+        loader.load(
+          url,
+          (gltf) => {
+            this.setLoadingState(false);
+            const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+            if (!model) {
+              console.warn('[QuantixSpatialStudio] GLTF file contains no scene. Falling back to procedural model.');
+              this.fallbackToProcedural(fallbackIsIndustrial);
+              return;
+            }
+
+            // Remove previous objects in modelGroup
+            while (this.modelGroup.children.length > 0) {
+              const obj = this.modelGroup.children[0];
+              this.modelGroup.remove(obj);
+              if (obj.geometry) obj.geometry.dispose();
+              if (obj.material) {
+                if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                else obj.material.dispose();
+              }
+            }
+            this.parts = {};
+
+            // Traverse and enhance mesh materials
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                  child.material.needsUpdate = true;
+                }
+              }
+            });
+
+            // Compute Bounding Box & Center
+            const bbox = new THREE.Box3().setFromObject(model);
+            const center = bbox.getCenter(new THREE.Vector3());
+            const size = bbox.getSize(new THREE.Vector3());
+
+            model.position.x = -center.x;
+            model.position.y = -center.y;
+            model.position.z = -center.z;
+
+            // Normalize scale to standard stage unit dimension (2.2)
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const targetDim = 2.2;
+            const scale = targetDim / (maxDim || 1);
+
+            const pivotGroup = new THREE.Group();
+            pivotGroup.add(model);
+            pivotGroup.scale.setScalar(scale);
+
+            this.modelGroup.add(pivotGroup);
+            this.activeCustomModel = pivotGroup;
+
+            // Ground shadow positioned at normalized base
+            const minY = (bbox.min.y - center.y) * scale;
+            this.buildGroundShadow(minY - 0.05);
+
+            // Re-render hotspots
+            this.initHotspots();
+
+            console.info('[QuantixSpatialStudio] Custom GLTF loaded and auto-centered successfully:', url);
+          },
+          (xhr) => {
+            // Optional progress tracking
+          },
+          (error) => {
+            this.setLoadingState(false);
+            console.warn('[QuantixSpatialStudio] Circuit breaker triggered! Failed to load (' + url + '). Reverting to procedural mesh:', error);
+            this.fallbackToProcedural(fallbackIsIndustrial);
+          }
+        );
+      } catch (e) {
+        this.setLoadingState(false);
+        console.warn('[QuantixSpatialStudio] Exception in GLTF loading pipeline. Executing circuit breaker:', e);
+        this.fallbackToProcedural(fallbackIsIndustrial);
+      }
+    }
+
+    fallbackToProcedural(isIndustrial) {
+      while (this.modelGroup.children.length > 0) {
+        const obj = this.modelGroup.children[0];
+        this.modelGroup.remove(obj);
+      }
+      this.parts = {};
 
       if (isIndustrial) {
         this.buildIndustrialSolenoid();
+        this.buildGroundShadow(-0.38);
       } else {
         this.buildPerfumeFlacon();
+        this.buildGroundShadow(-0.68);
       }
+      this.initHotspots();
+    }
 
-      this.buildGroundShadow(isIndustrial ? -0.38 : -0.68);
+    setLoadingState(isLoading) {
+      let pill = this.wrapper ? this.wrapper.querySelector('#qx_3d_loading_pill') : null;
+      if (!pill && this.wrapper && isLoading) {
+        pill = document.createElement('div');
+        pill.id = 'qx_3d_loading_pill';
+        pill.className = 'qx-3d-loading-pill';
+        pill.innerHTML = `<span>💎 Ingestando Modelo Espacial 3D...</span>`;
+        this.wrapper.appendChild(pill);
+      }
+      if (pill) {
+        pill.style.display = isLoading ? 'flex' : 'none';
+      }
+    }
+
+    loadCustomModel(url, name, hotspots) {
+      if (!url) return;
+      this.config.custom_model_url = url;
+      this.config.custom_model_name = name || 'custom_model.glb';
+      this.config.model_source = 'custom_gltf';
+      if (hotspots && Array.isArray(hotspots)) {
+        this.config.custom_hotspots = hotspots;
+      }
+      const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
+      this.loadCustomGltfModel(url, isIndustrial);
+    }
+
+    setCustomHotspots(hotspots) {
+      if (Array.isArray(hotspots)) {
+        this.config.custom_hotspots = hotspots;
+        this.initHotspots();
+      }
+    }
+
+    resetToProcedural() {
+      this.config.custom_model_url = '';
+      this.config.custom_model_name = '';
+      this.config.model_source = 'procedural';
+      this.config.custom_hotspots = [];
+      const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
+      this.fallbackToProcedural(isIndustrial);
     }
 
     buildPerfumeFlacon() {
@@ -388,14 +556,28 @@
       this.hotspotsLayer.innerHTML = '';
       this.hotspotPins = [];
 
-      const spots = this.config.hotspots || [];
+      let spots = [];
+      if (this.config.custom_hotspots && this.config.custom_hotspots.length > 0) {
+        spots = this.config.custom_hotspots.map((hs, idx) => ({
+          id: 'custom_hs_' + idx,
+          label: hs.title || hs.label || ('Punto ' + (idx + 1)),
+          description: hs.desc || hs.description || '',
+          position: [hs.x !== undefined ? hs.x : 0, hs.y !== undefined ? hs.y : 0, hs.z !== undefined ? hs.z : 0],
+          normal: [hs.nx !== undefined ? hs.nx : 0, hs.ny !== undefined ? hs.ny : 0, hs.nz !== undefined ? hs.nz : 1],
+          camera_target: [hs.x || 0, hs.y || 0, (hs.z || 0) + 1.2],
+          icon: hs.icon || '✦'
+        }));
+      } else {
+        spots = this.config.hotspots || [];
+      }
+
       spots.forEach(spot => {
         const pin = document.createElement('div');
         pin.className = 'qx-hotspot-pin';
         pin.setAttribute('data-id', spot.id);
         pin.setAttribute('title', spot.label);
         pin.innerHTML = `
-          <div class="qx-hotspot-dot"></div>
+          <div class="qx-hotspot-dot">${spot.icon ? `<span style="font-size:9px;">${this.escapeHtml(spot.icon)}</span>` : ''}</div>
           <div class="qx-hotspot-ripple"></div>
           <div class="qx-hotspot-card" id="card_${spot.id}">
             <div class="qx-hotspot-card-title">${this.escapeHtml(spot.label)}</div>
@@ -421,8 +603,13 @@
           spot.position ? spot.position[2] : 0
         );
 
-        const normal = new THREE.Vector3(pos.x, 0, pos.z).normalize();
-        if (normal.length() === 0) normal.set(0, 0, 1);
+        let normal;
+        if (spot.normal && Array.isArray(spot.normal) && (spot.normal[0] !== 0 || spot.normal[1] !== 0 || spot.normal[2] !== 0)) {
+          normal = new THREE.Vector3(spot.normal[0], spot.normal[1], spot.normal[2]).normalize();
+        } else {
+          normal = new THREE.Vector3(pos.x, 0, pos.z).normalize();
+          if (normal.length() === 0) normal.set(0, 0, 1);
+        }
 
         this.hotspotPins.push({
           id: spot.id,

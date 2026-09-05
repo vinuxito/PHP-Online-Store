@@ -92,6 +92,18 @@ class StorefrontTenant {
                 ];
             }
         }
+        if (!empty($cfg['custom_model_url'])) {
+            $cfg['custom_model_url'] = htmlspecialchars(trim($cfg['custom_model_url']), ENT_QUOTES, 'UTF-8');
+            $cfg['model_source'] = 'custom_gltf';
+        } else {
+            $cfg['model_source'] = 'procedural';
+        }
+        if (!empty($cfg['custom_model_name'])) {
+            $cfg['custom_model_name'] = htmlspecialchars(trim($cfg['custom_model_name']), ENT_QUOTES, 'UTF-8');
+        }
+        if (!empty($cfg['custom_hotspots']) && is_array($cfg['custom_hotspots'])) {
+            $cfg['custom_hotspots'] = array_values($cfg['custom_hotspots']);
+        }
         return $cfg;
     }
 

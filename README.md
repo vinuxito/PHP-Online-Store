@@ -8,7 +8,22 @@ Real-time, ultra-luxury, and multi-archetype e-commerce storefront platform desi
 - **Archetype Isolation:** Multi-tenant support for Haute Perfumerie (`Mistiq`), Industrial Electrical/Hardware (`Gersol`), and Generic Retail, fully isolated without domain or terminology bleed.
 - **Fiscal Compliance:** SAT CFDI 4.0 ready with dynamic RFC validation (Persona Moral vs Física vs Público en General/Extranjero).
 
-## Latest Upgrade: Quantix Holo-Studio 3D Interactive Showcase (2026-09-05)
+## Latest Upgrade: Quantix Holo-Vault Custom 3D Asset Upload & GLTF Ingestion Pipeline (2026-09-05)
+- **Holo-Vault Drag-and-Drop Ingestion:** Direct tenant `.gltf` / `.glb` 3D model ingestion in Store Director (Capítulo IV) with 0ms client-side blob preview.
+- **Zero-CDN Vendor Independence:** Self-hosted `GLTFLoader.js`, `DRACOLoader.js`, and local Draco WASM decoders (`draco_decoder.wasm`, `draco_wasm_wrapper.js`) served directly from local Apache.
+- **Security Shield & Hardened Isolation:** Dual binary magic-byte verification (`0x46546C67`), 15MB file ceiling, multi-tenant directory segregation, and `.htaccess` script execution lock (`php_flag engine off`).
+- **Auto-Centering & Scale Normalization:** Automated `THREE.Box3` bounding calculation, centering at origin `(0, 0, 0)`, proportional scaling to 2.2 units, and dynamic ground shadow repositioning.
+- **Circuit-Breaker Fallback to Procedural Models:** Corrupt or unrenderable models immediately trigger circuit-breaker fallback to native parametric models without crashing WebGL context.
+- **Interactive 3D Surface Hotspot Studio:** Custom pins can be pinned to 3D surface coordinates with custom labels and descriptions, synced live via `GlassTwinBridge`.
+- **1-Click Factory Reset:** Instantly revert custom model overrides back to procedural geometry in real time.
+- **Targeted Test Suite:** Verified 100% green via `/lamp/www/cfdadmin/tests/e2e/test_custom_3d_gltf_pipeline.mjs`.
+- **Verification Documentation:**
+  - Memory: `/lamp/www/cfdadmin/docs/memories/session-2026-09-05-custom-3d-gltf-ingestion-pipeline.md`
+  - HTML Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-custom-3d-gltf-pipeline-verification.html`
+  - Markdown Report: `/lamp/www/cfdadmin/docs/reports/2026-09-05-custom-3d-gltf-pipeline-verification.md`
+  - Plan Index: `/lamp/www/cfdadmin/docs/plans/quantix-3d-custom-model-upload-and-gltf-pipeline/INDEX.md`
+
+## Previous Upgrade: Quantix Holo-Studio 3D Interactive Showcase (2026-09-05)
 - **Zero-Asset Procedural 3D WebGL:** Built with self-hosted Three.js r128 (`js/vendor/three.min.js`), ACES Filmic tone mapping, and sRGB encoding. Generates procedural borosilicate crystal flacons (with transmission dielectric physics) for perfumery, and mechanical solenoid valves for industrial tenants.
 - **Interactive 3D Hotspots:** Screen-space projected pins with normal vector depth-occlusion culling and frosted-glass popover detail cards.
 - **Anatomical Exploded View ("Vista Desglosada"):** Smooth spring physics disassembly along calibrated axis vectors with micro-haptic ratchet audio.
