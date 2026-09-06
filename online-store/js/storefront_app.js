@@ -2572,8 +2572,11 @@ ${shareUrl}`;
       this.init();
     }
 
+    
     init() {
+      this.setupGlobalErrorHandling();
       this.bindGlobalEvents();
+
       this.initSensoryAtelier();
       this.loadCatalog();
       this.renderCartUI();
@@ -2641,8 +2644,51 @@ ${shareUrl}`;
       this.renderCartUI();
     }
 
+    
+    
+    // [Iter 3] Unified Error Handling & Toast Architecture
+    setupGlobalErrorHandling() {
+      window.addEventListener('unhandledrejection', (event) => {
+        console.warn('Quantix Guard caught promise rejection:', event.reason);
+        this.showToast('Error de red o conexión inestable. Por favor, intente de nuevo.', 'error');
+      });
+      
+      // Upgrade showToast to handle types
+      const originalShowToast = this.showToast.bind(this);
+      this.showToast = (message, type = 'success') => {
+        // We will prepend an icon based on type if not already there
+        let prefix = '';
+        if (type === 'error' && !message.includes('❌')) prefix = '❌ ';
+        if (type === 'warning' && !message.includes('⚠')) prefix = '⚠ ';
+        originalShowToast(prefix + message);
+      };
+    }
+
     bindGlobalEvents() {
       const self = this;
+
+      
+      // [Iter 6] Accessibility Modal Trap Release
+      $(document).on('keydown', (e) => {
+        if (e.key === 'Escape') {
+          this.closeCart();
+          $('#qx_product_modal').removeClass('active');
+          if (window.quantixStore?.comparisonStudio?.closeCrucible) window.quantixStore.comparisonStudio.closeCrucible();
+          if (this.closeTastingModal) this.closeTastingModal();
+          if (this.passportEngine?.closePassportModal) this.passportEngine.closePassportModal();
+        }
+      });
+
+      // [Iter 2] Omni-Search Keyboard Mastery
+      $(document).on('keydown', (e) => {
+        if (e.key === '/' || (e.key === 'k' && (e.ctrlKey || e.metaKey))) {
+          if (!$(e.target).is('input, textarea')) {
+            e.preventDefault();
+            $('#qx_search_input').focus();
+          }
+        }
+      });
+
 
       // Omnibox Search Trigger & Spotlight
       $('#qx_search_input, #qx_nav_search_trigger').on('click focus', function(e) {
@@ -3730,19 +3776,33 @@ ${shareUrl}`;
               <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
             </div>
             <div class="qx-cart-stepper">
-              <button type="button" class="qx-step-btn btn-dec">-</button>
-              <span style="font-size:12px; font-weight:700">${item.qty}</span>
-              <button type="button" class="qx-step-btn btn-inc">+</button>
+              <button type="button" class="qx-step-btn btn-dec" aria-label="Disminuir cantidad">-</button>
+              <span style="font-size:12px; font-weight:700" aria-live="polite">${item.qty}</span>
+              <button type="button" class="qx-step-btn btn-inc" aria-label="Aumentar cantidad">+</button>
             </div>
           </div>
         `);
 
         row.find('.btn-dec').on('click', () => { self.playHaptic('light'); self.updateCartItemQty(item.id, -1); });
         row.find('.btn-inc').on('click', () => { self.playHaptic('light'); self.updateCartItemQty(item.id, 1); });
+        
         list.append(row);
       });
 
+      // [Iter 2] Trust Signals and Floating Total
+      const trustSignals = `
+        <div class="qx-cart-trust-signals" style="margin-top: 20px; padding: 16px; background: rgba(0,0,0,0.02); border: 1px solid var(--qx-border); border-radius: var(--qx-radius-md); text-align: center;">
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 8px;">Pago 100% Seguro</div>
+          <div style="font-size: 12px; color: var(--qx-text-muted); display: flex; justify-content: center; gap: 12px;">
+            <span>🔒 Encriptación SSL/TLS</span>
+            <span>🏦 Transferencia SPEI</span>
+          </div>
+        </div>
+      `;
+      list.append(trustSignals);
+
       // Render Smart Decant Upsell if applicable
+
       const fullBottleItem = this.cart.items.find(i => !i.isDecant);
       if (fullBottleItem) {
         const fullProd = this.products.find(p => p.id === (fullBottleItem.baseId || fullBottleItem.id));
