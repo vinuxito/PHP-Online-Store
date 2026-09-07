@@ -280,6 +280,8 @@ class StorefrontTenant {
             $tenant->heroBg = $deMap['STORE_HERO_BG'] ?? 'obsidian';
             $tenant->archetype = strtolower($deMap['STORE_ARCHETYPE'] ?? 'maison');
             $tenant->density = floatval($deMap['STORE_COMMERCIAL_DENSITY'] ?? 0.5);
+            $tenant->showStock = ($deMap['STORE_SHOW_STOCK'] ?? 'SI') !== 'NO';
+            $tenant->lowStockThreshold = intval($deMap['STORE_LOW_STOCK_THRESHOLD'] ?? 5);
             $tenant->modules = json_decode($deMap['STORE_COMMERCIAL_MODULES'] ?? '{}', true) ?: [
                 'flash_deals' => true,
                 'horizontal_rails' => true,

@@ -101,6 +101,7 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
         'iepsRate'     => $iepsRate,
         'priceWithTax' => round($priceWithTax, 2),
         'stock'        => (float)($p['stock'] ?? 0),
+        'inInventory'  => (($p['EnInventario'] ?? 'NO') === 'SI'),
         'satKey'       => $p['ClaveProdServ'] ?? '',
         'notes'        => $p['Observaciones'] ?? '',
         'storeDesc'    => $cleanStoreDesc,
@@ -131,7 +132,7 @@ if ($action === 'search' || $action === 'autocomplete') {
 
     $sql = "
         SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
-               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
+               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock, p.EnInventario,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
@@ -235,7 +236,7 @@ if ($action === 'get_product') {
     }
     $stmt = $db->prepare("
         SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
-               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
+               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock, p.EnInventario,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
@@ -293,7 +294,7 @@ if ($action === 'get_product') {
 try {
     $stmt = $db->prepare("
         SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
-               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
+               p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock, p.EnInventario,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
                pa.RutaRelativa as CoverRuta,
@@ -403,6 +404,8 @@ try {
             'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13,
             'archetype'   => $tenant->archetype ?? 'maison',
             'density'     => $tenant->density ?? 0.5,
+            'showStock'   => $tenant->showStock ?? true,
+            'lowStockThreshold' => $tenant->lowStockThreshold ?? 5,
             'modules'     => $tenant->modules ?? [
                 'flash_deals' => true,
                 'horizontal_rails' => true,

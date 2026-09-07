@@ -3541,13 +3541,31 @@ ${shareUrl}`;
           <div class="qx-titan-shipping">🚚 Envío FULL Mañana</div>
         `;
       } else if (currentArchetype === 'social') {
-        const remaining = 3 + (Math.abs((p.id || 1) * 7) % 8);
-        urgencyHtml = `
-          <div class="qx-social-stock">
-            <div class="qx-social-bar"><div class="qx-social-progress" style="width: ${Math.min(92, 100 - remaining * 7)}%;"></div></div>
-            <span class="qx-social-stock-text">🔥 Quedan solo ${remaining} piezas</span>
-          </div>
-        `;
+        const tenantAllowsStock = self.tenant ? (self.tenant.showStock !== false && self.tenant.showStock !== 'NO') : true;
+        const isInventoryTracked = (p.inInventory === true || p.inInventory === 'SI' || p.EnInventario === 'SI');
+        
+        if (tenantAllowsStock && isInventoryTracked) {
+          const stockNum = parseFloat(p.stock);
+          let remaining = 0;
+          if (!isNaN(stockNum) && stockNum > 0) {
+            remaining = Math.round(stockNum);
+          } else {
+            // Deterministic safe positive integer derived from hash code (never NaN)
+            const safeSeed = String(p.id || '1').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+            remaining = 2 + (safeSeed % 6);
+          }
+          
+          if (remaining > 0) {
+            const unitLabel = (p.unit && p.unit.trim()) ? self.esc(p.unit.toLowerCase()) : 'piezas';
+            const progressPercent = Math.min(92, Math.max(15, 100 - (remaining * 7)));
+            urgencyHtml = `
+              <div class="qx-social-stock">
+                <div class="qx-social-bar"><div class="qx-social-progress" style="width: ${progressPercent}%;"></div></div>
+                <span class="qx-social-stock-text">🔥 Quedan solo ${remaining} ${unitLabel}</span>
+              </div>
+            `;
+          }
+        }
       }
 
       const body = $(`
