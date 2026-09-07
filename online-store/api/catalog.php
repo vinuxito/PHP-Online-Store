@@ -67,6 +67,9 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
     $priceWithTax = $unitPrice * (1 + $vatRate / 100) * (1 + $iepsRate / 100);
 
     $cleanDesc = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '&nbsp;'], [' ', ' ', ' ', ' '], $p['descripcion'] ?? '')));
+    $cleanStoreDesc = !empty($p['descripcion_tienda']) 
+        ? trim(str_replace(['<br>', '<br/>', '<br />'], "\n", $p['descripcion_tienda']))
+        : (!empty($p['Observaciones']) ? trim(str_replace(['<br>', '<br/>', '<br />'], "\n", $p['Observaciones'])) : $cleanDesc);
 
     $hasDecant = $isPerfumery ? (($p['TieneDecant'] ?? 'SI') !== 'NO') : false;
     $decantPrice = $hasDecant ? (!empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2)) : 0;
@@ -100,6 +103,8 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
         'stock'        => (float)($p['stock'] ?? 0),
         'satKey'       => $p['ClaveProdServ'] ?? '',
         'notes'        => $p['Observaciones'] ?? '',
+        'storeDesc'    => $cleanStoreDesc,
+        'hasStoreDesc' => !empty($p['descripcion_tienda']),
         'cover'        => $cover,
         'photos'       => $fotos,
         'docs'         => $docs,
@@ -125,7 +130,7 @@ if ($action === 'search' || $action === 'autocomplete') {
     $excludeId = trim($_GET['exclude_id'] ?? '');
 
     $sql = "
-        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.categoria,
+        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
                p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
@@ -149,8 +154,9 @@ if ($action === 'search' || $action === 'autocomplete') {
     }
 
     if ($q !== '') {
-        $sql .= " AND (p.descripcion LIKE ? OR p.SKU LIKE ? OR p.noIdentificacion LIKE ? OR p.ClaveProdServ LIKE ? OR p.categoria LIKE ?) ";
+        $sql .= " AND (p.descripcion LIKE ? OR p.descripcion_tienda LIKE ? OR p.SKU LIKE ? OR p.noIdentificacion LIKE ? OR p.ClaveProdServ LIKE ? OR p.categoria LIKE ?) ";
         $term = "%{$q}%";
+        $params[] = $term;
         $params[] = $term;
         $params[] = $term;
         $params[] = $term;
@@ -228,7 +234,7 @@ if ($action === 'get_product') {
         exit;
     }
     $stmt = $db->prepare("
-        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.categoria,
+        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
                p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,
@@ -286,7 +292,7 @@ if ($action === 'get_product') {
 
 try {
     $stmt = $db->prepare("
-        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.categoria,
+        SELECT p.ProductoID, p.noIdentificacion, p.SKU, p.descripcion, p.descripcion_tienda, p.categoria,
                p.unidad, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad as stock,
                p.ClaveProdServ, p.Observaciones, p.TiendaInicio, p.TiendaFin,
                pa.ArchivoID as CoverArchivoID,

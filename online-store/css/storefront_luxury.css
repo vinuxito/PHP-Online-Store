@@ -3626,7 +3626,9 @@ body {
 .qx-pmodal-desc {
   font-size: 14.5px;
   color: var(--qx-text-muted) !important;
-  line-height: 1.6;
+  line-height: 1.65;
+  white-space: pre-line;
+  word-break: break-word;
 }
 
 .qx-pmodal-docs-list {

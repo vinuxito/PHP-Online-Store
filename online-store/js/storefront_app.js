@@ -4131,10 +4131,12 @@ ${shareUrl}`;
 
       const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
 
-      // Specs / Description
+      // Specs / Description (Commercial Dossier)
       const defaultGenericDesc = `Artículo garantizado de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
       const defaultPerfumeDesc = `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
-      const desc = product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc);
+      const desc = (product.storeDesc && product.storeDesc.trim())
+        ? product.storeDesc
+        : (product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc));
       $('#qx_pmodal_desc').text(desc);
 
       // Documents / Ficha Técnica
@@ -4755,7 +4757,8 @@ ${shareUrl}`;
           const matchCat = (p.category || '').toLowerCase().includes(q);
           const matchSat = (p.satKey || '').toLowerCase().includes(q);
           const matchNotes = (p.notes || '').toLowerCase().includes(q);
-          return matchName || matchSku || matchCode || matchCat || matchSat || matchNotes;
+          const matchStoreDesc = (p.storeDesc || '').toLowerCase().includes(q);
+          return matchName || matchSku || matchCode || matchCat || matchSat || matchNotes || matchStoreDesc;
         });
       }
 
