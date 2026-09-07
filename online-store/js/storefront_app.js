@@ -4212,32 +4212,51 @@ ${shareUrl}`;
         });
         dotsContainer.append(dot);
 
-        // Real-Time Floating Flacon Isolation
-        const originalSrc = photo.url || photo.thumb;
-        self.flaconEngine.isolateSilhouette(originalSrc).then(transUrl => {
-          slide.find('img').attr('src', transUrl);
-        });
+        // Real-Time Floating Flacon Isolation (ONLY for perfumery!)
+        const isPerfumsTenant = (self.tenant?.quantixStorePerfums === 'SI');
+        if (isPerfumsTenant && self.flaconEngine) {
+          const originalSrc = photo.url || photo.thumb;
+          self.flaconEngine.isolateSilhouette(originalSrc).then(transUrl => {
+            slide.find('img').attr('src', transUrl);
+          });
+        }
       });
 
       const filmstrip = $('#qx_pmodal_filmstrip').empty();
+      let activePhotoIdx = 0;
+
+      const updatePhotoState = (newIdx) => {
+        activePhotoIdx = Math.max(0, Math.min(photos.length - 1, newIdx));
+        dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(activePhotoIdx).addClass('active');
+        filmstrip.find('.qx-pmodal-thumb').removeClass('active').eq(activePhotoIdx).addClass('active');
+        $('#qx_pmodal_counter_badge').text(`Foto ${activePhotoIdx + 1} de ${photos.length}`).show();
+        const targetSlide = swipeTrack.find(`.qx-pmodal-swipe-slide[data-idx="${activePhotoIdx}"]`)[0];
+        if (targetSlide) {
+          targetSlide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      };
 
       if (photos.length > 1) {
         dotsContainer.show();
         filmstrip.show();
+        $('#qx_pmodal_counter_badge').text(`Foto 1 de ${photos.length}`).show();
+        $('#qx_pmodal_nav_prev, #qx_pmodal_nav_next').show();
+
+        $('#qx_pmodal_nav_prev').off('click.gallery').on('click.gallery', function(e) {
+          e.stopPropagation();
+          updatePhotoState(activePhotoIdx - 1);
+        });
+        $('#qx_pmodal_nav_next').off('click.gallery').on('click.gallery', function(e) {
+          e.stopPropagation();
+          updatePhotoState(activePhotoIdx + 1);
+        });
 
         // Populate Filmstrip thumbnails (desktop & tablet)
         photos.forEach((photo, idx) => {
           const thumbImg = $(`<img class="qx-pmodal-thumb ${idx === 0 ? 'active' : ''}" data-idx="${idx}" src="${self.esc(photo.url || photo.thumb)}" alt="">`);
           thumbImg.on('click', function() {
             self.playHaptic('light');
-            filmstrip.find('.qx-pmodal-thumb').removeClass('active');
-            $(this).addClass('active');
-            dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(idx).addClass('active');
-
-            const targetSlide = swipeTrack.find(`.qx-pmodal-swipe-slide[data-idx="${idx}"]`)[0];
-            if (targetSlide) {
-              targetSlide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
+            updatePhotoState(idx);
           });
           filmstrip.append(thumbImg);
         });
@@ -4247,12 +4266,15 @@ ${shareUrl}`;
           const scrollLeft = this.scrollLeft;
           const slideWidth = this.clientWidth || 1;
           const currentIdx = Math.round(scrollLeft / slideWidth);
+          activePhotoIdx = currentIdx;
           dotsContainer.find('.qx-pmodal-dot').removeClass('active').eq(currentIdx).addClass('active');
           filmstrip.find('.qx-pmodal-thumb').removeClass('active').eq(currentIdx).addClass('active');
+          $('#qx_pmodal_counter_badge').text(`Foto ${currentIdx + 1} de ${photos.length}`);
         });
       } else {
         dotsContainer.hide();
         filmstrip.hide();
+        $('#qx_pmodal_counter_badge, #qx_pmodal_nav_prev, #qx_pmodal_nav_next').hide();
       }
 
       // Badge
@@ -4262,11 +4284,16 @@ ${shareUrl}`;
         $('#qx_pmodal_badge').hide();
       }
 
-      // Meta & Titles
+      // Meta & Titles with formatting cleanup
       $('#qx_pmodal_cat').text(product.category || 'GENERAL');
       $('#qx_pmodal_sku').text(product.sku ? `SKU: ${product.sku}` : (product.code ? `CÓD: ${product.code}` : ''));
       $('#qx_pmodal_sat').text(product.satKey ? `SAT: ${product.satKey}` : '');
-      $('#qx_pmodal_title').text(product.name);
+      
+      let cleanTitle = (product.name || '').replace(/\.?\s*SUP\.SOS\s*00\/100\s*M\.N\.?\)?/gi, '')
+                                          .replace(/\s*00\/100\s*M\.N\.?\)?/gi, '')
+                                          .replace(/\s*\(\s*\$?[0-9,\.]+\s*PESOS?[^\)]*\)/gi, '')
+                                          .trim();
+      $('#qx_pmodal_title').text(cleanTitle || product.name);
 
       // Price & Stock
       $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
@@ -4317,9 +4344,18 @@ ${shareUrl}`;
         $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>⚡ Comprar Ahora</span>')
           .off('click.highTicket');
       }
-      const isRealEstate = (self.tenant?.industry === 'real_estate' || isHighTicket);
+      const isRealEstate = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || isHighTicket);
       if (isRealEstate) {
         $('#qx_pmodal_stock').text(`🏛️ Certeza Jurídica & Posesión Inmediata`).show();
+        $('.pmodal-stepper, #qx_pmodal_stepper, .qx-pmodal-actions-box, #qx_pmodal_metrics_box, #qx_pmodal_radar_section').hide();
+        $('#qx_format_selector, #qx_shield_guarantee_card, #qx_refill_subscription_card, #qx_pmodal_btn_layering, #qx_pmodal_btn_compare').hide();
+        $('#qx_tilt_hint, #qx_pmodal_glass_sheen').hide();
+        $('#qx_pmodal_stage').addClass('qx-stage-cinematic');
+        $('#qx_pmodal_swipe_track').removeClass('qx-living-float qx-tilt-target').css({
+          'transform': 'none',
+          '--tilt-rx': '0deg',
+          '--tilt-ry': '0deg'
+        });
       } else if (product.stock > 0) {
         $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
       } else {
@@ -4329,12 +4365,14 @@ ${shareUrl}`;
       const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
 
       // Specs / Description (Commercial Dossier)
-      const defaultGenericDesc = `Artículo garantizado de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
-      const defaultPerfumeDesc = `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
-      const desc = (product.storeDesc && product.storeDesc.trim())
-        ? product.storeDesc
-        : (product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc));
-      $('#qx_pmodal_desc').text(desc);
+      if (!isRealEstate) {
+        const defaultGenericDesc = `Artículo garantizado de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+        const defaultPerfumeDesc = `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+        const desc = (product.storeDesc && product.storeDesc.trim())
+          ? product.storeDesc
+          : (product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc));
+        $('#qx_pmodal_desc').text(desc);
+      }
 
       // Documents / Ficha Técnica
       const docsList = $('#qx_pmodal_docs').empty();
@@ -4354,70 +4392,66 @@ ${shareUrl}`;
       // Quantity reset
       $('#qx_pmodal_qty_val, #qx_pmodal_bar_qty').text('1');
 
-      // Reset & Populate Format Selector (Full Bottle vs Decant)
-      this.activeProductFormat = 'full';
-      $('#qx_format_full').addClass('active');
-      $('#qx_format_decant').removeClass('active');
-      $('#qx_format_price_full').text(`$ ${self.formatMoney(product.priceWithTax)}`);
-      
-      const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
-      $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
+      if (!isRealEstate) {
+        // Reset & Populate Format Selector (Full Bottle vs Decant)
+        this.activeProductFormat = 'full';
+        $('#qx_format_full').addClass('active');
+        $('#qx_format_decant').removeClass('active');
+        $('#qx_format_price_full').text(`$ ${self.formatMoney(product.priceWithTax)}`);
+        
+        const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+        $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
 
-      if (isPerfums && product.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
-        $('#qx_format_selector').show();
-        $('#qx_shield_guarantee_card').show();
+        if (isPerfums && product.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
+          $('#qx_format_selector').show();
+          $('#qx_shield_guarantee_card').show();
+        } else {
+          $('#qx_format_selector').hide();
+          $('#qx_shield_guarantee_card').hide();
+        }
+
+        // Reset Refill Subscription Selector
+        if (this.loyalty) {
+          this.loyalty.selectedPurchaseMode = 'once';
+          this.loyalty.selectedFrequencyMonths = 3;
+        }
+        $('#qx_refill_opt_once').prop('checked', true);
+        $('#qx_refill_opt_once_lbl').addClass('active');
+        $('#qx_refill_opt_sub_lbl').removeClass('active');
+        $('#qx_refill_freq_row').hide();
+        $('.qx-freq-pill').removeClass('active').eq(0).addClass('active');
+
+        if (isPerfums && self.tenant?.featureMatrix?.loyalty_refill_vault?.enabled !== false) {
+          $('#qx_refill_subscription_card').show();
+        } else {
+          $('#qx_refill_subscription_card').hide();
+        }
+
+        $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
+        $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
+
+        // Layering Button
+        if (isPerfums && self.tenant?.featureMatrix?.layering_crucible?.enabled !== false) {
+          $('#qx_pmodal_btn_layering').show();
+        } else {
+          $('#qx_pmodal_btn_layering').hide();
+        }
+
+        $('#qx_re_actions_box, #qx_re_highlights_bar').hide();
+        $('.qx-pmodal-actions-box').show();
+        // Render Adaptive Specs & Metric Bars
+        this.renderAdaptiveSpecs(product);
+
+        // Render Scent Trail Radar & Live Weather (Feature 3)
+        if (isPerfums && self.tenant?.featureMatrix?.scent_radar?.enabled !== false) {
+          $('#qx_pmodal_radar_section').show();
+          this.renderProductRadarSection(product);
+        } else {
+          $('#qx_pmodal_radar_section').hide();
+        }
       } else {
-        $('#qx_format_selector').hide();
-        $('#qx_shield_guarantee_card').hide();
-      }
-
-      // Reset Refill Subscription Selector
-      if (this.loyalty) {
-        this.loyalty.selectedPurchaseMode = 'once';
-        this.loyalty.selectedFrequencyMonths = 3;
-      }
-      $('#qx_refill_opt_once').prop('checked', true);
-      $('#qx_refill_opt_once_lbl').addClass('active');
-      $('#qx_refill_opt_sub_lbl').removeClass('active');
-      $('#qx_refill_freq_row').hide();
-      $('.qx-freq-pill').removeClass('active').eq(0).addClass('active');
-
-      if (isPerfums && self.tenant?.featureMatrix?.loyalty_refill_vault?.enabled !== false) {
-        $('#qx_refill_subscription_card').show();
-      } else {
-        $('#qx_refill_subscription_card').hide();
-      }
-
-      $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
-      $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
-
-      // WhatsApp concierge button
-      if (self.tenant && self.tenant.showWhatsapp && self.tenant.whatsappPhone) {
-        const rawPhone = String(self.tenant.whatsappPhone).replace(/[^0-9]/g, '');
-        const currentUrl = window.location.href;
-        const waMsg = `¡Hola! Deseo más información y adquirir el producto: *${product.name}* (Precio: $${self.formatMoney(product.priceWithTax)} MXN) de la tienda online: ${currentUrl}`;
-        const waLink = `https://wa.me/${encodeURIComponent(rawPhone)}?text=${encodeURIComponent(waMsg)}`;
-        $('#qx_pmodal_btn_wa').attr('href', waLink).show();
-      } else {
-        $('#qx_pmodal_btn_wa').hide();
-      }
-
-      // Layering Button
-      if (isPerfums && self.tenant?.featureMatrix?.layering_crucible?.enabled !== false) {
-        $('#qx_pmodal_btn_layering').show();
-      } else {
-        $('#qx_pmodal_btn_layering').hide();
-      }
-
-      // Render Adaptive Specs & Metric Bars
-      this.renderAdaptiveSpecs(product);
-
-      // Render Scent Trail Radar & Live Weather (Feature 3)
-      if (isPerfums && self.tenant?.featureMatrix?.scent_radar?.enabled !== false) {
-        $('#qx_pmodal_radar_section').show();
-        this.renderProductRadarSection(product);
-      } else {
-        $('#qx_pmodal_radar_section').hide();
+        // REAL ESTATE SOVEREIGN DOSSIER
+        this.renderRealEstateDossier(product);
       }
 
       // Set dynamic aura colors & living float
@@ -5136,6 +5170,229 @@ ${shareUrl}`;
         $('#qx_metric_bar_2').css('width', `${longevity}%`);
         $('#qx_metric_bar_3').css('width', `${quality}%`);
       }, 50);
+    }
+
+    renderRealEstateDossier(product) {
+      const self = this;
+      const rawText = (product.storeDesc && product.storeDesc.trim()) || product.notes || product.description || '';
+      const textUpper = rawText.toUpperCase();
+
+      // 1. Extract Metrics for Highlights Bar
+      let terreno = '';
+      let construccion = '';
+      let superficie = '';
+
+      const terrMatch = textUpper.match(/(?:TERRENO|SUP(?:ERFICIE)?(?:\s*DE)?\s*TERRENO)\s*(?:SON|ES|DE|:)?\s*(\d+(?:[\.,]\d+)?)\s*(?:M2|MTS2|METROS)?/i);
+      const constrMatch = textUpper.match(/(?:CONSTRUCCI[OÓ]N|SUPERFICIE\s*CONSTRUIDA)\s*(?:SON|ES|DE|:)?\s*(\d+(?:[\.,]\d+)?)\s*(?:M2|MTS2|METROS)?/i);
+
+      if (terrMatch && terrMatch[1]) {
+        terreno = `${terrMatch[1]} m²`;
+      }
+      if (constrMatch && constrMatch[1]) {
+        construccion = `${constrMatch[1]} m²`;
+      }
+
+      if (!terreno && !construccion) {
+        const generalSup = textUpper.match(/(\d+(?:[\.,]\d+)?)\s*(?:M2|MTS2|METROS\s*CUADRADOS)/i);
+        if (generalSup && generalSup[1]) {
+          superficie = `${generalSup[1]} m²`;
+        }
+      }
+
+      let recamaras = '';
+      const recMatch = textUpper.match(/\bRECAMARAS?:\s*([^\n\r]+)/i);
+      if (recMatch) {
+        const rVal = recMatch[1].trim();
+        if (!/NO\b/i.test(rVal)) {
+          if (/CUATRO/i.test(rVal) || /\b4\b/.test(rVal)) recamaras = '4 Recámaras';
+          else if (/TRES/i.test(rVal) || /\b3\b/.test(rVal)) recamaras = '3 Recámaras';
+          else if (/DOS/i.test(rVal) || /\b2\b/.test(rVal)) recamaras = '2 Recámaras';
+          else if (/UNA\b|1\b/.test(rVal)) recamaras = '1 Recámara';
+          else recamaras = rVal.split(' ')[0] + ' Rec.';
+        }
+      }
+
+      let banos = '';
+      const banMatch = textUpper.match(/\bBAÑOS?:\s*([^\n\r]+)/i);
+      if (banMatch) {
+        const bVal = banMatch[1].trim();
+        if (!/NO\b/i.test(bVal)) {
+          if (/TRES\s*Y\s*MEDIO|3\.5/i.test(bVal)) banos = '3.5 Baños';
+          else if (/DOS\s*COMPLETOS\s*Y\s*UNO\s*MEDIO|2\.5/i.test(bVal)) banos = '2.5 Baños';
+          else if (/DOS\s*MEDIOS/i.test(bVal)) banos = '2 Medios Baños';
+          else if (/DOS/i.test(bVal) || /\b2\b/.test(bVal)) banos = '2 Baños';
+          else if (/UNO|UN\s*BAÑO|\b1\b/.test(bVal)) banos = '1 Baño';
+          else banos = bVal.replace(/COMPLETOS?/gi, '').trim();
+        }
+      } else {
+        const altBan = textUpper.match(/(\d+)\s*(?:MEDIOS?\s*BAÑOS?|BAÑOS?)/i);
+        if (altBan) {
+          banos = `${altBan[1]} Baños`;
+        }
+      }
+
+      let estacionamiento = '';
+      const estMatch = textUpper.match(/(?:\bESTACIONAMIENTO|\bCOCHERA):\s*([^\n\r]+)/i) || textUpper.match(/ESTACIONAMIENTO[^\n\r]*PARA\s*(\d+|UN|DOS|TRES|CUATRO)\s*AUTOS?/i);
+      if (estMatch) {
+        const eVal = (estMatch[1] || '').trim();
+        if (!/NO\b/i.test(eVal)) {
+          if (/UN\s*AUTO|\b1\b/i.test(eVal)) estacionamiento = '1 Auto';
+          else if (/DOS\s*AUTOS|\b2\b/i.test(eVal)) estacionamiento = '2 Autos';
+          else if (/TRES\s*AUTOS|\b3\b/i.test(eVal)) estacionamiento = '3 Autos';
+          else if (/CUATRO\s*AUTOS|\b4\b/i.test(eVal)) estacionamiento = '4 Autos';
+          else estacionamiento = eVal;
+        }
+      }
+
+      let niveles = '';
+      const nivMatch = textUpper.match(/(?:EN\s*)?(DOS|TRES|CUATRO|\d+)\s*NIVELES/i);
+      if (nivMatch) {
+        const n = nivMatch[1].toUpperCase();
+        const map = { DOS: '2', TRES: '3', CUATRO: '4' };
+        niveles = `${map[n] || n} Niveles`;
+      }
+
+      let usoSuelo = '';
+      const usoMatch = textUpper.match(/USO\s*DE\s*SUELO:?\s*([A-Z\s]+)/i);
+      if (usoMatch) {
+        const u = usoMatch[1];
+        if (u.includes('OFICINA')) usoSuelo = 'Oficinas';
+        else if (u.includes('COMERCIAL')) usoSuelo = 'Comercial';
+        else if (u.includes('MIXTO') || u.includes('HABITACIONAL')) usoSuelo = 'Mixto';
+      } else if (textUpper.includes('USO DE SUELO COMERCIAL')) {
+        usoSuelo = 'Comercial';
+      } else if (textUpper.includes('USO DE SUELO MIXTO') || textUpper.includes('HABITACIONAL-COMERCIAL')) {
+        usoSuelo = 'Mixto';
+      }
+
+      let locales = '';
+      if (textUpper.includes('LOCALES COMERCIALES')) {
+        const locMatch = textUpper.match(/(\d+)\s*LOCALES\s*COMERCIALES/i);
+        if (locMatch) locales = `${locMatch[1]} Locales`;
+      }
+
+      // Populate highlights bar
+      const hlContainer = $('#qx_re_highlights_bar').empty();
+      let chipsCount = 0;
+
+      const addChip = (icon, val, lbl) => {
+        if (!val) return;
+        hlContainer.append(`
+          <div class="qx-re-metric-card">
+            <span class="icon">${icon}</span>
+            <span class="val">${self.esc(val)}</span>
+            <span class="lbl">${self.esc(lbl)}</span>
+          </div>
+        `);
+        chipsCount++;
+      };
+
+      if (terreno) addChip('📐', terreno, 'Terreno');
+      if (construccion) addChip('🏗️', construccion, 'Construcción');
+      if (superficie) addChip('📐', superficie, 'Superficie');
+      if (recamaras) addChip('🛏️', recamaras, 'Habitaciones');
+      if (banos) addChip('🚿', banos, 'Baños');
+      if (estacionamiento) addChip('🚗', estacionamiento, 'Cochera');
+      if (niveles) addChip('🏛️', niveles, 'Plantas');
+      if (usoSuelo) addChip('📋', usoSuelo, 'Uso de Suelo');
+      if (locales) addChip('🏪', locales, 'Comercio');
+
+      if (chipsCount > 0) {
+        hlContainer.show();
+      } else {
+        hlContainer.hide();
+      }
+
+      // 2. Extract Location
+      let ubicacionText = '';
+      const ubiMatch = rawText.match(/UBICACI[OÓ]N:\s*([^\n\r]+(?:\n[^\n\r]+){1,3})/i);
+      if (ubiMatch) {
+        ubicacionText = ubiMatch[1].replace(/\n+/g, ', ').replace(/\s+/g, ' ').trim();
+      }
+
+      // 3. Extract Distribution / Description details
+      let descBody = '';
+      const descMatch = rawText.match(/DESCRIPCI[OÓ]N:?\s*([\s\S]+?)(?=(?:RECAMARAS:|BAÑOS:|COCINA:|ESTACIONAMIENTO:|RENTA:|PRECIO:|CONTACTO:|$))/i);
+      if (descMatch) {
+        descBody = descMatch[1].trim();
+      } else {
+        descBody = rawText;
+      }
+
+      // 4. Extract Broker / Contact
+      let brokerName = 'Lic. Mauricio Gama K.';
+      let brokerPhone = '525514595381';
+      if (/LIC\.\s*MAURICIO\s*GAMA/i.test(rawText)) {
+        brokerName = 'Lic. Mauricio Gama K.';
+      }
+      if (/55-?1459-?5381/.test(rawText)) {
+        brokerPhone = '525514595381';
+      }
+
+      // 5. Render Structured Sections into #qx_pmodal_desc
+      let formattedHtml = '';
+      if (ubicacionText) {
+        formattedHtml += `
+          <div class="qx-re-section-block">
+            <div class="qx-re-section-title">📍 Ubicación Privilegiada</div>
+            <div class="qx-re-section-content">${self.esc(ubicacionText)}</div>
+          </div>
+        `;
+      }
+
+      if (descBody && descBody.length > 10) {
+        const cleanBody = self.esc(descBody)
+          .replace(/PB\./g, '<br><strong>Planta Baja:</strong>')
+          .replace(/PA\./g, '<br><strong>Planta Alta:</strong>');
+        formattedHtml += `
+          <div class="qx-re-section-block">
+            <div class="qx-re-section-title">🏛️ Arquitectura & Distribución</div>
+            <div class="qx-re-section-content">${cleanBody}</div>
+          </div>
+        `;
+      }
+
+      formattedHtml += `
+        <div class="qx-re-broker-plaque">
+          <div class="qx-re-broker-info">
+            <span class="qx-re-broker-name">👤 ${self.esc(brokerName)}</span>
+            <span class="qx-re-broker-agency">Asesor Patrimonial Senior · BRACSA & Gama</span>
+          </div>
+          <a href="https://wa.me/${brokerPhone}?text=${encodeURIComponent('Hola ' + brokerName + ', me interesa agendar un recorrido para: ' + product.name + ' ($' + self.formatMoney(product.priceWithTax) + ' MXN)')}" target="_blank" class="qx-re-broker-wa-btn" rel="noopener noreferrer">
+            <span>💬 WhatsApp VIP</span>
+          </a>
+        </div>
+      `;
+
+      $('#qx_pmodal_desc').html(formattedHtml);
+
+      // 6. Wire Above-The-Fold Actions
+      const waMsg = encodeURIComponent(`Hola, me interesa agendar un recorrido privado para el inmueble: ${product.name} (Ref: $${self.formatMoney(product.priceWithTax)} MXN)`);
+      const waUrl = `https://wa.me/${brokerPhone}?text=${waMsg}`;
+
+      $('#qx_re_actions_box').show();
+      $('#qx_btn_re_tour').off('click.reTour').on('click.reTour', function(e) {
+        e.preventDefault();
+        self.playHaptic('light');
+        if ($('#qx_agenda_modal').length) {
+          self.closeProductModal();
+          setTimeout(() => {
+            self.openAgendaModal({
+              title: product.name,
+              price: product.priceWithTax,
+              sku: product.sku || product.code
+            });
+          }, 200);
+        } else {
+          window.open(waUrl, '_blank', 'noopener,noreferrer');
+        }
+      });
+
+      $('#qx_btn_re_broker').off('click.reBroker').on('click.reBroker', function(e) {
+        e.preventDefault();
+        self.playHaptic('light');
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      });
     }
 
     // =========================================================================
@@ -5975,6 +6232,19 @@ ${shareUrl}`;
         const nh = imgEl.naturalHeight || imgEl.height;
         if (!nw || !nh) return;
 
+        const isRealEstate = (this.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate');
+        if (isRealEstate) {
+          imgEl.style.objectFit = 'contain';
+          imgEl.style.objectPosition = 'center';
+          imgEl.style.display = 'block';
+          imgEl.style.margin = 'auto';
+          imgEl.style.width = '100%';
+          imgEl.style.height = '100%';
+          imgEl.style.maxWidth = '100%';
+          imgEl.style.maxHeight = '100%';
+          return;
+        }
+
         imgEl.style.objectFit = 'contain';
         imgEl.style.objectPosition = 'center';
         imgEl.style.display = 'block';
@@ -6227,10 +6497,29 @@ ${shareUrl}`;
       const sheen = $('#qx_pmodal_glass_sheen');
       let idleTimer = null;
 
+      const isRETenant = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate');
+      if (isRETenant) {
+        sheen.hide();
+        target.removeClass('qx-living-float qx-tilt-target').css({
+          'transform': 'none',
+          '--tilt-rx': '0deg',
+          '--tilt-ry': '0deg'
+        });
+        return;
+      }
+
       function resumeIdle() {
         clearTimeout(idleTimer);
         idleTimer = setTimeout(() => {
           if (!self.activeProductModal) return;
+          const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
+          const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
+          if (isRE) {
+            target.removeClass('qx-living-float');
+            target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
+            sheen.css('--sheen-x', '-140%').hide();
+            return;
+          }
           target.addClass('qx-living-float');
           target.css({
             '--tilt-rx': '0deg',
@@ -6247,6 +6536,16 @@ ${shareUrl}`;
       });
 
       stage.on('mousemove', function(e) {
+        if (!self.activeProductModal) return;
+        const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
+        const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
+        if (isRE) {
+          target.removeClass('qx-living-float');
+          target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
+          sheen.css('--sheen-x', '-140%').hide();
+          return;
+        }
+
         clearTimeout(idleTimer);
         target.removeClass('qx-living-float');
         const rect = this.getBoundingClientRect();
@@ -6272,7 +6571,16 @@ ${shareUrl}`;
 
       // Touchmove for mobile 3D tilt
       stage.on('touchmove', function(e) {
-        if (!e.touches || !e.touches[0]) return;
+        if (!e.touches || !e.touches[0] || !self.activeProductModal) return;
+        const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
+        const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
+        if (isRE) {
+          target.removeClass('qx-living-float');
+          target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
+          sheen.css('--sheen-x', '-140%').hide();
+          return;
+        }
+
         clearTimeout(idleTimer);
         target.removeClass('qx-living-float');
         const rect = this.getBoundingClientRect();

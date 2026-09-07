@@ -14232,3 +14232,388 @@ img {
     letter-spacing: 0.5px !important;
   }
 }
+
+/* ==========================================================================
+ * SOVEREIGN ARCHITECTURAL MODAL & REAL ESTATE SANCTUARY
+ * ========================================================================== */
+
+body[data-industry="real_estate"] {
+  --qx-text-muted: #94a3b8 !important;
+  --qx-border: rgba(255, 255, 255, 0.1) !important;
+  --qx-border-hover: rgba(197, 168, 128, 0.4) !important;
+}
+
+/* 1. Complete Suppression of 3D Tilt, Wobble, and Glare Sheen */
+body[data-industry="real_estate"] .qx-glass-sheen,
+.qx-stage-cinematic .qx-glass-sheen,
+body[data-industry="real_estate"] .qx-aura-canvas,
+body[data-industry="real_estate"] .qx-tilt-hint,
+body[data-industry="real_estate"] #qx_pmodal_radar_section,
+body[data-industry="real_estate"] #qx_format_selector,
+body[data-industry="real_estate"] #qx_shield_guarantee_card,
+body[data-industry="real_estate"] #qx_refill_subscription_card,
+body[data-industry="real_estate"] #qx_pmodal_btn_layering,
+body[data-industry="real_estate"] #qx_pmodal_btn_compare,
+body[data-industry="real_estate"] .qx-pmodal-actions-box .qx-pmodal-qty-row,
+body[data-industry="real_estate"] .qx-pmodal-metrics-box {
+  display: none !important;
+}
+
+body[data-industry="real_estate"] .qx-tilt-target,
+.qx-stage-cinematic .qx-tilt-target {
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+body[data-industry="real_estate"] .qx-tilt-target.qx-living-float,
+.qx-stage-cinematic .qx-tilt-target.qx-living-float {
+  animation: none !important;
+  transform: none !important;
+}
+
+body[data-industry="real_estate"] .qx-tilt-img,
+.qx-stage-cinematic .qx-tilt-img {
+  transform: none !important;
+  filter: none !important;
+}
+
+/* 2. Expanded Sovereign Architectural Modal Frame */
+body[data-industry="real_estate"] .qx-product-modal {
+  max-width: 1160px !important;
+  width: 95vw !important;
+  max-height: 92vh !important;
+  background: #090c15 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 35px 100px -15px rgba(0, 0, 0, 0.95) !important;
+  padding: 36px 40px !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-layout {
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+  gap: 36px !important;
+  align-items: start !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-gallery {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-info {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* 3. Widescreen Architectural Gallery Stage */
+body[data-industry="real_estate"] .qx-pmodal-stage {
+  height: 460px !important;
+  padding: 0 !important;
+  background: #04060a !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-swipe-slide {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-swipe-slide img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+  transition: opacity 0.3s ease !important;
+}
+
+/* Navigation Arrows on Stage */
+.qx-pmodal-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(9, 12, 20, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.2s ease;
+  opacity: 0.85;
+}
+.qx-pmodal-nav-btn:hover {
+  background: rgba(9, 12, 20, 0.95);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.qx-pmodal-nav-prev { left: 16px; }
+.qx-pmodal-nav-next { right: 16px; }
+
+/* Photo Counter Badge */
+.qx-pmodal-counter-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(9, 12, 20, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 5;
+  letter-spacing: 0.5px;
+}
+
+/* Thumbnails */
+body[data-industry="real_estate"] .qx-pmodal-filmstrip {
+  display: flex !important;
+  gap: 12px !important;
+  padding-top: 4px !important;
+  padding-bottom: 6px !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-thumb {
+  width: 76px !important;
+  height: 56px !important;
+  flex-shrink: 0 !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  object-fit: cover !important;
+  opacity: 0.65;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-thumb:hover {
+  opacity: 0.9;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-thumb.active {
+  opacity: 1 !important;
+  border-color: var(--qx-sand, #c5a880) !important;
+  box-shadow: 0 0 0 1px var(--qx-sand, #c5a880) !important;
+}
+
+/* 4. Above-the-fold Real Estate Actions */
+.qx-re-actions-box {
+  display: flex;
+  gap: 12px;
+  margin: 18px 0 22px 0;
+}
+
+.qx-btn-re-tour {
+  flex: 1.2;
+  background: linear-gradient(135deg, #ede4d8 0%, #c5a880 50%, #a4855d 100%);
+  color: #090c15;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 14px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 25px -5px rgba(197, 168, 128, 0.35);
+}
+
+.qx-btn-re-tour:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -5px rgba(197, 168, 128, 0.5);
+  filter: brightness(1.05);
+}
+
+.qx-btn-re-broker {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 14px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.qx-btn-re-broker:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* 5. Structured Real Estate Highlights Bar */
+.qx-re-highlights-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.qx-re-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.qx-re-metric-card .icon {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.qx-re-metric-card .val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.qx-re-metric-card .lbl {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 6. Clean Editorial Description & Neutral Typography */
+body[data-industry="real_estate"] .qx-pmodal-desc {
+  color: #cbd5e1 !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-sec-title {
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  font-weight: 700 !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-sku,
+body[data-industry="real_estate"] .qx-pmodal-sat {
+  color: #64748b !important;
+}
+
+body[data-industry="real_estate"] .qx-pmodal-cat {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.8px !important;
+}
+
+body[data-industry="real_estate"] .qx-re-section-block {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body[data-industry="real_estate"] .qx-re-section-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--qx-sand, #c5a880);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body[data-industry="real_estate"] .qx-re-section-content {
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Broker Contact Plaque */
+.qx-re-broker-plaque {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(197, 168, 128, 0.06);
+  border: 1px solid rgba(197, 168, 128, 0.18);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 20px;
+}
+
+.qx-re-broker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qx-re-broker-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.qx-re-broker-agency {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.qx-re-broker-wa-btn {
+  background: #25D366;
+  color: #fff;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.qx-re-broker-wa-btn:hover {
+  opacity: 0.9;
+}

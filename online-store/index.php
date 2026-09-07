@@ -743,6 +743,9 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <div class="qx-glass-sheen" id="qx_pmodal_glass_sheen"></div>
           <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Edición Destacada</span>
           <div class="qx-tilt-hint" id="qx_tilt_hint"><span>✨ Inclina o mueve para explorar en 3D</span></div>
+          <button type="button" class="qx-pmodal-nav-btn qx-pmodal-nav-prev" id="qx_pmodal_nav_prev" aria-label="Foto anterior" style="display:none;">‹</button>
+          <button type="button" class="qx-pmodal-nav-btn qx-pmodal-nav-next" id="qx_pmodal_nav_next" aria-label="Foto siguiente" style="display:none;">›</button>
+          <span class="qx-pmodal-counter-badge" id="qx_pmodal_counter_badge" style="display:none;">1 / 1</span>
         </div>
         <!-- Swipe Pagination Dots -->
         <div class="qx-pmodal-dots" id="qx_pmodal_dots"></div>
@@ -770,6 +773,19 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
             <span class="qx-pmodal-pill stock" id="qx_pmodal_stock">📦 En Existencia</span>
           </div>
         </div>
+
+        <!-- High-Ticket / Real Estate Instant Action Bar (Above The Fold) -->
+        <div class="qx-re-actions-box" id="qx_re_actions_box" style="display:none;">
+          <button type="button" class="qx-btn-re-tour" id="qx_btn_re_tour">
+            <span>📅 Agendar Recorrido Privado</span>
+          </button>
+          <button type="button" class="qx-btn-re-broker" id="qx_btn_re_broker">
+            <span>💬 Contactar Broker VIP</span>
+          </button>
+        </div>
+
+        <!-- Structured Real Estate Property Highlights Grid -->
+        <div class="qx-re-highlights-bar" id="qx_re_highlights_bar" style="display:none;"></div>
 
         <!-- Sensory Atelier: Format Selector (100ml Bottle vs 5ml Decant) -->
         <div class="qx-format-selector" id="qx_format_selector">
