@@ -4097,7 +4097,7 @@ ${shareUrl}`;
         const waText = encodeURIComponent(`Hola, me interesa agendar un recorrido privado para el inmueble: ${product.name} (Ref: $${self.formatMoney(product.priceWithTax)} MXN)`);
         const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
 
-        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>📅 Agendar Recorrido</span>')
+        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy, #qx_pmodal_bar_buy').html('<span>📅 Agendar Recorrido</span>')
           .attr('title', 'Agendar recorrido privado con un broker VIP')
           .off('click.highTicket').on('click.highTicket', function(e) {
             e.preventDefault();
