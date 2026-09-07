@@ -3230,6 +3230,15 @@ ${shareUrl}`;
     }
 
     initFlashDeals() {
+      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
+        $('body').attr('data-industry') === 'real_estate' ||
+        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
+
+      if (isRealEstate || this.currentArchetype === 'maison' || (this.tenant && this.tenant.modules && this.tenant.modules.flash_deals === false)) {
+        $('#qx_flash_deals_banner').hide();
+        return;
+      }
+
       const self = this;
       if (this.flashTimerInterval) {
         clearInterval(this.flashTimerInterval);
@@ -3336,8 +3345,14 @@ ${shareUrl}`;
       const ticker = $('#qx_social_proof_ticker');
       if (!ticker.length) return;
 
+      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
+        $('body').attr('data-industry') === 'real_estate' ||
+        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
+
       const cities = ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Querétaro', 'Mérida', 'Cancún'];
-      const actions = ['acaba de ordenar', 'agregó a su bolsa', 'compró con envío express'];
+      const actions = isRealEstate 
+        ? ['solicitó el dossier de', 'agendó una visita para', 'consultó disponibilidad de']
+        : ['acaba de ordenar', 'adquirió', 'ordenó'];
 
       function showNextNotification() {
         if (!self.products || !self.products.length) return;
@@ -3347,7 +3362,9 @@ ${shareUrl}`;
         const mins = Math.floor(Math.random() * 8) + 1;
 
         $('#qx_social_proof_text').text(`Alguien en ${city} ${act} ${prod.name}`);
-        $('#qx_social_proof_meta').text(`Hace ${mins} minutos • Compra Verificada SAT CFDI 4.0`);
+        $('#qx_social_proof_meta').text(isRealEstate 
+          ? `Hace ${mins} minutos • Consulta Confidencial Verificada`
+          : `Hace ${mins} minutos • Compra Verificada SAT CFDI 4.0`);
 
         ticker.addClass('active');
 
@@ -3522,13 +3539,19 @@ ${shareUrl}`;
       media.prepend(cardImg);
 
       // Archetype-Specific Badges & Inlays
+      const isRealEstate = (self.tenant && (self.tenant.industry === 'real_estate' || self.tenant.slug === 'bracsa')) ||
+        $('body').attr('data-industry') === 'real_estate' ||
+        (self.tenant && self.tenant.brandName && self.tenant.brandName.toLowerCase().includes('bracsa'));
+
       if (currentArchetype === 'maison') {
         if (globalIdx % 4 === 0) {
           card.addClass('qx-card-editorial-featured');
         }
-        media.append('<div class="qx-maison-seal"><span>✦ ÉDITION MAISON</span></div>');
-        media.append('<div class="qx-card-zoom-badge">✨ Ver Ficha</div>');
-        if (self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
+        const sealText = isRealEstate ? '✦ RESIDENCIA EXCLUSIVA' : '✦ ÉDITION MAISON';
+        const zoomText = isRealEstate ? 'Ver Galería' : 'Ver Ficha';
+        media.append(`<div class="qx-maison-seal"><span>${sealText}</span></div>`);
+        media.append(`<div class="qx-card-zoom-badge">${zoomText}</div>`);
+        if (!isRealEstate && self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
           media.append('<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>');
         }
       } else if (currentArchetype === 'titan') {
@@ -3714,25 +3737,29 @@ ${shareUrl}`;
         });
 
       } else {
-        // Maison (Default Luxury Atelier)
+        // Maison (Default Luxury Atelier & Architectural Portfolio)
+        const defaultCategory = isRealEstate ? 'Propiedad Exclusiva' : 'Haute Cosecha';
+        const actionLabel = isRealEstate ? 'Explorar Residencia →' : 'Descubrir Obra';
+        const taxLabel = isRealEstate ? 'Facturación SAT CFDI 4.0' : 'IVA 16% incluido';
+
         body = $(`
           <div class="qx-card-body">
             <div class="qx-card-meta">
-              <span class="qx-card-category">${self.esc(p.category || 'Haute Cosecha')}</span>
-              ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
+              <span class="qx-card-category">${self.esc(p.category || defaultCategory)}</span>
+              ${p.sku ? `<span class="qx-card-sku">REF: ${self.esc(p.sku)}</span>` : ''}
             </div>
             <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
             <div class="qx-card-footer">
               <div class="qx-card-price-block">
-                <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
-                <span class="qx-card-tax">IVA 16% incluido</span>
+                <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)} ${isRealEstate ? '<small style="font-size:11px; font-weight:400; color:var(--qx-text-muted)">MXN</small>' : ''}</span>
+                <span class="qx-card-tax">${taxLabel}</span>
               </div>
               <div class="qx-card-actions">
-                <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="Comparar en Quantum Studio">
+                <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="${isRealEstate ? 'Comparar Residencias' : 'Comparar en Quantum Studio'}">
                   <span>⚖️</span>
                 </button>
-                <button type="button" class="qx-btn-add-cart">
-                  <span>✦</span> Descubrir Obra
+                <button type="button" class="qx-btn-add-cart ${isRealEstate ? 'qx-btn-explore-residence' : ''}">
+                  <span>✦</span> ${actionLabel}
                 </button>
               </div>
             </div>
@@ -4290,7 +4317,10 @@ ${shareUrl}`;
         $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>⚡ Comprar Ahora</span>')
           .off('click.highTicket');
       }
-      if (product.stock > 0) {
+      const isRealEstate = (self.tenant?.industry === 'real_estate' || isHighTicket);
+      if (isRealEstate) {
+        $('#qx_pmodal_stock').text(`🏛️ Certeza Jurídica & Posesión Inmediata`).show();
+      } else if (product.stock > 0) {
         $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
       } else {
         $('#qx_pmodal_stock').text(`📦 Disponible para envío inmediato`).show();
@@ -4438,13 +4468,24 @@ ${shareUrl}`;
         $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('🔥 ¡COMPRAR AHORA!');
       } else {
         // Maison
-        if (product.isFeatured) {
-          $('#qx_pmodal_badge').text('✦ Édition Haute Maison').show();
+        const isRealEstate = (self.tenant?.industry === 'real_estate' || isHighTicket);
+        if (isRealEstate) {
+          if (product.isFeatured) {
+            $('#qx_pmodal_badge').text('✦ Residencia Destacada').show();
+          } else {
+            $('#qx_pmodal_badge').text('✦ Propiedad Exclusiva').show();
+          }
+          $('#qx_pmodal_btn_add span, #qx_pmodal_bar_buy span').text('📅 Agendar Recorrido Privado');
+          $('#qx_pmodal_btn_buy span').text('✦ Contactar Broker Exclusivo');
         } else {
-          $('#qx_pmodal_badge').text('✦ Édition Limitée').show();
+          if (product.isFeatured) {
+            $('#qx_pmodal_badge').text('✦ Édition Haute Maison').show();
+          } else {
+            $('#qx_pmodal_badge').text('✦ Édition Limitée').show();
+          }
+          $('#qx_pmodal_btn_add span').text('🛍️ Reservar en Atelier');
+          $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Adquirir Pieza');
         }
-        $('#qx_pmodal_btn_add span').text('🛍️ Reservar en Atelier');
-        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Adquirir Pieza');
       }
 
       // Open Modal
@@ -4691,11 +4732,19 @@ ${shareUrl}`;
       this.heroActiveIndex = 0;
       this.heroAutoPlayTimer = null;
 
+      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
+        $('body').attr('data-industry') === 'real_estate' ||
+        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
+      const isPerfumery = (this.tenant && (this.tenant.isPerfumery || this.tenant.quantixStorePerfums === 'SI')) ||
+        $('body').attr('data-perfumery') === '1';
+
       items.forEach((p, idx) => {
         const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
+        const badgeText = isRealEstate ? 'Residencia Exclusiva' : (isPerfumery ? 'Alta Cosecha' : 'Pieza Destacada');
+        const btnText = isRealEstate ? 'Explorar Residencia →' : (isPerfumery ? 'Adquirir' : 'Ver Detalles');
         const cardHtml = `
           <div class="qx-3d-card" data-index="${idx}" data-id="${self.esc(p.id)}">
-            <span class="qx-3d-badge">★ Edición Destacada</span>
+            <span class="qx-3d-badge">${badgeText}</span>
             <div class="qx-3d-img-container">
               <img src="${self.esc(coverImg)}" alt="${self.esc(p.name)}" class="qx-3d-img" loading="lazy">
             </div>
@@ -4704,7 +4753,7 @@ ${shareUrl}`;
               <div class="qx-3d-bottom-row">
                 <div class="qx-3d-price">$${self.formatMoney(p.priceWithTax)}</div>
                 <button type="button" class="qx-3d-btn-buy" data-id="${self.esc(p.id)}">
-                  <span>🛍️</span> Comprar
+                  ${btnText}
                 </button>
               </div>
             </div>
@@ -4750,11 +4799,18 @@ ${shareUrl}`;
         }
       });
 
-      // 1-Click Buy Button
+      // Action Button (Explore or Buy)
       stage.find('.qx-3d-btn-buy').off('click').on('click', function(e) {
         e.stopPropagation();
         const prodId = $(this).data('id');
-        self.addToCart(prodId, 1);
+        const product = self.products.find(p => String(p.id) === String(prodId));
+        if (isRealEstate) {
+          if (product) {
+            self.openProductModal(product);
+          }
+        } else {
+          self.addToCart(prodId, 1);
+        }
       });
 
       // Touch / Mouse Swipe
@@ -5671,13 +5727,29 @@ ${shareUrl}`;
     }
 
     initStories() {
+      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
+        $('body').attr('data-industry') === 'real_estate' ||
+        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
+      const isPerfumery = (this.tenant && (this.tenant.isPerfumery || this.tenant.quantixStorePerfums === 'SI')) ||
+        $('body').attr('data-perfumery') === '1';
+      const isSocial = (this.currentArchetype === 'social');
+      const storiesExplicit = this.tenant && this.tenant.modules && this.tenant.modules.stories;
+
+      if (!storiesExplicit && (!isSocial || isRealEstate)) {
+        $('.qx-stories-section').hide();
+        return;
+      }
+
       const topItems = this.products.slice(0, 6);
       if (topItems.length === 0) return;
 
+      const topLabel = isRealEstate ? '✦ Destacadas' : (isPerfumery ? '👑 Alta Cosecha' : 'Top Selección');
+      const topTitle = isRealEstate ? 'Residencias Más Solicitadas' : (isPerfumery ? 'Top Fragancias Más Vendidas' : 'Artículos Más Vendidos');
+
       this.stories = [
-        { id: 'top_arabes', label: '👑 Top Ventas', title: 'Top Fragancias Más Vendidas', slides: topItems.slice(0, 3).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
-        { id: 'novedades', label: '✨ Novedades', title: 'Colección Reciente', slides: topItems.slice(3, 6).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
-        { id: 'garantia', label: '🛡️ Garantía SAT', title: 'Calidad y Facturación SAT 4.0', slides: [{ mediaUrl: topItems[0].cover, productId: topItems[0].id }] }
+        { id: 'top_destacados', label: topLabel, title: topTitle, slides: topItems.slice(0, 3).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
+        { id: 'novedades', label: '✦ Novedades', title: 'Portafolio Reciente', slides: topItems.slice(3, 6).map(p => ({ mediaUrl: p.cover, productId: p.id })) },
+        { id: 'garantia', label: '🛡️ Garantía SAT', title: 'Certeza Fiscal SAT CFDI 4.0', slides: [{ mediaUrl: topItems[0].cover, productId: topItems[0].id }] }
       ];
 
       this.renderStoriesBar();

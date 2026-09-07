@@ -393,6 +393,9 @@ try {
         unset($prod);
     }
 
+    $textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
+    $resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
+
     echo json_encode([
         'Status'     => 'OK',
         'Tenant'     => [
@@ -406,6 +409,8 @@ try {
             'email'       => $tenant->email,
             'phone'       => $tenant->phone,
             'address'     => $tenant->address,
+            'isPerfumery' => $tenant->isPerfumery(),
+            'industry'    => $resolvedIndustry,
             'quantixStorePerfums' => $tenant->quantixStorePerfums,
             'featureMatrix'=> $tenant->apexConfig['feature_matrix'] ?? [],
             'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13,

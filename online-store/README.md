@@ -62,6 +62,13 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Interactive Action Chips:** Dispatches direct actions including `#qx_agenda_modal` opening (`[📅 Agendar Cita VIP]`), WhatsApp VIP linking, and CFDI 4.0 invoice assistance.
    - **Sub-Millisecond Execution:** Rule-based intelligence responds in `< 0.1ms`.
 
+11. **Quantix Sovereign Luxury Architectural Redesign (Bienes Raíces & High-Ticket)**
+    - **Atmospheric Palette Purification:** Purged muddy brown backgrounds and dirty caustics dot matrix; replaced with Deep Obsidian Onyx (`#090c15` / `#0f1523`) and Champagne Sand typography (`#c5a880` / `#d6c7b2`).
+    - **Aesthetic Decluttering:** Removed radioactive neon yellow halos, cartoon emojis, flash deals banners, Instagram stories bars, and perfume mechanics on real estate and non-perfumery portals.
+    - **High-Ticket Interaction Semantics:** Replaced consumer retail buy buttons ("Comprar 🛍️") with "✦ Explorar Residencia →" and direct private VIP concierge viewing scheduling.
+    - **Property Dossier Modal:** Frosted glass "✦ Residencia Destacada" badge, legal certainty indicators ("🏛️ Certeza Jurídica & Posesión Inmediata"), and WhatsApp VIP broker routing.
+    - **Sanitized Typography:** Automatic entity un-double-encoding in hero headlines preserving refined italic script ampersands (`&`).
+
 ## Live Endpoints & Interactive Previews
 
 The 4 commercial archetypes can be previewed live on any tenant using the `?archetype=` parameter:
