@@ -31,6 +31,9 @@ class StorefrontTenant {
     public $quantixStorePerfums = 'NO';
     public $isStoreActive = false;
     public $studio3DConfig = null;
+    public $showWhatsapp = false;
+    public $whatsappPhone = '';
+    public $whatsappGreeting = '';
 
     public function isPerfumery() {
         return ($this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false);
@@ -288,6 +291,9 @@ class StorefrontTenant {
                 'cfdi_trust' => true,
                 'hero_vitrina' => true
             ];
+            $tenant->showWhatsapp = ($deMap['STORE_SHOW_WHATSAPP'] ?? 'NO') === 'SI';
+            $tenant->whatsappPhone = $deMap['STORE_WHATSAPP_PHONE'] ?? '';
+            $tenant->whatsappGreeting = $deMap['STORE_WHATSAPP_GREETING'] ?? '¡Hola! Requiero asistencia.';
 
             // Load Quantix Apex Command Tower configuration
             $tenant->apexConfig = null;
