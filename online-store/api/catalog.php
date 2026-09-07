@@ -364,6 +364,13 @@ try {
     if ($rowFeat && !empty($rowFeat['Valor'])) {
         $featuredIds = array_filter(array_map('trim', explode(',', $rowFeat['Valor'])));
     }
+    if (empty($featuredIds) && !empty($tenant->apexConfig['hero_curation']['featured_products']) && is_array($tenant->apexConfig['hero_curation']['featured_products'])) {
+        foreach ($tenant->apexConfig['hero_curation']['featured_products'] as $fp) {
+            if (!empty($fp['product_id'])) {
+                $featuredIds[] = trim((string)$fp['product_id']);
+            }
+        }
+    }
 
     $featuredProducts = [];
     foreach ($products as &$prod) {
