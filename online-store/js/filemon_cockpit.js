@@ -102,6 +102,12 @@
       container.id = 'filemon_root_container';
       container.innerHTML = badgeHtml;
       document.body.appendChild(container);
+
+      // [Iter 3 Hardening] Race Condition Shield: If modal/drawer is already active upon injection, dock immediately
+      if (window.quantixStore && typeof window.quantixStore.isModalOrDrawerOpen === 'function' && window.quantixStore.isModalOrDrawerOpen()) {
+        const bEl = document.getElementById('filemon_trigger_badge');
+        if (bEl) bEl.classList.add('docked-hidden');
+      }
     },
 
     /**

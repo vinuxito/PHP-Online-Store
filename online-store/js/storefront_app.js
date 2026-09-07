@@ -4078,7 +4078,8 @@ ${shareUrl}`;
       $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
 
       // [Iter 2] Ticket-Adaptive & Domain Architecture Logic
-      const isHighTicket = (product.priceWithTax > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test(product.name + ' ' + (product.category || ''));
+      const rawPrice = parseFloat(product.priceWithTax || product.price || 0);
+      const isHighTicket = (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((product.name || '') + ' ' + (product.category || ''));
       const isArchitectural = /inmueble|terreno|edificio|residencia|casa|departamento|propiedad|planta/i.test(product.name + ' ' + (product.category || ''));
 
       if (isArchitectural) {
