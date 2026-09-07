@@ -7,13 +7,13 @@
 require_once __DIR__ . '/includes/tenant_resolver.php';
 $tenant = StorefrontTenant::resolve();
 $featMatrix = $tenant->apexConfig['feature_matrix'] ?? [];
-$isPerfumsTenant = ($tenant->quantixStorePerfums === 'SI');
-$isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['royal_agenda']));
-$isTastingActive = !empty($featMatrix['tasting_room']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['tasting_room']));
-$isVaultActive = !empty($featMatrix['loyalty_refill_vault']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['loyalty_refill_vault']));
-$isPassportActive = !empty($featMatrix['decant_passport']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['decant_passport']));
-$isLayeringActive = !empty($featMatrix['layering_crucible']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['layering_crucible']));
-$isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['aura_ai_sommelier']));
+$isPerfumsTenant = $tenant->isPerfumery();
+$isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']);
+$isTastingActive = $isPerfumsTenant && !empty($featMatrix['tasting_room']['enabled']);
+$isVaultActive = $isPerfumsTenant && !empty($featMatrix['loyalty_refill_vault']['enabled']);
+$isPassportActive = $isPerfumsTenant && !empty($featMatrix['decant_passport']['enabled']);
+$isLayeringActive = $isPerfumsTenant && !empty($featMatrix['layering_crucible']['enabled']);
+$isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']['enabled']);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -31,7 +31,7 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
+<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
@@ -1702,8 +1702,8 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
         <div class="qx-agenda-brand-strip">
           <span class="qx-agenda-crest">👑</span>
           <div>
-            <div class="qx-agenda-badge">CONSERJERÍA DE ALTA PERFUMERÍA</div>
-            <h2 class="qx-agenda-title">The Royal Concierge Agenda & Atelier Booking</h2>
+            <div class="qx-agenda-badge"><?php echo $isPerfumsTenant ? 'CONSERJERÍA DE ALTA PERFUMERÍA' : 'CONSERJERÍA PRIVADA & CITAS VIP'; ?></div>
+            <h2 class="qx-agenda-title"><?php echo $isPerfumsTenant ? 'The Royal Concierge Agenda & Atelier Booking' : 'Agenda de Citas Exclusivas & Asesoría VIP'; ?></h2>
           </div>
         </div>
         <button type="button" class="qx-agenda-close" id="qx_agenda_close" aria-label="Cerrar">&times;</button>
@@ -1717,15 +1717,15 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
         </div>
         <div class="qx-astep-item" id="qx_astep_btn_2" data-step="2">
           <span class="qx-astep-num">2</span>
-          <span class="qx-astep-txt">Horizontes Chronos</span>
+          <span class="qx-astep-txt"><?php echo $isPerfumsTenant ? 'Horizontes Chronos' : 'Horarios'; ?></span>
         </div>
         <div class="qx-astep-item" id="qx_astep_btn_3" data-step="3">
           <span class="qx-astep-num">3</span>
-          <span class="qx-astep-txt">Intake Olfativo</span>
+          <span class="qx-astep-txt"><?php echo $isPerfumsTenant ? 'Intake Olfativo' : 'Preferencias'; ?></span>
         </div>
         <div class="qx-astep-item" id="qx_astep_btn_4" data-step="4">
           <span class="qx-astep-num">4</span>
-          <span class="qx-astep-txt">Pase de Gala</span>
+          <span class="qx-astep-txt"><?php echo $isPerfumsTenant ? 'Pase de Gala' : 'Pase VIP'; ?></span>
         </div>
       </div>
 
@@ -1738,23 +1738,23 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
               <div class="qx-keycard-inner" id="qx_keycard_inner">
                 <div class="qx-keycard-front">
                   <div class="qx-kcard-header">
-                    <span class="qx-kcard-emblem">👑 MAISON QUANTIX</span>
+                    <span class="qx-kcard-emblem">👑 <?php echo htmlspecialchars(strtoupper($tenant->brandName)); ?></span>
                     <span class="qx-kcard-chip"></span>
                   </div>
                   <div class="qx-kcard-body">
                     <div class="qx-kcard-monogram" id="qx_keycard_monogram">AVH</div>
                     <div class="qx-kcard-name" id="qx_keycard_name">Alexander von Humboldt</div>
-                    <div class="qx-kcard-signature" id="qx_keycard_signature">Signature: Rasasi Hawas / Oud Royal</div>
+                    <div class="qx-kcard-signature" id="qx_keycard_signature"><?php echo $isPerfumsTenant ? 'Signature: Rasasi Hawas / Oud Royal' : 'Atención y Asesoría Especializada'; ?></div>
                   </div>
                   <div class="qx-kcard-footer">
-                    <span class="qx-kcard-tier" id="qx_keycard_tier">MASTER PERFUMER</span>
+                    <span class="qx-kcard-tier" id="qx_keycard_tier"><?php echo $isPerfumsTenant ? 'MASTER PERFUMER' : 'CLIENTE VIP'; ?></span>
                     <span class="qx-kcard-status">● LLAVE ACTIVA</span>
                   </div>
                 </div>
                 <div class="qx-keycard-back">
                   <div class="qx-kcard-back-mag"></div>
                   <div class="qx-kcard-back-barcode">||| | |||| | ||| |||| | ||</div>
-                  <div class="qx-kcard-back-txt">Acceso exclusivo a catas privadas, barricas numeradas y asesoría directa de alta perfumería.</div>
+                  <div class="qx-kcard-back-txt"><?php echo $isPerfumsTenant ? 'Acceso exclusivo a catas privadas, barricas numeradas y asesoría directa de alta perfumería.' : 'Acceso prioritario a citas privadas, recorridos de catálogo y atención personalizada.'; ?></div>
                 </div>
               </div>
             </div>
@@ -1791,27 +1791,51 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
           <div class="qx-chronos-layout">
             <!-- Experience Selector -->
             <div class="qx-exp-selector-bar">
-              <div class="qx-exp-card selected" data-exp="TASTING_MASTERCLASS">
-                <span class="qx-exp-icon">🍷</span>
-                <div>
-                  <div class="qx-exp-name">Cata Virtual 1-a-1</div>
-                  <div class="qx-exp-sub">Coffret 4x5ml + 100% Bonificable</div>
+              <?php if ($isPerfumsTenant): ?>
+                <div class="qx-exp-card selected" data-exp="TASTING_MASTERCLASS">
+                  <span class="qx-exp-icon">🍷</span>
+                  <div>
+                    <div class="qx-exp-name">Cata Virtual 1-a-1</div>
+                    <div class="qx-exp-sub">Coffret 4x5ml + 100% Bonificable</div>
+                  </div>
                 </div>
-              </div>
-              <div class="qx-exp-card" data-exp="SIGNATURE_SCENT">
-                <span class="qx-exp-icon">🎩</span>
-                <div>
-                  <div class="qx-exp-name">Signature Scent</div>
-                  <div class="qx-exp-sub">Asesoría de Evento & Bodas</div>
+                <div class="qx-exp-card" data-exp="SIGNATURE_SCENT">
+                  <span class="qx-exp-icon">🎩</span>
+                  <div>
+                    <div class="qx-exp-name">Signature Scent</div>
+                    <div class="qx-exp-sub">Asesoría de Evento & Bodas</div>
+                  </div>
                 </div>
-              </div>
-              <div class="qx-exp-card" data-exp="LAYERING_ALCHEMY">
-                <span class="qx-exp-icon">🧪</span>
-                <div>
-                  <div class="qx-exp-name">Alquimia de Capas</div>
-                  <div class="qx-exp-sub">Combinaciones de Autor a Medida</div>
+                <div class="qx-exp-card" data-exp="LAYERING_ALCHEMY">
+                  <span class="qx-exp-icon">🧪</span>
+                  <div>
+                    <div class="qx-exp-name">Alquimia de Capas</div>
+                    <div class="qx-exp-sub">Combinaciones de Autor a Medida</div>
+                  </div>
                 </div>
-              </div>
+              <?php else: ?>
+                <div class="qx-exp-card selected" data-exp="CONSULTA_VIP">
+                  <span class="qx-exp-icon">🏢</span>
+                  <div>
+                    <div class="qx-exp-name">Asesoría Especializada 1-a-1</div>
+                    <div class="qx-exp-sub">Atención personalizada con un especialista</div>
+                  </div>
+                </div>
+                <div class="qx-exp-card" data-exp="RECORRIDO_GUIADO">
+                  <span class="qx-exp-icon">🔑</span>
+                  <div>
+                    <div class="qx-exp-name">Recorrido & Presentación</div>
+                    <div class="qx-exp-sub">Muestra guiada de catálogo y opciones</div>
+                  </div>
+                </div>
+                <div class="qx-exp-card" data-exp="PROPUESTA_COMERCIAL">
+                  <span class="qx-exp-icon">📑</span>
+                  <div>
+                    <div class="qx-exp-name">Cotización & Cierre VIP</div>
+                    <div class="qx-exp-sub">Condiciones y atención prioritaria</div>
+                  </div>
+                </div>
+              <?php endif; ?>
             </div>
 
             <!-- Atmospheric Bands Container -->
@@ -1827,55 +1851,81 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
                 <button type="button" class="qx-chan-pill" id="qx_chan_btn_wa">📱 WhatsApp Video VIP</button>
               </div>
               <button type="button" class="qx-btn-agenda-next" id="qx_btn_proceed_to_intake">
-                Definir Intake Olfativo ➔
+                <?php echo $isPerfumsTenant ? 'Definir Intake Olfativo ➔' : 'Continuar con Preferencias ➔'; ?>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- VIEW 3: OLFACTORY INTAKE BRIEFING -->
+        <!-- VIEW 3: INTAKE & PREFERENCES BRIEFING -->
         <div class="qx-agenda-view" id="qx_agenda_view_intake" style="display:none;">
           <div class="qx-intake-layout">
-            <div class="qx-intake-section">
-              <label class="qx-intake-lbl">1. ¿Para qué ocasión buscas tu fragancia?</label>
-              <div class="qx-occasion-pills" id="qx_occasion_pills">
-                <button type="button" class="qx-occ-pill selected" data-occ="Presencia Ejecutiva & Seducción">💼 Presencia Ejecutiva & Seducción</button>
-                <button type="button" class="qx-occ-pill" data-occ="Boda Real & Evento de Gala">💍 Boda Real & Evento de Gala</button>
-                <button type="button" class="qx-occ-pill" data-occ="Signature Diario & Oficina">☀️ Signature Diario & Oficina</button>
-                <button type="button" class="qx-occ-pill" data-occ="Alquimia Personal & Colección">🧪 Alquimia Personal & Colección</button>
+            <?php if ($isPerfumsTenant): ?>
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">1. ¿Para qué ocasión buscas tu fragancia?</label>
+                <div class="qx-occasion-pills" id="qx_occasion_pills">
+                  <button type="button" class="qx-occ-pill selected" data-occ="Presencia Ejecutiva & Seducción">💼 Presencia Ejecutiva & Seducción</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Boda Real & Evento de Gala">💍 Boda Real & Evento de Gala</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Signature Diario & Oficina">☀️ Signature Diario & Oficina</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Alquimia Personal & Colección">🧪 Alquimia Personal & Colección</button>
+                </div>
               </div>
-            </div>
 
-            <div class="qx-intake-section">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <label class="qx-intake-lbl">2. Dial Analógico de Intensidad Olfativa</label>
-                <span class="qx-dial-val-badge" id="qx_intake_dial_label">65% — Opulencia Amaderada</span>
+              <div class="qx-intake-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label class="qx-intake-lbl">2. Dial Analógico de Intensidad Olfativa</label>
+                  <span class="qx-dial-val-badge" id="qx_intake_dial_label">65% — Opulencia Amaderada</span>
+                </div>
+                <div class="qx-dial-slider-wrap">
+                  <span style="font-size:11px; color:#38bdf8;">🍋 Fresco Cítrico (-100)</span>
+                  <input type="range" min="-100" max="100" value="65" class="qx-intake-dial-slider" id="qx_intake_intensity_dial">
+                  <span style="font-size:11px; color:#f59e0b;">🪵 Ámbar Oriental (+100)</span>
+                </div>
               </div>
-              <div class="qx-dial-slider-wrap">
-                <span style="font-size:11px; color:#38bdf8;">🍋 Fresco Cítrico (-100)</span>
-                <input type="range" min="-100" max="100" value="65" class="qx-intake-dial-slider" id="qx_intake_intensity_dial">
-                <span style="font-size:11px; color:#f59e0b;">🪵 Ámbar Oriental (+100)</span>
-              </div>
-            </div>
 
-            <div class="qx-intake-section">
-              <label class="qx-intake-lbl">3. Modo de Proyección Deseado</label>
-              <div class="qx-proj-pills" id="qx_proj_pills">
-                <button type="button" class="qx-proj-pill" data-proj="INTIMATE">Sutil / Íntimo (1 spray)</button>
-                <button type="button" class="qx-proj-pill" data-proj="MODERATE">Elegante / Versátil (3 sprays)</button>
-                <button type="button" class="qx-proj-pill selected" data-proj="BEAST_MODE">👑 Beast-Mode Nuclear (6+ sprays)</button>
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">3. Modo de Proyección Deseado</label>
+                <div class="qx-proj-pills" id="qx_proj_pills">
+                  <button type="button" class="qx-proj-pill" data-proj="INTIMATE">Sutil / Íntimo (1 spray)</button>
+                  <button type="button" class="qx-proj-pill" data-proj="MODERATE">Elegante / Versátil (3 sprays)</button>
+                  <button type="button" class="qx-proj-pill selected" data-proj="BEAST_MODE">👑 Beast-Mode Nuclear (6+ sprays)</button>
+                </div>
               </div>
-            </div>
 
-            <div class="qx-intake-section">
-              <label class="qx-intake-lbl">4. Perfumes que usas o notas favoritas (Opcional)</label>
-              <textarea class="qx-intake-textarea" id="qx_intake_notes" rows="2" placeholder="Ej: Rasasi Hawas, acordes marinos, piña, cuero, vainilla bourbon...">Rasasi Hawas, Afnan 9AM Dive, notas especiadas y secado de ámbar gris.</textarea>
-            </div>
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">4. Perfumes que usas o notas favoritas (Opcional)</label>
+                <textarea class="qx-intake-textarea" id="qx_intake_notes" rows="2" placeholder="Ej: Rasasi Hawas, acordes marinos, piña, cuero, vainilla bourbon...">Rasasi Hawas, Afnan 9AM Dive, notas especiadas y secado de ámbar gris.</textarea>
+              </div>
+            <?php else: ?>
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">1. ¿Cuál es el motivo o interés de tu cita?</label>
+                <div class="qx-occasion-pills" id="qx_occasion_pills">
+                  <button type="button" class="qx-occ-pill selected" data-occ="Información & Asesoría General">💼 Información & Asesoría General</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Cotización & Propuesta Formal">📑 Cotización & Propuesta Formal</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Recorrido / Visita Presencial">📍 Recorrido / Visita Presencial</button>
+                  <button type="button" class="qx-occ-pill" data-occ="Atención Prioritaria VIP">✨ Atención Prioritaria VIP</button>
+                </div>
+              </div>
+
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">2. Modalidad de Atención Preferida</label>
+                <div class="qx-proj-pills" id="qx_proj_pills">
+                  <button type="button" class="qx-proj-pill selected" data-proj="VIDEOCALL">💻 Videollamada En Línea</button>
+                  <button type="button" class="qx-proj-pill" data-proj="WHATSAPP">📱 WhatsApp Directo</button>
+                  <button type="button" class="qx-proj-pill" data-proj="IN_PERSON">📍 Presencial / En Sitio</button>
+                </div>
+              </div>
+
+              <div class="qx-intake-section">
+                <label class="qx-intake-lbl">3. Requerimientos o notas específicas (Opcional)</label>
+                <textarea class="qx-intake-textarea" id="qx_intake_notes" rows="2" placeholder="Ej: Servicio de interés, horarios específicos, preguntas previas..."></textarea>
+              </div>
+            <?php endif; ?>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
               <button type="button" class="qx-btn-agenda-back" id="qx_btn_back_to_chronos">← Volver a Horarios</button>
               <button type="button" class="qx-btn-agenda-submit" id="qx_btn_submit_royal_agenda">
-                👑 Confirmar Cita & Emitir Pase de Gala
+                👑 Confirmar Cita & Emitir Pase VIP
               </button>
             </div>
           </div>
@@ -1888,8 +1938,8 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
             <div class="qx-boarding-pass-card" id="qx_boarding_pass_card">
               <div class="qx-bpass-top">
                 <div class="qx-bpass-brand">
-                  <span>👑 MAISON QUANTIX</span>
-                  <span class="qx-bpass-seal">ROYAL BOARDING PASS</span>
+                  <span>👑 <?php echo htmlspecialchars(strtoupper($tenant->brandName)); ?></span>
+                  <span class="qx-bpass-seal"><?php echo $isPerfumsTenant ? 'ROYAL BOARDING PASS' : 'PASE DE CITA VIP'; ?></span>
                 </div>
                 <div class="qx-bpass-code-tag" id="qx_bpass_code">AGENDA-2026-VIP</div>
               </div>
@@ -1901,24 +1951,24 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
                     <div class="qx-bpass-val" id="qx_bpass_client_name">Alexander von Humboldt</div>
                   </div>
                   <div>
-                    <div class="qx-bpass-lbl">FECHA DE CATA</div>
-                    <div class="qx-bpass-val" id="qx_bpass_date">Hoy, 31 de Agosto</div>
+                    <div class="qx-bpass-lbl"><?php echo $isPerfumsTenant ? 'FECHA DE CATA' : 'FECHA DE CITA'; ?></div>
+                    <div class="qx-bpass-val" id="qx_bpass_date">Hoy</div>
                   </div>
                   <div>
-                    <div class="qx-bpass-lbl">HORA (20 MIN)</div>
+                    <div class="qx-bpass-lbl">HORA</div>
                     <div class="qx-bpass-val" id="qx_bpass_time">15:45 hrs</div>
                   </div>
                   <div>
-                    <div class="qx-bpass-lbl">MAESTRO ASIGNADO</div>
-                    <div class="qx-bpass-val" id="qx_bpass_sommelier">Jean-Luc Moreau</div>
+                    <div class="qx-bpass-lbl"><?php echo $isPerfumsTenant ? 'MAESTRO ASIGNADO' : 'ASESOR ASIGNADO'; ?></div>
+                    <div class="qx-bpass-val" id="qx_bpass_sommelier"><?php echo $isPerfumsTenant ? 'Jean-Luc Moreau' : 'Asesor Especialista'; ?></div>
                   </div>
                   <div>
-                    <div class="qx-bpass-lbl">HORIZONTE ATMOSFÉRICO</div>
-                    <div class="qx-bpass-val" id="qx_bpass_band">The Golden Hour Atelier</div>
+                    <div class="qx-bpass-lbl">MODALIDAD</div>
+                    <div class="qx-bpass-val" id="qx_bpass_band"><?php echo $isPerfumsTenant ? 'The Golden Hour Atelier' : 'Atención Prioritaria'; ?></div>
                   </div>
                   <div>
-                    <div class="qx-bpass-lbl">BONIFICACIÓN DISPONIBLE</div>
-                    <div class="qx-bpass-val" style="color:#10b981;" id="qx_bpass_voucher_val">$ 499.00 MXN</div>
+                    <div class="qx-bpass-lbl">ESTADO</div>
+                    <div class="qx-bpass-val" style="color:#10b981;" id="qx_bpass_voucher_val">CONFIRMADA</div>
                   </div>
                 </div>
 
@@ -1934,7 +1984,7 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
               </div>
 
               <div class="qx-bpass-actions">
-                <a href="#" class="qx-btn-bpass-ics" id="qx_btn_download_ics" download="Maison-Tasting-AGENDA-2026-VIP.ics">
+                <a href="#" class="qx-btn-bpass-ics" id="qx_btn_download_ics" download="Cita-VIP-AGENDA-2026.ics">
                   📅 Guardar en Apple / Google Calendar (.ics)
                 </a>
                 <a href="#" target="_blank" class="qx-btn-bpass-wa" id="qx_btn_wa_agenda_link">
@@ -2051,23 +2101,24 @@ $isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($is
           persistentAtmosphere = $('body').attr('data-atmosphere') || 'obsidian';
         }
         if (type === 'SYNC_FEATURE_MATRIX') {
+          const isPerfumery = $('body').attr('data-perfumery') === '1';
           if (payload.royal_agenda) {
             $('#qx_btn_nav_agenda, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
           }
           if (payload.tasting_room) {
-            $('#qx_btn_nav_tasting, #qx_dock_tasting').toggle(Boolean(payload.tasting_room.enabled));
+            $('#qx_btn_nav_tasting, #qx_dock_tasting').toggle(Boolean(isPerfumery && payload.tasting_room.enabled));
           }
           if (payload.layering_crucible) {
-            $('#qx_btn_nav_layering, #qx_dock_layering').toggle(Boolean(payload.layering_crucible.enabled));
+            $('#qx_btn_nav_layering, #qx_dock_layering').toggle(Boolean(isPerfumery && payload.layering_crucible.enabled));
           }
           if (payload.aura_ai_sommelier) {
-            $('#qx_btn_sommelier_trigger, #qx_dock_concierge, #qx_sommelier_floating_nudge').toggle(Boolean(payload.aura_ai_sommelier.enabled));
+            $('#qx_btn_sommelier_trigger, #qx_dock_concierge, #qx_sommelier_floating_nudge').toggle(Boolean(isPerfumery && payload.aura_ai_sommelier.enabled));
           }
           if (payload.decant_passport) {
-            $('#qx_btn_nav_passport, #qx_dock_passport, .qx-shield-badge').toggle(Boolean(payload.decant_passport.enabled));
+            $('#qx_btn_nav_passport, #qx_dock_passport, .qx-shield-badge').toggle(Boolean(isPerfumery && payload.decant_passport.enabled));
           }
           if (payload.loyalty_refill_vault) {
-            $('#qx_btn_nav_vault, #qx_dock_vault').toggle(Boolean(payload.loyalty_refill_vault.enabled));
+            $('#qx_btn_nav_vault, #qx_dock_vault').toggle(Boolean(isPerfumery && payload.loyalty_refill_vault.enabled));
           }
         }
         function formatHeroHeadlineJs(raw) {

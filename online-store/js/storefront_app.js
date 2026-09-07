@@ -1317,15 +1317,23 @@
     }
 
     renderKeycardUI(member) {
-      $('#qx_keycard_monogram').text(member.initials || 'AVH');
-      $('#qx_keycard_name').text(member.name || 'Alexander von Humboldt');
-      $('#qx_keycard_tier').text(member.tier ? member.tier.replace(/_/g, ' ') : 'MASTER PERFUMER');
-      $('#qx_keycard_signature').text(`Signature: ${member.signatureScent || 'Rasasi Hawas / Oud Royal'}`);
-      
-      const statusTxt = (member.tier === 'MASTER_PERFUMER')
-        ? `✨ Llave VIP Reconocida: ${member.name} (${member.tierLabel})`
-        : `✨ Pase de Invitado Activo: ${member.name} (50 PTS)`;
-      $('#qx_scan_status_pill').text(statusTxt);
+      const isPerfumery = $('body').attr('data-perfumery') === '1';
+      $('#qx_keycard_monogram').text(member.initials || (isPerfumery ? 'AVH' : 'VIP'));
+      $('#qx_keycard_name').text(member.name || (isPerfumery ? 'Alexander von Humboldt' : 'Cliente VIP'));
+
+      if (isPerfumery) {
+        $('#qx_keycard_tier').text(member.tier ? member.tier.replace(/_/g, ' ') : 'MASTER PERFUMER');
+        $('#qx_keycard_signature').text(`Signature: ${member.signatureScent || 'Rasasi Hawas / Oud Royal'}`);
+        const statusTxt = (member.tier === 'MASTER_PERFUMER')
+          ? `✨ Llave VIP Reconocida: ${member.name} (${member.tierLabel})`
+          : `✨ Pase de Invitado Activo: ${member.name} (50 PTS)`;
+        $('#qx_scan_status_pill').text(statusTxt);
+      } else {
+        const tierText = (member.tier === 'MASTER_PERFUMER' || !member.tier) ? 'CLIENTE VIP' : member.tier.replace(/_/g, ' ');
+        $('#qx_keycard_tier').text(tierText);
+        $('#qx_keycard_signature').text(member.signatureScent || 'Atención y Asesoría Especializada');
+        $('#qx_scan_status_pill').text(`✨ Llave VIP Reconocida: ${member.name}`);
+      }
     }
 
     flipKeycard() {
@@ -1611,7 +1619,9 @@
 
     openAgendaModal() {
       this.goToStep(1);
-      this.scanKeycard('alexander@humboldt-expeditions.org');
+      const isPerfumery = $('body').attr('data-perfumery') === '1';
+      const defaultEmail = isPerfumery ? 'alexander@humboldt-expeditions.org' : 'cliente.vip@empresa.com';
+      this.scanKeycard(defaultEmail);
       $('#qx_agenda_backdrop').addClass('active');
       $('#qx_agenda_modal').addClass('active');
       $('body').css('overflow', 'hidden');

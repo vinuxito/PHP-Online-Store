@@ -60,11 +60,17 @@ switch ($action) {
             if (strlen($initials) > 3) $initials = substr($initials, 0, 3);
             if (empty($initials)) $initials = 'AVH';
 
-            $tierLabels = [
+            $isPerfumery = $tenant->isPerfumery();
+            $tierLabels = $isPerfumery ? [
                 'MASTER_PERFUMER' => 'Master Perfumer (Oro 24K)',
                 'CONNOISSEUR' => 'Connoisseur VIP',
                 'AFICIONADO' => 'Aficionado Noble',
                 'GUEST' => 'Pase de Invitado de Cortesía'
+            ] : [
+                'MASTER_PERFUMER' => 'Cliente VIP (Prioritario)',
+                'CONNOISSEUR' => 'Cliente Distinguido',
+                'AFICIONADO' => 'Cliente Frecuente',
+                'GUEST' => 'Pase de Invitado'
             ];
 
             echo json_encode([
@@ -75,13 +81,13 @@ switch ($action) {
                     'email' => $email,
                     'phone' => $phone,
                     'initials' => $initials,
-                    'tier' => $tier,
-                    'tierLabel' => isset($tierLabels[$tier]) ? $tierLabels[$tier] : 'Miembro VIP',
+                    'tier' => $isPerfumery ? $tier : 'CLIENTE_VIP',
+                    'tierLabel' => isset($tierLabels[$tier]) ? $tierLabels[$tier] : 'Cliente VIP',
                     'points' => 250,
                     'totalPurchases' => 12,
                     'activeAppointmentsCount' => 1,
                     'lastAppointmentCode' => $lastCode,
-                    'signatureScent' => 'Rasasi Hawas / Oud Royal'
+                    'signatureScent' => $isPerfumery ? 'Rasasi Hawas / Oud Royal' : 'Atención y Asesoría Especializada'
                 ]
             ]);
         } else {
