@@ -5659,20 +5659,20 @@ ${shareUrl}`;
           // Tall bottle
           imgEl.style.maxHeight = '88%';
           imgEl.style.maxWidth = '86%';
-          imgEl.style.width = 'auto';
-          imgEl.style.height = 'auto';
+          imgEl.style.width = '100%';
+          imgEl.style.height = '100%';
         } else if (nw > nh * 1.15) {
           // Wide packaging
           imgEl.style.maxWidth = '88%';
           imgEl.style.maxHeight = '86%';
-          imgEl.style.width = 'auto';
-          imgEl.style.height = 'auto';
+          imgEl.style.width = '100%';
+          imgEl.style.height = '100%';
         } else {
           // Square or balanced
           imgEl.style.maxWidth = '88%';
           imgEl.style.maxHeight = '88%';
-          imgEl.style.width = 'auto';
-          imgEl.style.height = 'auto';
+          imgEl.style.width = '100%';
+          imgEl.style.height = '100%';
         }
       };
 

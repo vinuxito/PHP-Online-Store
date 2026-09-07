@@ -312,16 +312,18 @@ body[data-atmosphere="crimson"] .qx-concierge-float-pill {
 /* 6. APPLE MINIMALIST / PURE LIGHT STUDIO */
 body[data-atmosphere="minimalist"],
 body[data-atmosphere="light"] {
-  --qx-bg: var(--qx-surface-muted);
-  --qx-surface: var(--qx-surface);
-  --qx-surface-glass: rgba(255, 255, 255, 0.94);
-  --qx-card: var(--qx-surface);
-  --qx-card-hover: var(--qx-bg);
-  --qx-border: var(--qx-border);
-  --qx-border-hover: var(--qx-primary);
-  --qx-text: var(--qx-ink);
-  --qx-text-muted: var(--qx-text-dim);
-  --qx-text-dim: var(--qx-border-hover);
+  --qx-bg: #f8fafc;
+  --qx-surface: #ffffff;
+  --qx-surface-solid: #ffffff;
+  --qx-surface-muted: #f1f5f9;
+  --qx-surface-glass: rgba(255, 255, 255, 0.98);
+  --qx-card: #ffffff;
+  --qx-card-hover: #f8fafc;
+  --qx-border: #e2e8f0;
+  --qx-border-hover: #3b82f6;
+  --qx-text: #0f172a;
+  --qx-text-muted: #334155;
+  --qx-text-dim: #64748b;
   --qx-accent: var(--qx-primary);
   --qx-accent-gradient: linear-gradient(135deg, #3b82f6 0%, var(--qx-primary-hover) 100%);
   --qx-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -3400,7 +3402,7 @@ body {
 .qx-pmodal-close {
   position: absolute;
   top: 18px;
-  right: 18px;
+  right: 24px;
   width: 38px;
   height: 38px;
   background: rgba(255, 255, 255, 0.08);
@@ -3481,6 +3483,10 @@ body {
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.qx-pmodal-filmstrip::-webkit-scrollbar {
+  display: none;
 }
 
 .qx-pmodal-thumb {
@@ -3618,8 +3624,8 @@ body {
 }
 
 .qx-pmodal-desc {
-  font-size: 14px;
-  color: var(--qx-border);
+  font-size: 14.5px;
+  color: var(--qx-text-muted) !important;
   line-height: 1.6;
 }
 
@@ -3630,9 +3636,9 @@ body {
 }
 
 .qx-pmodal-doc-link {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--qx-surface-muted, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--qx-border);
-  color: var(--qx-surface);
+  color: var(--qx-text) !important;
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 12.5px;
@@ -13247,7 +13253,7 @@ body[data-atmosphere="minimalist"] .qx-shelf-price-val {
 /* [Iter 5] Mobile Parity & Overflow Hardening */
 html, body {
   overflow-x: hidden;
-  max-width: 100vw;
+  
 }
 
 img {
@@ -13263,4 +13269,25 @@ img {
   .qx-drawer {
     width: 100% !important;
   }
+}
+
+
+.qx-product-modal::-webkit-scrollbar,
+.qx-drawer::-webkit-scrollbar,
+.qx-sommelier-modal::-webkit-scrollbar,
+.qx-checkout-drawer::-webkit-scrollbar {
+  width: 6px;
+}
+.qx-product-modal::-webkit-scrollbar-track,
+.qx-drawer::-webkit-scrollbar-track,
+.qx-sommelier-modal::-webkit-scrollbar-track,
+.qx-checkout-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.qx-product-modal::-webkit-scrollbar-thumb,
+.qx-drawer::-webkit-scrollbar-thumb,
+.qx-sommelier-modal::-webkit-scrollbar-thumb,
+.qx-checkout-drawer::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
 }
