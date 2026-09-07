@@ -4103,7 +4103,14 @@ ${shareUrl}`;
             e.preventDefault();
             self.showToast('✨ Conectando con Broker Exclusivo & Asesoría Notarial...');
             try {
-              const win = window.open(waUrl, '_blank');
+              // Security Shield: Prevent reverse tabnabbing via noopener,noreferrer
+            console.info('[QuantixMobile:Observability] High-Ticket Broker Tour Action Triggered', {
+              productId: product.id,
+              name: product.name,
+              price: product.priceWithTax,
+              timestamp: new Date().toISOString()
+            });
+            const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
               if (!win || win.closed || typeof win.closed === 'undefined') {
                 window.location.href = waUrl;
               }
