@@ -4234,6 +4234,10 @@ ${shareUrl}`;
         if (targetSlide) {
           targetSlide.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
+        const targetThumb = filmstrip.find(`.qx-pmodal-thumb[data-idx="${activePhotoIdx}"]`)[0];
+        if (targetThumb) {
+          targetThumb.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+        }
       };
 
       if (photos.length > 1) {
