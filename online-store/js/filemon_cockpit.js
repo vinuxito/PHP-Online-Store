@@ -20,8 +20,8 @@
     isOpen: false,
     audioMuted: false,
     audioCtx: null,
-    endpoint: '/cfdadmin/ajax/filemon_assistant_api.php',
-    avatarUrl: '/cfdadmin/images/filemon/avatar-filemon.png',
+    endpoint: '/api/filemon_assistant_api.php',
+    avatarUrl: '/images/filemon/avatar-filemon.png',
     options: {},
 
     /**
@@ -29,18 +29,12 @@
      */
     init: function(opts) {
       this.options = opts || {};
-      if (this.options.endpoint) {
-        this.endpoint = this.options.endpoint;
-      }
-      if (this.options.avatarUrl) {
-        this.avatarUrl = this.options.avatarUrl;
-      }
+      
+      const isSubpath = window.location.pathname.includes('/quantix-stores/online-store');
+      const basePath = isSubpath ? '/quantix-stores/online-store' : '';
 
-      // Si estamos en un subdominio de tienda, usar /api/filemon_assistant_api.php
-      if (window.location.hostname.includes('mistiq') || window.location.hostname.includes('gersol') || window.location.pathname.includes('online-store')) {
-        this.endpoint = '/api/filemon_assistant_api.php';
-        this.avatarUrl = '/images/filemon/avatar-filemon.png';
-      }
+      this.endpoint = this.options.endpoint || (basePath + '/api/filemon_assistant_api.php');
+      this.avatarUrl = this.options.avatarUrl || (basePath + '/images/filemon/avatar-filemon.png');
 
       this.audioMuted = localStorage.getItem('filemon_audio_muted') === 'true';
 

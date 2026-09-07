@@ -8,12 +8,12 @@ require_once __DIR__ . '/includes/tenant_resolver.php';
 $tenant = StorefrontTenant::resolve();
 $featMatrix = $tenant->apexConfig['feature_matrix'] ?? [];
 $isPerfumsTenant = ($tenant->quantixStorePerfums === 'SI');
-$isAgendaActive = $isPerfumsTenant && (!isset($featMatrix['royal_agenda']) || !empty($featMatrix['royal_agenda']['enabled']));
-$isTastingActive = $isPerfumsTenant && (!isset($featMatrix['tasting_room']) || !empty($featMatrix['tasting_room']['enabled']));
-$isVaultActive = $isPerfumsTenant && (!isset($featMatrix['loyalty_refill_vault']) || !empty($featMatrix['loyalty_refill_vault']['enabled']));
-$isPassportActive = $isPerfumsTenant && (!isset($featMatrix['decant_passport']) || !empty($featMatrix['decant_passport']['enabled']));
-$isLayeringActive = $isPerfumsTenant && (!isset($featMatrix['layering_crucible']) || !empty($featMatrix['layering_crucible']['enabled']));
-$isSommelierActive = $isPerfumsTenant && (!isset($featMatrix['aura_ai_sommelier']) || !empty($featMatrix['aura_ai_sommelier']['enabled']));
+$isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['royal_agenda']));
+$isTastingActive = !empty($featMatrix['tasting_room']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['tasting_room']));
+$isVaultActive = !empty($featMatrix['loyalty_refill_vault']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['loyalty_refill_vault']));
+$isPassportActive = !empty($featMatrix['decant_passport']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['decant_passport']));
+$isLayeringActive = !empty($featMatrix['layering_crucible']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['layering_crucible']));
+$isSommelierActive = !empty($featMatrix['aura_ai_sommelier']['enabled']) || ($isPerfumsTenant && !isset($featMatrix['aura_ai_sommelier']));
 ?>
 <!DOCTYPE html>
 <html lang="es">

@@ -42,16 +42,17 @@ $context = isset($payload['context']) && is_array($payload['context']) ? $payloa
 // Marcar explícitamente contexto de vitrina
 $context['is_showroom'] = true;
 
-// Inferir arquetipo si no vino explícito
+// Inferir tenant y arquetipo dinámicamente
+require_once __DIR__ . '/../includes/tenant_resolver.php';
+$tenant = StorefrontTenant::resolve();
+if (!isset($context['brand_name'])) {
+    $context['brand_name'] = $tenant->brandName;
+}
 if (!isset($context['archetype'])) {
-    $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
-    if (strpos($host, 'gersol') !== false || (isset($_GET['slug']) && $_GET['slug'] === 'gersol')) {
-        $context['archetype'] = 'industrial_automation';
-        $context['is_perfume'] = false;
-    } else {
-        $context['archetype'] = 'haute_perfumerie';
-        $context['is_perfume'] = true;
-    }
+    $context['archetype'] = $tenant->archetype ?: 'maison';
+}
+if (!isset($context['is_perfume'])) {
+    $context['is_perfume'] = $tenant->isPerfumery();
 }
 
 $response = FilemonAssistantEngine::answer($query, $context);
