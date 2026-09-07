@@ -49,12 +49,16 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Vernissage Wax Seal:** Ceremonial VIP prelansamento curtain with sonic crystal chime and wax stamp break.
    - **Stored XSS Sanitization & Layout Guard:** 100% escaped token pipeline and `requestAnimationFrame` render throttle.
 
+9. **Quantix Archetype Radical Metamorphosis (Capítulo VIII)**
+   - **Haute Maison:** 3-column editorial asymmetric grid with 2-column statement product spans, floating pedestal halos, atelier wax seal badges, Roman serif typography, and centered Velvet Salon Sanctuary modal.
+   - **Titan Hyper-Velocity:** High-density 4-to-5 column compact matrix with 24H Full express delivery countdown ticker, dual strikethrough pricing, direct in-card `[-] 1 [+]` quantity stepper, and slide-over right checkout drawer.
+   - **Nordic Monolith:** 3-column architectural gallery with 1px hairline border-collapse, pure negative space, zero screaming stickers, clean lowercase Swiss typography, invisible hover CTA pills, and 50/50 fullscreen split technical monograph.
+   - **Dynamic Social Drop:** 9:16 vertical portrait cards, live buyer counter ticker, real-time stock depletion progress bars, recent buyer avatar stacks, pulsing gradient buy buttons, and swipeable mobile bottom sheet.
+   - **Zero-Reload Dynamic Morphing:** Instantaneous state transitions via APEX Command Tower and Glass Twin Bridge postMessage sync.
+
 ## Verification & Testing
 
-Automated Playwright test suite:
+Targeted verification suite for commercial archetypes:
 ```bash
-node /lamp/www/cfdadmin/tests/e2e/test_hero_circadian_and_defile.mjs
-node /lamp/www/cfdadmin/tests/e2e/test_hero_typography_atelier.mjs
-node /lamp/www/cfdadmin/tests/e2e/vx-quantix-storefront-e2e.mjs
-node /lamp/www/cfdadmin/tests/e2e/vx-storefront-maitre-d-e2e.mjs
+node /lamp/www/quantix-stores/online-store/tests/test_archetype_radical_metamorphosis.mjs
 ```

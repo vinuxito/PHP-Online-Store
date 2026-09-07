@@ -380,6 +380,13 @@ class StorefrontTenant {
             $tenant->studio3DConfig['enabled'] = ($_GET['studio_3d'] === '1' || $_GET['studio_3d'] === 'true');
         }
 
+        if (!empty($_GET['archetype'])) {
+            $reqArch = strtolower(trim($_GET['archetype']));
+            if (in_array($reqArch, ['maison', 'titan', 'nordic', 'social'])) {
+                $tenant->archetype = $reqArch;
+            }
+        }
+
         // Industry-Aware Defaults (Zero Perfume Leak for Non-Perfumery Tenants)
         if ($tenant->isPerfumery()) {
             $tenant->cartTitle = 'Bolsa de Compras';

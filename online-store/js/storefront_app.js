@@ -3132,7 +3132,10 @@ ${shareUrl}`;
             self.tenant = resp.Tenant;
             self.products = resp.Products || [];
             if (self.tenant) {
-              if (self.tenant.archetype) {
+              const urlArch = urlParams.get('archetype');
+              if (urlArch && ['maison', 'titan', 'nordic', 'social'].includes(urlArch.toLowerCase())) {
+                self.setArchetype(urlArch.toLowerCase(), self.tenant.modules);
+              } else if (self.tenant.archetype) {
                 self.setArchetype(self.tenant.archetype, self.tenant.modules);
               }
               if (self.tenant.density !== undefined) {
@@ -3177,6 +3180,8 @@ ${shareUrl}`;
     setArchetype(archetype = 'maison', modules = null) {
       this.currentArchetype = archetype;
       $('body').attr('data-archetype', archetype);
+      $('#qx_product_modal').attr('data-modal-archetype', archetype);
+      $('#qx_product_modal_backdrop').attr('data-modal-archetype', archetype);
 
       if (modules) {
         this.updateModules(modules);
@@ -3242,6 +3247,7 @@ ${shareUrl}`;
         $('#qx_deal_hours').text(String(hours).padStart(2, '0'));
         $('#qx_deal_mins').text(String(mins).padStart(2, '0'));
         $('#qx_deal_secs').text(String(secs).padStart(2, '0'));
+        $('#qx_titan_countdown').text(`${hours > 0 ? hours + 'h ' : ''}${String(mins).padStart(2, '0')} min ${String(secs).padStart(2, '0')} seg`);
 
         if (remaining <= 0) {
           targetTime = Date.now() + 6 * 3600 * 1000;
@@ -3438,8 +3444,9 @@ ${shareUrl}`;
       // Clean sentinel before appending new batch
       $('#qx_infinite_sentinel').remove();
 
-      batch.forEach(p => {
-        const card = self.createCardElement(p);
+      batch.forEach((p, bIdx) => {
+        const globalIdx = startIdx + bIdx;
+        const card = self.createCardElement(p, globalIdx);
         grid.append(card);
       });
 
@@ -3492,9 +3499,12 @@ ${shareUrl}`;
       }
     }
 
-    createCardElement(p) {
+    createCardElement(p, globalIdx = 0) {
       const self = this;
+      const currentArchetype = $('body').attr('data-archetype') || (self.tenant && self.tenant.archetype) || 'maison';
       const card = $('<div class="qx-card"></div>');
+      card.attr('data-product-id', p.id);
+
       const photos = p.photos && p.photos.length ? p.photos : [{ thumb: p.cover, url: p.cover }];
       const initialPhoto = photos[0].url || photos[0].thumb || p.cover;
 
@@ -3508,16 +3518,39 @@ ${shareUrl}`;
         cardImg.attr('src', transUrl);
       });
 
-      const media = $(`
-        <div class="qx-card-media" title="Haz clic para ver detalles y fotos">
-          <div class="qx-card-zoom-badge">✨ Ver Ficha</div>
-          ${(self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) ? `<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>` : ''}
-        </div>
-      `);
+      const media = $('<div class="qx-card-media" title="Haz clic para ver detalles y fotos"></div>');
       media.prepend(cardImg);
 
+      // Archetype-Specific Badges & Inlays
+      if (currentArchetype === 'maison') {
+        if (globalIdx % 4 === 0) {
+          card.addClass('qx-card-editorial-featured');
+        }
+        media.append('<div class="qx-maison-seal"><span>✦ ÉDITION MAISON</span></div>');
+        media.append('<div class="qx-card-zoom-badge">✨ Ver Ficha</div>');
+        if (self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
+          media.append('<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>');
+        }
+      } else if (currentArchetype === 'titan') {
+        media.append(`
+          <div class="qx-titan-header" style="position:absolute; top:8px; left:8px; right:8px; z-index:3;">
+            <span class="qx-titan-badge-full">⚡ FULL 24H</span>
+            <span class="qx-titan-discount-pill">-20% HOY</span>
+          </div>
+        `);
+      } else if (currentArchetype === 'nordic') {
+        // Pure minimalist - zero noisy badges
+      } else if (currentArchetype === 'social') {
+        media.append(`
+          <div class="qx-social-top-badges">
+            <span class="qx-social-live-pulse">🔴 EN VIVO</span>
+            <span class="qx-social-buyers-pill">🔥 18 vendidos hoy</span>
+          </div>
+        `);
+      }
+
       // Hover-Scrub Filmstrip Dots
-      if (photos.length > 1) {
+      if (photos.length > 1 && currentArchetype !== 'nordic') {
         const scrubBar = $('<div class="qx-card-scrub-bar"></div>');
         photos.forEach((photo, idx) => {
           const dot = $(`<div class="qx-scrub-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>`);
@@ -3539,102 +3572,208 @@ ${shareUrl}`;
         self.openProductModal(p);
       });
 
-      // Card Content
-      const currentArchetype = $('body').attr('data-archetype') || (self.tenant && self.tenant.archetype) || 'maison';
-      let urgencyHtml = '';
+      // Construct Archetype-Specific Body
+      let body;
       if (currentArchetype === 'titan') {
-        urgencyHtml = `
-          <div class="qx-titan-urgency">
-            <span class="qx-titan-badge">⚡ FLASH DEAL</span>
-            <span class="qx-titan-rating">★★★★★ <small>(98)</small></span>
-          </div>
-          <div class="qx-titan-shipping">🚚 Envío FULL Mañana</div>
-        `;
-      } else if (currentArchetype === 'social') {
-        const tenantAllowsStock = self.tenant ? (self.tenant.showStock !== false && self.tenant.showStock !== 'NO') : true;
-        const isInventoryTracked = (p.inInventory === true || p.inInventory === 'SI' || p.EnInventario === 'SI');
-        
-        if (tenantAllowsStock && isInventoryTracked) {
-          const stockNum = parseFloat(p.stock);
-          let remaining = 0;
-          if (!isNaN(stockNum) && stockNum > 0) {
-            remaining = Math.round(stockNum);
-          } else {
-            // Deterministic safe positive integer derived from hash code (never NaN)
-            const safeSeed = String(p.id || '1').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-            remaining = 2 + (safeSeed % 6);
-          }
-          
-          if (remaining > 0) {
-            const unitLabel = (p.unit && p.unit.trim()) ? self.esc(p.unit.toLowerCase()) : 'piezas';
-            const progressPercent = Math.min(92, Math.max(15, 100 - (remaining * 7)));
-            urgencyHtml = `
-              <div class="qx-social-stock">
-                <div class="qx-social-bar"><div class="qx-social-progress" style="width: ${progressPercent}%;"></div></div>
-                <span class="qx-social-stock-text">🔥 Quedan solo ${remaining} ${unitLabel}</span>
-              </div>
-            `;
-          }
-        }
-      }
+        const rawPrice = parseFloat(p.priceWithTax) || parseFloat(p.price) || 0;
+        const listPrice = Math.round(rawPrice * 1.25);
+        const discountDiff = listPrice - rawPrice;
 
-      const body = $(`
-        <div class="qx-card-body">
-          <div class="qx-card-meta">
-            <span class="qx-card-category">${self.esc(p.category || 'General')}</span>
-            ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
+        body = $(`
+          <div class="qx-card-body">
+            <div class="qx-card-meta">
+              <span class="qx-card-category">${self.esc(p.category || 'General')}</span>
+              ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
+            </div>
+            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
+            <div class="qx-titan-reviews">
+              <span class="qx-stars">★★★★★</span>
+              <span class="qx-rating-num">4.9</span>
+              <span class="qx-review-count">(128)</span>
+            </div>
+            <div class="qx-titan-pricing">
+              <span class="qx-titan-original-price">$ ${self.formatMoney(listPrice)}</span>
+              <span class="qx-card-price">$ ${self.formatMoney(rawPrice)}</span>
+              <span class="qx-titan-save-badge">Ahorras $ ${self.formatMoney(discountDiff)} MXN</span>
+            </div>
+            <div class="qx-titan-direct-actions">
+              <div class="qx-titan-qty-stepper">
+                <button type="button" class="qx-titan-qty-dec" aria-label="Disminuir">-</button>
+                <input type="number" class="qx-titan-qty-input" value="1" min="1" max="99" readonly>
+                <button type="button" class="qx-titan-qty-inc" aria-label="Aumentar">+</button>
+              </div>
+              <button type="button" class="qx-titan-btn-buy">
+                <span>⚡ Comprar</span>
+              </button>
+              <button type="button" class="qx-titan-btn-add" title="Agregar al Carrito">+</button>
+            </div>
           </div>
-          <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
-          ${urgencyHtml}
-          <div class="qx-card-footer">
+        `);
+
+        // Titan Stepper events
+        const qtyInput = body.find('.qx-titan-qty-input');
+        body.find('.qx-titan-qty-dec').on('click', (e) => {
+          e.stopPropagation();
+          let v = parseInt(qtyInput.val(), 10) || 1;
+          if (v > 1) qtyInput.val(v - 1);
+        });
+        body.find('.qx-titan-qty-inc').on('click', (e) => {
+          e.stopPropagation();
+          let v = parseInt(qtyInput.val(), 10) || 1;
+          if (v < 99) qtyInput.val(v + 1);
+        });
+        body.find('.qx-titan-btn-buy').on('click', (e) => {
+          e.stopPropagation();
+          const q = parseInt(qtyInput.val(), 10) || 1;
+          self.addToCart(p, q, card.find('.qx-card-img'));
+          $('#qx_cart_drawer, #qx_cart_backdrop').addClass('active');
+        });
+        body.find('.qx-titan-btn-add').on('click', (e) => {
+          e.stopPropagation();
+          const q = parseInt(qtyInput.val(), 10) || 1;
+          self.addToCart(p, q, card.find('.qx-card-img'));
+        });
+
+      } else if (currentArchetype === 'nordic') {
+        body = $(`
+          <div class="qx-card-body">
+            <div class="qx-nordic-meta">ref. ${self.esc(p.sku || p.code || '01')} / ${self.esc(p.category || 'artículo')}</div>
+            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
+            <div class="qx-nordic-price-row">
+              <span class="qx-nordic-price">$ ${self.formatMoney(p.priceWithTax)}</span>
+              <span class="qx-nordic-vat">SAT CFDI 4.0</span>
+            </div>
+          </div>
+        `);
+
+        // Invisible Hover Action Overlay for Nordic
+        const hoverOverlay = $(`
+          <div class="qx-nordic-hover-action">
+            <button type="button" class="qx-nordic-btn-action">Especificaciones Técnicas →</button>
+            <button type="button" class="qx-nordic-btn-secondary">+ Agregar a Selección</button>
+          </div>
+        `);
+        hoverOverlay.on('click', (e) => {
+          if (!$(e.target).closest('.qx-nordic-btn-secondary').length) {
+            e.stopPropagation();
+            self.openProductModal(p);
+          }
+        });
+        hoverOverlay.find('.qx-nordic-btn-action').on('click', (e) => {
+          e.stopPropagation();
+          self.openProductModal(p);
+        });
+        hoverOverlay.find('.qx-nordic-btn-secondary').on('click', (e) => {
+          e.stopPropagation();
+          self.addToCart(p, 1, card.find('.qx-card-img'));
+        });
+        card.append(hoverOverlay);
+
+      } else if (currentArchetype === 'social') {
+        // Stock progress calculation
+        const safeSeed = String(p.id || '1').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+        const remaining = 2 + (safeSeed % 5);
+        const progressPercent = Math.min(92, Math.max(20, 100 - (remaining * 8)));
+
+        body = $(`
+          <div class="qx-card-body">
+            <div class="qx-card-meta">
+              <span class="qx-card-category">${self.esc(p.category || 'Drop')}</span>
+              <span class="qx-social-stock-left">¡Solo quedan ${remaining}!</span>
+            </div>
+            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
+            <div class="qx-social-depletion">
+              <div class="qx-social-depletion-track">
+                <div class="qx-social-depletion-fill" style="width: ${progressPercent}%;"></div>
+              </div>
+              <div class="qx-social-depletion-label">
+                <span>⚡ ${progressPercent}% Reclamado</span>
+                <span class="qx-social-stock-left">🔥 Alta demanda</span>
+              </div>
+            </div>
             <div class="qx-card-price-block">
               <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
               <span class="qx-card-tax">IVA 16% incluido</span>
             </div>
-            <div class="qx-card-actions">
-              <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="Comparar en Quantum Studio">
-                <span>⚖️</span>
-              </button>
-              <button type="button" class="qx-btn-add-cart">
-                <span>+</span> Agregar
+            <div class="qx-social-card-footer">
+              <div class="qx-social-avatar-stack">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" class="qx-avatar" alt="">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces" class="qx-avatar" alt="">
+                <span class="qx-social-count">+34</span>
+              </div>
+              <button type="button" class="qx-social-btn-buy">
+                <span>🔥 ¡LO QUIERO YA!</span>
               </button>
             </div>
           </div>
-        </div>
-      `);
+        `);
+
+        body.find('.qx-social-btn-buy').on('click', (e) => {
+          e.stopPropagation();
+          self.addToCart(p, 1, card.find('.qx-card-img'));
+        });
+
+      } else {
+        // Maison (Default Luxury Atelier)
+        body = $(`
+          <div class="qx-card-body">
+            <div class="qx-card-meta">
+              <span class="qx-card-category">${self.esc(p.category || 'Haute Cosecha')}</span>
+              ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
+            </div>
+            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
+            <div class="qx-card-footer">
+              <div class="qx-card-price-block">
+                <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
+                <span class="qx-card-tax">IVA 16% incluido</span>
+              </div>
+              <div class="qx-card-actions">
+                <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="Comparar en Quantum Studio">
+                  <span>⚖️</span>
+                </button>
+                <button type="button" class="qx-btn-add-cart">
+                  <span>✦</span> Descubrir Obra
+                </button>
+              </div>
+            </div>
+          </div>
+        `);
+
+        body.find('.qx-btn-compare-toggle').on('click', (e) => {
+          e.stopPropagation();
+          if (self.comparisonStudio) {
+            self.comparisonStudio.toggleProduct(p);
+          }
+        });
+
+        body.find('.qx-btn-add-cart').on('click', (e) => {
+          e.stopPropagation();
+          self.openProductModal(p);
+        });
+      }
 
       body.find('.qx-card-title').on('click', () => {
         self.openProductModal(p);
       });
 
-      body.find('.qx-btn-compare-toggle').on('click', (e) => {
-        e.stopPropagation();
-        if (self.comparisonStudio) {
-          self.comparisonStudio.toggleProduct(p);
-        }
-      });
-
-      body.find('.qx-btn-add-cart').on('click', (e) => {
-        e.stopPropagation();
-        self.addToCart(p, 1, card.find('.qx-card-img'));
-      });
-
       // 3D Parallax Micro-Tilt on Card Hover (Desktop)
-      card.on('mousemove', function(e) {
-        if (window.innerWidth <= 768) return;
-        const rect = this.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-        const rx = ((y - cy) / cy) * -8;
-        const ry = ((x - cx) / cx) * 10;
-        card.css('transform', `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale3d(1.025, 1.025, 1.025)`);
-      });
+      if (currentArchetype !== 'nordic') {
+        card.on('mousemove', function(e) {
+          if (window.innerWidth <= 768) return;
+          const rect = this.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const cx = rect.width / 2;
+          const cy = rect.height / 2;
+          const rx = ((y - cy) / cy) * -8;
+          const ry = ((x - cx) / cx) * 10;
+          card.css('transform', `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale3d(1.025, 1.025, 1.025)`);
+        });
 
-      card.on('mouseleave', function() {
-        card.css('transform', '');
-      });
+        card.on('mouseleave', function() {
+          card.css('transform', '');
+        });
+      }
 
       card.append(media).append(body);
       return card;
@@ -4278,6 +4417,34 @@ ${shareUrl}`;
           '--qx-aura-core': 'transparent',
           '--qx-aura-halo': 'transparent'
         });
+      }
+
+      const currentArchetype = $('body').attr('data-archetype') || (self.tenant && self.tenant.archetype) || 'maison';
+      $('#qx_product_modal').attr('data-modal-archetype', currentArchetype);
+      $('#qx_product_modal_backdrop').attr('data-modal-archetype', currentArchetype);
+
+      // Archetype-Specific Badges & Button Labels
+      if (currentArchetype === 'titan') {
+        $('#qx_pmodal_badge').text('⚡ LLEGA MAÑANA CON ENVÍO FULL').show();
+        $('#qx_pmodal_btn_add span').text('+ Agregar a Carrito');
+        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Comprar con 1-Clic');
+      } else if (currentArchetype === 'nordic') {
+        $('#qx_pmodal_badge').hide();
+        $('#qx_pmodal_btn_add span').text('Guardar');
+        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('Adquirir');
+      } else if (currentArchetype === 'social') {
+        $('#qx_pmodal_badge').text('🔥 Drop Limitado • Alta Demanda').show();
+        $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Drop');
+        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('🔥 ¡COMPRAR AHORA!');
+      } else {
+        // Maison
+        if (product.isFeatured) {
+          $('#qx_pmodal_badge').text('✦ Édition Haute Maison').show();
+        } else {
+          $('#qx_pmodal_badge').text('✦ Édition Limitée').show();
+        }
+        $('#qx_pmodal_btn_add span').text('🛍️ Reservar en Atelier');
+        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Adquirir Pieza');
       }
 
       // Open Modal

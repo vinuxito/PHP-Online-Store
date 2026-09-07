@@ -420,6 +420,24 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
 
   <!-- Main Product Showroom Grid -->
   <main class="qx-main-container">
+    <!-- Archetype II: Titan Hyper-Velocity Express Ticker -->
+    <div class="qx-titan-ticker-bar" id="qx_titan_ticker_bar">
+      <div class="qx-titan-ticker-inner">
+        <span class="qx-titan-ticker-icon">⚡</span>
+        <span class="qx-titan-ticker-text"><strong>ENVÍO FULL EXPRESS 24H:</strong> Compra en los próximos <span class="qx-titan-ticker-timer" id="qx_titan_countdown">42 min 18 seg</span> y recibe mañana garantizado.</span>
+        <span class="qx-titan-ticker-badge">STOCK LOCAL INMEDIATO</span>
+      </div>
+    </div>
+
+    <!-- Archetype IV: Social Live Activity Ticker -->
+    <div class="qx-social-ticker-bar" id="qx_social_ticker_bar">
+      <div class="qx-social-ticker-inner">
+        <span class="qx-social-live-dot"></span>
+        <span class="qx-social-ticker-text">🔥 <strong id="qx_social_active_count">38 personas</strong> comprando en vivo en este momento • <strong>14 productos</strong> despachados en la última hora</span>
+        <span class="qx-social-ticker-tag">DROP LIMITADO</span>
+      </div>
+    </div>
+
     <div class="qx-grid view-2col" id="qx_product_grid"></div>
   </main>
 
