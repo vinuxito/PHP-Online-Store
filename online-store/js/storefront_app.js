@@ -4101,7 +4101,15 @@ ${shareUrl}`;
           .attr('title', 'Agendar recorrido privado con un broker VIP')
           .off('click.highTicket').on('click.highTicket', function(e) {
             e.preventDefault();
-            window.open(waUrl, '_blank');
+            self.showToast('✨ Conectando con Broker Exclusivo & Asesoría Notarial...');
+            try {
+              const win = window.open(waUrl, '_blank');
+              if (!win || win.closed || typeof win.closed === 'undefined') {
+                window.location.href = waUrl;
+              }
+            } catch (err) {
+              window.location.href = waUrl;
+            }
           });
       } else {
         $('.pmodal-stepper, #qx_pmodal_stepper').show();

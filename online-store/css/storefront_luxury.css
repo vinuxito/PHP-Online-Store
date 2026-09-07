@@ -13365,3 +13365,27 @@ img {
   background: rgba(148, 163, 184, 0.3);
   border-radius: 10px;
 }
+
+/* =========================================================================
+ * [Iter 5 UX Polish] 44px Touch Targets & High-Ticket Commercial Trust
+ * ========================================================================= */
+@media (max-width: 768px) {
+  .qx-pmodal-close {
+    width: 44px !important;
+    height: 44px !important;
+    top: 14px !important;
+    right: 14px !important;
+    font-size: 24px !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
+  body[data-atmosphere="minimalist"] .qx-pmodal-close,
+  body[data-atmosphere="light"] .qx-pmodal-close {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+  .qx-pmodal-bar-sub {
+    font-size: 10px !important;
+    letter-spacing: 0.5px !important;
+  }
+}
