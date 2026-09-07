@@ -56,9 +56,33 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Dynamic Social Drop:** 9:16 vertical portrait cards, live buyer counter ticker, real-time stock depletion progress bars, recent buyer avatar stacks, pulsing gradient buy buttons, and swipeable mobile bottom sheet.
    - **Zero-Reload Dynamic Morphing:** Instantaneous state transitions via APEX Command Tower and Glass Twin Bridge postMessage sync.
 
+## Live Endpoints & Interactive Previews
+
+The 4 commercial archetypes can be previewed live on any tenant using the `?archetype=` parameter:
+- **Haute Maison**: [https://bracsa.evinux.net/?archetype=maison](https://bracsa.evinux.net/?archetype=maison)
+- **Titan Hyper-Velocity**: [https://bracsa.evinux.net/?archetype=titan](https://bracsa.evinux.net/?archetype=titan)
+- **Nordic Monolith**: [https://bracsa.evinux.net/?archetype=nordic](https://bracsa.evinux.net/?archetype=nordic)
+- **Dynamic Social Drop**: [https://bracsa.evinux.net/?archetype=social](https://bracsa.evinux.net/?archetype=social)
+
 ## Verification & Testing
 
-Targeted verification suite for commercial archetypes:
+Targeted verification suite for commercial archetypes (runs against live tenant `https://bracsa.evinux.net`):
 ```bash
+# 1. PHP Static Linting
+php -l /lamp/www/quantix-stores/online-store/index.php
+php -l /lamp/www/quantix-stores/online-store/includes/tenant_resolver.php
+
+# 2. HTTP Status Code Checks
+curl -IsS "https://bracsa.evinux.net/?archetype=titan" | head -n 5
+
+# 3. Targeted Playwright E2E Suite (Desktop & Mobile, 0 failed network requests)
 node /lamp/www/quantix-stores/online-store/tests/test_archetype_radical_metamorphosis.mjs
 ```
+
+## Documentation & Audits
+- **Master Plan**: `/lamp/www/cfdadmin/docs/plans/quantix-archetype-radical-metamorphosis/INDEX.md`
+- **Verification Report (MD)**: `/lamp/www/cfdadmin/docs/reports/2026-09-07-quantix-archetype-radical-metamorphosis-verification.md`
+- **Verification Report (HTML)**: `/lamp/www/cfdadmin/docs/reports/2026-09-07-archetype-metamorphosis-report.html`
+- **Session Memory**: `/lamp/www/cfdadmin/docs/memories/session-2026-09-07-quantix-archetype-radical-metamorphosis.md`
+- **Visual Proof Artifacts**: `/lamp/www/cfdadmin/docs/reports/artifacts/archetype-radical-metamorphosis/` (12 screenshots)
+
