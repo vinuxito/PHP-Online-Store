@@ -4043,6 +4043,80 @@ body {
     transform: translateY(0);
   }
 
+  /* [Iter 2] Solid Surface Sheet Foundations & Anti-Ghosting */
+  .qx-product-modal {
+    background: #080c16 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-bottom: none !important;
+    color: #f8fafc !important;
+  }
+  body[data-atmosphere="minimalist"] .qx-product-modal,
+  body[data-atmosphere="light"] .qx-product-modal {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+    color: #0f172a !important;
+    box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.18) !important;
+  }
+
+  body[data-atmosphere="minimalist"] .qx-product-modal-backdrop,
+  body[data-atmosphere="light"] .qx-product-modal-backdrop {
+    background: rgba(15, 23, 42, 0.72) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+  }
+
+  /* High-Contrast Description & Details Typography */
+  .qx-pmodal-desc {
+    color: #cbd5e1 !important;
+    font-size: 14.5px !important;
+    line-height: 1.65 !important;
+    font-weight: 450 !important;
+  }
+  body[data-atmosphere="minimalist"] .qx-pmodal-desc,
+  body[data-atmosphere="light"] .qx-pmodal-desc {
+    color: #334155 !important;
+  }
+
+  /* Ticket-Adaptive & High-Ticket Commercial Action Styling */
+  .qx-btn-pmodal-broker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13.5px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Cinematic Full-Bleed Media Stage for Architectural / Landscape Assets */
+  .qx-pmodal-stage.qx-stage-cinematic {
+    height: 280px !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    background: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  body[data-atmosphere="minimalist"] .qx-pmodal-stage.qx-stage-cinematic,
+  body[data-atmosphere="light"] .qx-pmodal-stage.qx-stage-cinematic {
+    border-color: #e2e8f0 !important;
+  }
+  .qx-pmodal-stage.qx-stage-cinematic .qx-pmodal-swipe-slide img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+  }
+
+
   .qx-pmodal-grabber {
     display: block;
     width: 44px;

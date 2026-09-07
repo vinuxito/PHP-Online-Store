@@ -3879,6 +3879,7 @@ ${shareUrl}`;
 
     openCart() {
       $('#qx_mobile_dock').addClass('hidden');
+      $('#filemon_trigger_badge').addClass('docked-hidden');
       $('#qx_cart_backdrop').addClass('active');
       $('#qx_cart_drawer').addClass('active');
     }
@@ -3886,13 +3887,15 @@ ${shareUrl}`;
     closeCart() {
       $('#qx_cart_backdrop').removeClass('active');
       $('#qx_cart_drawer').removeClass('active');
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
     }
 
     openCheckout() {
       $('#qx_mobile_dock').addClass('hidden');
+      $('#filemon_trigger_badge').addClass('docked-hidden');
       $('#qx_checkout_backdrop').addClass('active');
       $('#qx_checkout_drawer').addClass('active');
       this.renderCheckoutSummary();
@@ -3904,8 +3907,9 @@ ${shareUrl}`;
     closeCheckout() {
       $('#qx_checkout_backdrop').removeClass('active');
       $('#qx_checkout_drawer').removeClass('active');
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
     }
 
@@ -3982,8 +3986,9 @@ ${shareUrl}`;
       // Scroll modal container to top
       $('#qx_product_modal').scrollTop(0);
 
-      // Hide mobile dock
+      // Hide mobile dock & auto-dock Filemón copilot so bottom purchase bar is 100% unimpeded
       $('#qx_mobile_dock').addClass('hidden');
+      $('#filemon_trigger_badge').addClass('docked-hidden');
 
       // Push history state so mobile swipe-back gesture closes modal without leaving the website
       this.pushModalHistory('product');
@@ -4071,6 +4076,37 @@ ${shareUrl}`;
 
       // Price & Stock
       $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${self.formatMoney(product.priceWithTax)}`);
+
+      // [Iter 2] Ticket-Adaptive & Domain Architecture Logic
+      const isHighTicket = (product.priceWithTax > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test(product.name + ' ' + (product.category || ''));
+      const isArchitectural = /inmueble|terreno|edificio|residencia|casa|departamento|propiedad|planta/i.test(product.name + ' ' + (product.category || ''));
+
+      if (isArchitectural) {
+        $('#qx_pmodal_stage').addClass('qx-stage-cinematic');
+        $('#qx_tilt_hint').hide();
+      } else {
+        $('#qx_pmodal_stage').removeClass('qx-stage-cinematic');
+        if (self.tenant?.quantixStorePerfums === 'SI') $('#qx_tilt_hint').show();
+        else $('#qx_tilt_hint').hide();
+      }
+
+      if (isHighTicket) {
+        $('.pmodal-stepper, #qx_pmodal_stepper').hide();
+        const waPhone = (self.tenant && self.tenant.supportPhone) ? self.tenant.supportPhone.replace(/[^0-9]/g, '') : '';
+        const waText = encodeURIComponent(`Hola, me interesa agendar un recorrido privado para el inmueble: ${product.name} (Ref: $${self.formatMoney(product.priceWithTax)} MXN)`);
+        const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
+
+        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>📅 Agendar Recorrido</span>')
+          .attr('title', 'Agendar recorrido privado con un broker VIP')
+          .off('click.highTicket').on('click.highTicket', function(e) {
+            e.preventDefault();
+            window.open(waUrl, '_blank');
+          });
+      } else {
+        $('.pmodal-stepper, #qx_pmodal_stepper').show();
+        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>⚡ Comprar Ahora</span>')
+          .off('click.highTicket');
+      }
       if (product.stock > 0) {
         $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
       } else {
@@ -4236,8 +4272,9 @@ ${shareUrl}`;
       $('#qx_product_modal_backdrop').removeClass('active');
       $('#qx_product_modal').removeClass('active');
       this.activeProductModal = null;
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
       if (syncHistory) {
         this.popModalHistory();
@@ -4682,8 +4719,9 @@ ${shareUrl}`;
     closeSpotlight() {
       $('#qx_spotlight_backdrop').removeClass('active');
       $('#qx_spotlight_modal').removeClass('active');
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
     }
 
@@ -5473,8 +5511,9 @@ ${shareUrl}`;
         this.storyTimer = null;
       }
       this.activeStory = null;
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
     }
 
@@ -5564,8 +5603,9 @@ ${shareUrl}`;
     closeQuiz() {
       $('#qx_quiz_backdrop').removeClass('active');
       $('#qx_quiz_modal').removeClass('active');
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
     }
 
@@ -5704,8 +5744,9 @@ ${shareUrl}`;
     closeSommelier() {
       $('#qx_sommelier_backdrop').removeClass('active');
       $('#qx_sommelier_modal').removeClass('active');
-      if (!this.isModalOrDrawerOpen()) {
+            if (!this.isModalOrDrawerOpen()) {
         $('#qx_mobile_dock').removeClass('hidden');
+        $('#filemon_trigger_badge').removeClass('docked-hidden');
       }
       if (this.speechRecognition) {
         try { this.speechRecognition.stop(); } catch(e) {}
