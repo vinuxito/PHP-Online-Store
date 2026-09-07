@@ -39,20 +39,31 @@ if (empty($payload)) {
 $query = isset($payload['query']) ? trim($payload['query']) : (isset($payload['message']) ? trim($payload['message']) : (isset($_GET['query']) ? trim($_GET['query']) : ''));
 $context = isset($payload['context']) && is_array($payload['context']) ? $payload['context'] : array();
 
-// Marcar explícitamente contexto de vitrina
+// Marcar explícitamente contexto de vitrina y limpiar sesgos de backoffice
 $context['is_showroom'] = true;
+$context['is_cfdadmin'] = false;
 
-// Inferir tenant y arquetipo dinámicamente
+// Inferir tenant, arquetipo e industria autoritariamente del servidor
 require_once __DIR__ . '/../includes/tenant_resolver.php';
 $tenant = StorefrontTenant::resolve();
-if (!isset($context['brand_name'])) {
-    $context['brand_name'] = $tenant->brandName;
-}
-if (!isset($context['archetype'])) {
-    $context['archetype'] = $tenant->archetype ?: 'maison';
-}
-if (!isset($context['is_perfume'])) {
-    $context['is_perfume'] = $tenant->isPerfumery();
+
+$context['brand_name'] = $tenant->brandName;
+$context['tenant_slug'] = $tenant->slug;
+$context['tenant_desc'] = $tenant->description;
+$context['tenant_headline'] = $tenant->headline;
+$context['archetype'] = $tenant->archetype ?: 'maison';
+$context['is_perfume'] = $tenant->isPerfumery();
+
+// Clasificación determinista de la industria comercial
+$textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
+if ($tenant->isPerfumery()) {
+    $context['industry'] = 'perfumery';
+} elseif ($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) {
+    $context['industry'] = 'real_estate';
+} elseif ($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false || strpos($textCorp, 'automatiz') !== false) {
+    $context['industry'] = 'industrial';
+} else {
+    $context['industry'] = 'retail';
 }
 
 $response = FilemonAssistantEngine::answer($query, $context);

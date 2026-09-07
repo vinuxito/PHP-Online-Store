@@ -265,6 +265,18 @@
       const path = window.location.pathname;
       let screen = path.split('/').pop() || 'index.php';
 
+      // Detectar si estamos en CFDAdmin o en Storefront
+      const isCfdadmin = (window.QX_ENVIRONMENT && window.QX_ENVIRONMENT.isCfdadmin) ||
+                         path.includes('/cfdadmin/') ||
+                         window.location.hostname.startsWith('panel.') ||
+                         window.location.hostname.startsWith('cfdadmin.');
+
+      const isStorefront = !isCfdadmin && (
+        (window.QX_TENANT && window.QX_TENANT.isStorefront) ||
+        (window.location.hostname.endsWith('.evinux.net') && !isCfdadmin) ||
+        path.includes('/quantix-stores/online-store')
+      );
+
       // Detectar Capítulo activo en Store Director
       let activeChapter = '';
       const activeCard = document.querySelector('.qx-chapter-panel.active, [data-chapter-active="true"], .qx-chapter-plate.active');
@@ -278,15 +290,44 @@
       const sourceBadge = document.getElementById('qx_3d_source_badge');
       const isCustomModel = sourceBadge && sourceBadge.textContent.includes('PERSONALIZADO');
 
-      // Detectar arquetipo
-      let isPerfume = true;
-      let archetype = 'haute_perfumerie';
-      if (window.QX_CONFIG) {
-        isPerfume = !!window.QX_CONFIG.is_perfume;
-        archetype = window.QX_CONFIG.archetype || archetype;
-      } else if (window.location.hostname.includes('gersol') || window.location.search.includes('gersol')) {
+      // Industria, arquetipo y marca
+      let isPerfume = false;
+      let industry = 'fiscal_backoffice';
+      let archetype = 'fiscal';
+      let brandName = '';
+
+      if (isStorefront) {
+        const bodyPerfumery = document.body ? document.body.dataset.perfumery : null;
+        const bodyArchetype = document.body ? document.body.dataset.archetype : null;
+
+        if (window.QX_TENANT) {
+          isPerfume = !!window.QX_TENANT.isPerfumery;
+          industry = window.QX_TENANT.industry || (isPerfume ? 'perfumery' : 'retail');
+          archetype = window.QX_TENANT.archetype || bodyArchetype || 'maison';
+          brandName = window.QX_TENANT.brandName || '';
+        } else {
+          isPerfume = (bodyPerfumery === '1') || window.location.hostname.includes('mistiq');
+          archetype = bodyArchetype || 'maison';
+
+          const pageText = (document.title + ' ' + (document.body ? document.body.innerText.substring(0, 1500) : '')).toLowerCase();
+          if (isPerfume) {
+            industry = 'perfumery';
+            brandName = 'Mistiq';
+          } else if (window.location.hostname.includes('bracsa') || pageText.includes('bienes raíces') || pageText.includes('residencias') || pageText.includes('inmobiliari') || pageText.includes('espacios corporativos')) {
+            industry = 'real_estate';
+            brandName = 'BRACSA Y GAMA';
+          } else if (window.location.hostname.includes('gersol') || pageText.includes('industrial') || pageText.includes('válvula') || pageText.includes('automatiz')) {
+            industry = 'industrial';
+            brandName = 'Gersol';
+          } else {
+            industry = 'retail';
+            brandName = document.title ? document.title.split('—')[0].trim() : 'Boutique';
+          }
+        }
+      } else {
         isPerfume = false;
-        archetype = 'industrial_automation';
+        industry = 'fiscal_backoffice';
+        archetype = screen.replace('.php', '');
       }
 
       return {
@@ -294,7 +335,11 @@
         chapter: activeChapter,
         is_custom_3d: isCustomModel,
         is_perfume: isPerfume,
+        industry: industry,
         archetype: archetype,
+        brand_name: brandName,
+        is_cfdadmin: isCfdadmin,
+        is_showroom: isStorefront,
         url: window.location.href
       };
     },
@@ -306,10 +351,45 @@
       const ctx = this.getContext();
       const screenTag = document.getElementById('filemon_radar_screen');
       const chapterTag = document.getElementById('filemon_radar_chapter');
+      const subtitleEl = document.querySelector('.filemon-subtitle');
+
+      // Nombre legible para humanos en pantalla
+      let displayScreen = ctx.screen;
+      if (ctx.is_cfdadmin) {
+        if (ctx.screen === 'consultacfdemitidos.php') displayScreen = 'CFDIs Emitidos';
+        else if (ctx.screen === 'consultacfd.php') displayScreen = 'Consulta CFDIs';
+        else if (ctx.screen === 'nvocfd.php' || ctx.screen === 'nvocfd40.php') displayScreen = 'Nueva Factura 4.0';
+        else if (ctx.screen === 'nvopagoacfd.php') displayScreen = 'Complementos REP 2.0';
+        else if (ctx.screen === 'consultacfdrecibidos.php' || ctx.screen === 'ingestacompras.php') displayScreen = 'Compras & EFOS';
+        else if (ctx.screen === 'storefront_master.php') displayScreen = 'Store Director';
+        else displayScreen = ctx.screen;
+      } else {
+        if (ctx.industry === 'real_estate') displayScreen = `Bienes Raíces (${ctx.brand_name || 'BRACSA'})`;
+        else if (ctx.industry === 'industrial') displayScreen = `Industrial (${ctx.brand_name || 'Gersol'})`;
+        else if (ctx.industry === 'perfumery') displayScreen = `Alta Perfumería (${ctx.brand_name || 'Mistiq'})`;
+        else displayScreen = ctx.brand_name || 'Showroom';
+      }
 
       if (screenTag) {
-        screenTag.textContent = ctx.screen;
+        screenTag.textContent = displayScreen;
       }
+
+      if (subtitleEl) {
+        let subText = 'Concierge Fiscal & Espacial';
+        if (ctx.is_cfdadmin) {
+          subText = 'Concierge Fiscal SAT';
+        } else if (ctx.industry === 'real_estate') {
+          subText = 'Concierge Inmobiliario VIP';
+        } else if (ctx.industry === 'industrial') {
+          subText = 'Concierge Técnico Industrial';
+        } else if (ctx.industry === 'perfumery') {
+          subText = 'Concierge Sensorial';
+        } else {
+          subText = 'Concierge de Tienda';
+        }
+        subtitleEl.innerHTML = `${subText} • <span class="filemon-lat-badge">0.01 ms</span>`;
+      }
+
       if (chapterTag) {
         if (ctx.chapter) {
           chapterTag.textContent = ctx.chapter.toUpperCase().replace('_', ' ');
@@ -459,6 +539,70 @@
             target.classList.add('filemon-highlight-pulse');
             setTimeout(() => target.classList.remove('filemon-highlight-pulse'), 2000);
             this.showToast(`Enfocando ${val}`);
+          }
+          break;
+
+        case 'open_agenda':
+          const agendaBtn = document.querySelector('#qx_agenda_btn, .qx-agenda-nav-btn, [data-action="open_agenda"]');
+          if (agendaBtn) {
+            agendaBtn.click();
+            this.showToast('Abriendo Agenda VIP');
+          } else if (window.quantixStore && typeof window.quantixStore.openAgendaModal === 'function') {
+            window.quantixStore.openAgendaModal();
+            this.showToast('Abriendo Agenda VIP');
+          } else {
+            const modal = document.getElementById('qx_agenda_modal');
+            const backdrop = document.getElementById('qx_agenda_backdrop');
+            if (modal) modal.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+            this.showToast('Abriendo Agenda VIP');
+          }
+          this.closeCockpit();
+          break;
+
+        case 'open_whatsapp':
+          const waBtn = document.querySelector('#qx_btn_vip_whatsapp, #qx_whatsapp_concierge, .qx-whatsapp-btn');
+          if (waBtn) {
+            waBtn.click();
+          } else if (window.QX_TENANT && window.QX_TENANT.whatsappPhone) {
+            window.open(`https://wa.me/${window.QX_TENANT.whatsappPhone}?text=${encodeURIComponent('Hola, me gustaría agendar una cita o consultar información.')}`, '_blank');
+          } else {
+            this.showToast('Enlazando con Asesor...');
+          }
+          break;
+
+        case 'open_fiscal_lounge':
+          const fisBtn = document.querySelector('#qx_btn_fiscal_lounge, #qx_btn_fiscal_nav, [data-action="open_fiscal"]');
+          if (fisBtn) {
+            fisBtn.click();
+          } else {
+            const drawer = document.querySelector('#qx_fiscal_lounge_drawer, #qx_fiscal_drawer');
+            if (drawer) drawer.classList.add('active');
+          }
+          this.showToast('Lounge Fiscal SAT abierto');
+          this.closeCockpit();
+          break;
+
+        case 'open_drawer':
+          const drw = document.querySelector(val);
+          if (drw) {
+            drw.classList.add('active');
+            this.showToast(`Abriendo ${val}`);
+          }
+          this.closeCockpit();
+          break;
+
+        case 'set_archetype':
+          if (window.quantixStore && typeof window.quantixStore.setArchetype === 'function') {
+            window.quantixStore.setArchetype(val);
+            this.showToast(`Arquetipo: ${val}`);
+          }
+          break;
+
+        case 'set_theme':
+          if (window.quantixStore && typeof window.quantixStore.setAtmosphere === 'function') {
+            window.quantixStore.setAtmosphere(val);
+            this.showToast(`Atmósfera: ${val}`);
           }
           break;
 

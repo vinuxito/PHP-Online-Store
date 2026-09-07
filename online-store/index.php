@@ -2784,6 +2784,25 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     </div>
     <button type="button" class="qx-social-proof-close" id="qx_social_proof_close" aria-label="Cerrar">&times;</button>
   </aside>
+  <script>
+    window.QX_TENANT = <?php 
+      $textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
+      $resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
+      echo json_encode([
+        'emisorId' => (string)$tenant->emisorId,
+        'brandName' => (string)$tenant->brandName,
+        'slug' => (string)$tenant->slug,
+        'description' => (string)$tenant->description,
+        'headline' => (string)$tenant->headline,
+        'isPerfumery' => $tenant->isPerfumery(),
+        'archetype' => (string)($tenant->archetype ?: 'maison'),
+        'industry' => $resolvedIndustry,
+        'showWhatsapp' => (bool)$tenant->showWhatsapp,
+        'whatsappPhone' => (string)$tenant->whatsappPhone,
+        'isStorefront' => true
+      ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); 
+    ?>;
+  </script>
   <script src="js/filemon_cockpit.js?v=<?php echo filemtime(__DIR__ . '/js/filemon_cockpit.js'); ?>"></script>
 </body>
 </html>

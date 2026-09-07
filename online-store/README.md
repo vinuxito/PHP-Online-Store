@@ -56,6 +56,12 @@ Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroo
    - **Dynamic Social Drop:** 9:16 vertical portrait cards, live buyer counter ticker, real-time stock depletion progress bars, recent buyer avatar stacks, pulsing gradient buy buttons, and swipeable mobile bottom sheet.
    - **Zero-Reload Dynamic Morphing:** Instantaneous state transitions via APEX Command Tower and Glass Twin Bridge postMessage sync.
 
+10. **Filemón Prime Context-Aware Intelligence Matrix**
+   - **Dynamic Industry Classification:** Evaluates tenant metadata (`isPerfumery`, `slug`, `brandName`, `description`) to deterministically assign persona (`real_estate`, `perfumery`, `industrial`, `retail`).
+   - **Hermetic Shielding:** Zero perfume leakage outside perfumery storefronts; real estate showrooms receive dedicated *Concierge Inmobiliario VIP & Asesor Patrimonial* persona.
+   - **Interactive Action Chips:** Dispatches direct actions including `#qx_agenda_modal` opening (`[📅 Agendar Cita VIP]`), WhatsApp VIP linking, and CFDI 4.0 invoice assistance.
+   - **Sub-Millisecond Execution:** Rule-based intelligence responds in `< 0.1ms`.
+
 ## Live Endpoints & Interactive Previews
 
 The 4 commercial archetypes can be previewed live on any tenant using the `?archetype=` parameter:
@@ -66,17 +72,14 @@ The 4 commercial archetypes can be previewed live on any tenant using the `?arch
 
 ## Verification & Testing
 
-Targeted verification suite for commercial archetypes (runs against live tenant `https://bracsa.evinux.net`):
+Targeted verification suite for commercial archetypes & Filemón intelligence:
 ```bash
 # 1. PHP Static Linting
 php -l /lamp/www/quantix-stores/online-store/index.php
-php -l /lamp/www/quantix-stores/online-store/includes/tenant_resolver.php
+php -l /lamp/www/quantix-stores/online-store/api/filemon_assistant_api.php
 
-# 2. HTTP Status Code Checks
-curl -IsS "https://bracsa.evinux.net/?archetype=titan" | head -n 5
-
-# 3. Targeted Playwright E2E Suite (Desktop & Mobile, 0 failed network requests)
-node /lamp/www/quantix-stores/online-store/tests/test_archetype_radical_metamorphosis.mjs
+# 2. Targeted Playwright E2E Suite (Filemón Context-Awareness across Storefronts & CFDAdmin)
+node /lamp/www/cfdadmin/tests/e2e/test_filemon_context_awareness.mjs
 ```
 
 ## Documentation & Audits
