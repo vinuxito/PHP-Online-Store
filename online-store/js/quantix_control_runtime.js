@@ -98,6 +98,15 @@
       clearInterval(state.timer); state.timer=setInterval(function(){renderHero(false);},1000);
     },
     handle:function(type,payload) {
+      if (type==='SYNC_TITLE_MOTION_PREVIEW') {
+        // The outer listener validates the Director origin, source and preview mode.
+        // Rehearsal is local to this embedded document; never saved or applied publicly.
+        if (root.parent !== root) {
+          if (payload && payload.enabled === true) document.body.setAttribute('data-title-motion-preview','true');
+          else document.body.removeAttribute('data-title-motion-preview');
+        }
+        return true;
+      }
       if (type==='SYNC_HERO_CURATION') {
         state.hero=Object.assign({},state.hero,payload); state.sceneId=null; state.solar=null; renderHero(true);
         if (Array.isArray(payload.featured_products) && root.QuantixStoreDesigns) root.QuantixStoreDesigns.setFeatured(payload.featured_products,root.quantixStore);

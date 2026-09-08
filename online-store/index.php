@@ -2755,6 +2755,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         'description' => (string)$tenant->description,
         'headline' => (string)$tenant->headline,
         'isPerfumery' => $tenant->isPerfumery(),
+        'featureMatrix' => $featMatrix,
         'archetype' => (string)($tenant->archetype ?: 'maison'),
         'industry' => $resolvedIndustry,
         'showWhatsapp' => (bool)$tenant->showWhatsapp,

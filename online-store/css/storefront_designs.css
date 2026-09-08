@@ -404,3 +404,8 @@ body[data-design] .qx-studio-shelf-bar { background:var(--qd-paper); border-colo
 body[data-design] .qx-shelf-price-val { color:var(--qd-ink); font-size:14px; }
 body[data-design] .qx-tool-btn:disabled, body[data-design] .qx-ar-pill-trigger:disabled { cursor:default; opacity:.42; filter:none; box-shadow:none; }
 @media(prefers-reduced-motion:reduce) { body[data-design] .qx-hero-title.qx-shimmer-active:is(.qx-shader-pure_monochrome,.qx-shader-obsidian_neon) { animation:none !important; } }
+
+/* Explicit Director rehearsal only; public visitors retain reduced-motion behavior. */
+body[data-design][data-title-motion-preview="true"] .qx-hero-title.qx-shimmer-active,
+body[data-design][data-title-motion-preview="true"] .qx-hero-title.qx-shimmer-active span {animation:qdTitleShimmer 6s linear infinite !important;}
+body[data-design][data-title-motion-preview="true"] .qx-hero-title.qx-shimmer-active:is(.qx-shader-pure_monochrome,.qx-shader-obsidian_neon) {animation:qdTextShimmer 6s ease-in-out infinite !important;}

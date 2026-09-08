@@ -1,5 +1,11 @@
 # Quantix Storefront Luxury Showroom
 
+## Live correction — title motion and tasting requests, 2026-09-08
+
+Tasting initialization now binds controls without requesting slots. Only an enabled perfumery can load slots, book, open a session or poll; slots load when the room is opened. The public bootstrap includes the existing feature matrix, and server access checks are unchanged. Fresh BRACSA public and Director loads made zero tasting requests and showed no captured storefront HTTP errors.
+
+The Director now explains reduced motion and offers **Portada → Probar animación / Terminar ensayo**. A trusted preview message temporarily animates the title without persisting settings; public visitors retain their motion preferences. Actual changing title positions were observed in both Director renderers. Four focused CFDAdmin checks passed (480 assertions/checks); no full suite or real booking/transaction ran. Source hashes and live evidence: adjacent `cfdadmin/docs/reports/2026-09-08-quantix-motion-tasting.html` and its `2026-09-08-quantix-motion-tasting/evidence.json` companion.
+
 ## Control integrity update — 2026-09-08
 
 This release reconnects Director choices to all four storefront compositions: title shaders, typography, spacing and shimmer; scheduled campaigns; exact featured selections; contact changes; model controls; and explicit payment capabilities. The permanent Director book and preview remain intact.

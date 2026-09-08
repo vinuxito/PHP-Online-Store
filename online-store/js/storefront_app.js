@@ -910,11 +910,18 @@
     }
 
     async init() {
-      await this.loadSlots();
+      // Slots are requested only when an available tasting room is opened.
       this.bindEvents();
     }
 
+    isAvailable() {
+      const tenant = this.storefront.tenant || window.QX_TENANT || {};
+      const flag = tenant.featureMatrix?.tasting_room?.enabled;
+      return Boolean(tenant.emisorId && tenant.isPerfumery === true && (flag === true || flag === 1 || flag === '1'));
+    }
+
     async loadSlots(dateStr) {
+      if (!this.isAvailable()) return;
       try {
         const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const date = dateStr || new Date().toISOString().split('T')[0];
@@ -1015,6 +1022,7 @@
     }
 
     async submitBooking() {
+      if (!this.isAvailable()) return;
       const name = $('#qx_tform_name').val().trim();
       const phone = $('#qx_tform_phone').val().trim();
       const email = $('#qx_tform_email').val().trim();
@@ -1060,6 +1068,7 @@
     }
 
     async openTastingModal(sessionCode) {
+      if (!this.isAvailable()) return;
       if (sessionCode) {
         this.sessionCode = sessionCode;
         this.switchView('live');
@@ -1094,6 +1103,7 @@
     }
 
     async startLiveSession(code) {
+      if (!this.isAvailable()) return;
       const targetCode = code || this.sessionCode;
       try {
         const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
@@ -1206,8 +1216,10 @@
 
     startPolling(sessionId) {
       this.stopPolling();
+      if (!this.isAvailable()) return;
       const self = this;
       this.pollTimer = setInterval(async () => {
+        if (!self.isAvailable()) { self.stopPolling(); return; }
         if (!self.currentView || self.currentView !== 'live') return;
         try {
           const tenantId = self.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
