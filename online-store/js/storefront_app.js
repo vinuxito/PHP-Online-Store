@@ -2600,6 +2600,8 @@ ${shareUrl}`;
 
       // Cross-tab auto-sync on focus (for side-by-side Director workflows)
       window.addEventListener('focus', () => {
+        // A Director draft must not be replaced by the persisted style on focus.
+        if (new URLSearchParams(window.location.search).get('preview_mode') === '1') return;
         const emisorParam = new URLSearchParams(window.location.search).get('emisor') || '';
         const url = 'api/catalog.php' + (emisorParam ? `?emisor=${encodeURIComponent(emisorParam)}` : '');
         $.getJSON(url, (resp) => {
@@ -2787,6 +2789,7 @@ ${shareUrl}`;
         self.openSommelier();
       });
       $('#qx_dock_cart').on('click', function() {
+        if (self.isRealEstateBusiness()) return;
         self.playHaptic('medium');
         self.openCart();
       });
@@ -2931,6 +2934,7 @@ ${shareUrl}`;
       });
 
       $('#qx_pmodal_btn_add').on('click', function() {
+        if (self.isRealEstateBusiness() && self.activeProductModal) { self.requestPropertyContact(self.activeProductModal, true); return; }
         self.playHaptic('success');
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
@@ -2948,6 +2952,7 @@ ${shareUrl}`;
       });
 
       $('#qx_pmodal_btn_buy, #qx_pmodal_bar_buy').on('click', function() {
+        if (self.isRealEstateBusiness() && self.activeProductModal) { self.requestPropertyContact(self.activeProductModal, true); return; }
         self.playHaptic('success');
         if (self.activeProductModal) {
           const prod = self.activeProductModal;
@@ -3097,7 +3102,12 @@ ${shareUrl}`;
       });
 
       // Concierge Quiz Button & Modal Handlers
-      $('#qx_concierge_btn').on('click', () => self.openQuiz());
+      $('#qx_design_mobile_search').on('click', () => self.openSpotlight());
+      $('#qx_concierge_btn').on('click', () => {
+        if (self.tenant && self.tenant.isPerfumery) { self.openQuiz(); return; }
+        const contact = document.getElementById('qx_design_contact');
+        if (contact && !contact.hidden) contact.click();
+      });
       $('#qx_quiz_close, #qx_quiz_backdrop').on('click', () => self.closeQuiz());
       $('#qx_quiz_restart').on('click', () => self.openQuiz());
       $('.qx-quiz-opt').on('click', function() {
@@ -3129,7 +3139,9 @@ ${shareUrl}`;
       $.getJSON(apiUrl)
         .done(function(resp) {
           if (resp.Status === 'OK') {
-            self.tenant = resp.Tenant;
+            const serverTenant = window.QX_TENANT || {};
+            const sameTenant = String(serverTenant.emisorId || '').toLowerCase() === String((resp.Tenant && resp.Tenant.emisorId) || '').toLowerCase();
+            self.tenant = Object.assign({}, sameTenant ? serverTenant : {}, resp.Tenant);
             self.products = resp.Products || [];
             if (self.tenant) {
               const urlArch = urlParams.get('archetype');
@@ -3153,6 +3165,7 @@ ${shareUrl}`;
             self.renderCategories(resp.Categories || []);
             self.applyFilters();
             self.initStories();
+            if (window.QuantixStoreDesigns) { window.QuantixStoreDesigns.refresh(self, resp.Featured || []); window.QuantixStoreDesigns.ready(); }
           } else {
             $('#qx_product_grid').html(`<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error: ${resp.Error || 'No se pudo cargar el catálogo'}</div>`);
           }
@@ -3178,24 +3191,15 @@ ${shareUrl}`;
     }
 
     setArchetype(archetype = 'maison', modules = null) {
+      archetype = window.QuantixStoreDesigns ? window.QuantixStoreDesigns.normalize(archetype) : (['maison', 'titan', 'nordic', 'social'].includes(archetype) ? archetype : 'maison');
       this.currentArchetype = archetype;
       $('body').attr('data-archetype', archetype);
       $('#qx_product_modal').attr('data-modal-archetype', archetype);
       $('#qx_product_modal_backdrop').attr('data-modal-archetype', archetype);
 
-      if (modules) {
-        this.updateModules(modules);
-      } else {
-        if (archetype === 'titan') {
-          this.updateModules({ flash_deals: true, hero_vitrina: true, horizontal_rails: true, cfdi_trust: true });
-        } else if (archetype === 'nordic') {
-          this.updateModules({ flash_deals: false, hero_vitrina: false, horizontal_rails: false, cfdi_trust: false });
-        } else if (archetype === 'social') {
-          this.updateModules({ flash_deals: true, hero_vitrina: true, horizontal_rails: true, cfdi_trust: true });
-        } else if (archetype === 'maison') {
-          this.updateModules({ flash_deals: false, hero_vitrina: true, horizontal_rails: false, cfdi_trust: true });
-        }
-      }
+      // Style changes never change business capabilities or merchant module choices.
+      if (modules) this.updateModules(modules);
+      if (window.QuantixStoreDesigns) window.QuantixStoreDesigns.refresh(this);
       this.renderGrid(true);
     }
 
@@ -3227,61 +3231,13 @@ ${shareUrl}`;
           $('#qx_hero_carousel_wrapper').hide();
         }
       }
+      if (window.QuantixStoreDesigns) window.QuantixStoreDesigns.modules(this);
     }
 
     initFlashDeals() {
-      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
-        $('body').attr('data-industry') === 'real_estate' ||
-        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
-
-      if (isRealEstate || this.currentArchetype === 'maison' || (this.tenant && this.tenant.modules && this.tenant.modules.flash_deals === false)) {
-        $('#qx_flash_deals_banner').hide();
-        return;
-      }
-
-      const self = this;
-      if (this.flashTimerInterval) {
-        clearInterval(this.flashTimerInterval);
-      }
-
-      let targetTime = Date.now() + (4 * 3600 + 32 * 60 + 15) * 1000;
-
-      function updateClock() {
-        const remaining = Math.max(0, targetTime - Date.now());
-        const totalSecs = Math.floor(remaining / 1000);
-        const hours = Math.floor(totalSecs / 3600);
-        const mins = Math.floor((totalSecs % 3600) / 60);
-        const secs = totalSecs % 60;
-
-        $('#qx_deal_hours').text(String(hours).padStart(2, '0'));
-        $('#qx_deal_mins').text(String(mins).padStart(2, '0'));
-        $('#qx_deal_secs').text(String(secs).padStart(2, '0'));
-        $('#qx_titan_countdown').text(`${hours > 0 ? hours + 'h ' : ''}${String(mins).padStart(2, '0')} min ${String(secs).padStart(2, '0')} seg`);
-
-        if (remaining <= 0) {
-          targetTime = Date.now() + 6 * 3600 * 1000;
-        }
-      }
-
-      updateClock();
-      this.flashTimerInterval = setInterval(updateClock, 1000);
-
-      $('#qx_btn_copy_coupon').off('click').on('click', function() {
-        const code = $('#qx_flash_coupon_code').text().trim() || 'FLASH20';
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(code).then(() => {
-            self.showToast(`🎟️ Cupón "${code}" copiado al portapapeles`);
-            $(this).find('span').text('¡Copiado!');
-            setTimeout(() => {
-              $('#qx_btn_copy_coupon span').text('Copiar Cupón');
-            }, 2000);
-          }).catch(() => {
-            self.showToast(`🎟️ Cupón: ${code}`);
-          });
-        } else {
-          self.showToast(`🎟️ Cupón: ${code}`);
-        }
-      });
+      // Configured promotional placement has no invented deadline or coupon.
+      if (this.flashTimerInterval) clearInterval(this.flashTimerInterval);
+      $('#qx_flash_deals_banner').toggle(Boolean(this.tenant && this.tenant.modules && this.tenant.modules.flash_deals));
     }
 
     renderDealsRail(products) {
@@ -3299,22 +3255,19 @@ ${shareUrl}`;
       featured.forEach((p, idx) => {
         const photos = p.photos && p.photos.length ? p.photos : [{ thumb: p.cover, url: p.cover }];
         const imgUrl = photos[0].url || photos[0].thumb || p.cover;
-        const discountPercent = 10 + (idx % 3) * 5;
-        const oldPrice = p.priceWithTax ? (p.priceWithTax * (1 + discountPercent / 100)).toFixed(2) : '0.00';
+
 
         const card = $(`
           <div class="qx-rail-card" data-id="${p.id}">
-            <span class="qx-rail-badge">-${discountPercent}% OFF</span>
             <div class="qx-rail-img-wrap">
               <img class="qx-rail-img" src="${self.esc(imgUrl)}" alt="${self.esc(p.name)}" loading="lazy">
             </div>
             <div class="qx-rail-title" title="${self.esc(p.name)}">${self.esc(p.name)}</div>
             <div class="qx-rail-price-row">
               <span class="qx-rail-price">$ ${self.formatMoney(p.priceWithTax)}</span>
-              <span class="qx-rail-old-price">$ ${self.formatMoney(oldPrice)}</span>
             </div>
             <button type="button" class="qx-rail-add-btn">
-              ⚡ Agregar
+              ${self.isRealEstateBusiness() ? 'Ver propiedad' : 'Agregar al carrito'}
             </button>
           </div>
         `);
@@ -3325,8 +3278,9 @@ ${shareUrl}`;
 
         card.find('.qx-rail-add-btn').on('click', (e) => {
           e.stopPropagation();
+          if (self.isRealEstateBusiness()) { self.openProductModal(p); return; }
           self.addToCart(p, 1);
-          self.showToast(`⚡ ${p.name} agregado al carrito`);
+          self.showToast(`${p.name} agregado al carrito`);
         });
 
         track.append(card);
@@ -3341,48 +3295,9 @@ ${shareUrl}`;
     }
 
     initSocialProofTicker() {
-      const self = this;
-      const ticker = $('#qx_social_proof_ticker');
-      if (!ticker.length) return;
-
-      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
-        $('body').attr('data-industry') === 'real_estate' ||
-        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
-
-      const cities = ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Querétaro', 'Mérida', 'Cancún'];
-      const actions = isRealEstate 
-        ? ['solicitó el dossier de', 'agendó una visita para', 'consultó disponibilidad de']
-        : ['acaba de ordenar', 'adquirió', 'ordenó'];
-
-      function showNextNotification() {
-        if (!self.products || !self.products.length) return;
-        const prod = self.products[Math.floor(Math.random() * self.products.length)];
-        const city = cities[Math.floor(Math.random() * cities.length)];
-        const act = actions[Math.floor(Math.random() * actions.length)];
-        const mins = Math.floor(Math.random() * 8) + 1;
-
-        $('#qx_social_proof_text').text(`Alguien en ${city} ${act} ${prod.name}`);
-        $('#qx_social_proof_meta').text(isRealEstate 
-          ? `Hace ${mins} minutos • Consulta Confidencial Verificada`
-          : `Hace ${mins} minutos • Compra Verificada SAT CFDI 4.0`);
-
-        ticker.addClass('active');
-
-        setTimeout(() => {
-          ticker.removeClass('active');
-        }, 4500);
-      }
-
-      $('#qx_social_proof_close').off('click').on('click', function(e) {
-        e.stopPropagation();
-        ticker.removeClass('active');
-      });
-
-      setTimeout(() => {
-        showNextNotification();
-        if (self.socialTickerInterval) clearInterval(self.socialTickerInterval);
-        self.socialTickerInterval = setInterval(showNextNotification, 18000);
-      }, 6000);
+      // There is no verified activity data source. Never fabricate customer events.
+      if (this.socialTickerInterval) clearInterval(this.socialTickerInterval);
+      $('#qx_social_proof_ticker').removeClass('active').hide();
     }
 
     renderCategories(categories) {
@@ -3474,7 +3389,7 @@ ${shareUrl}`;
         const sentinel = $(`
           <div id="qx_infinite_sentinel" style="grid-column:1/-1; text-align:center; padding:32px 16px; color:var(--qx-text-muted); font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px;">
             <span style="display:inline-block; width:16px; height:16px; border:2px solid rgba(56,189,248,0.3); border-top-color:var(--qx-accent); border-radius:50%; animation:qx-spin 0.8s linear infinite;"></span>
-            <span>✦ Desliza para cargar más fragancias (${this.renderedCount} de ${this.filteredProducts.length})...</span>
+            <span>✦ Desliza para ver más artículos (${this.renderedCount} de ${this.filteredProducts.length})...</span>
           </div>
         `);
         grid.append(sentinel);
@@ -3516,293 +3431,74 @@ ${shareUrl}`;
       }
     }
 
+    isRealEstateBusiness() {
+      return (this.tenant && this.tenant.industry === 'real_estate') || document.body.getAttribute('data-industry') === 'real_estate';
+    }
+
+    getStoreContact(message = '') {
+      const tenant = this.tenant || {};
+      const whatsapp = tenant.showWhatsapp && String(tenant.whatsappPhone || '').replace(/[^0-9]/g, '');
+      if (whatsapp) return { url: 'https://wa.me/' + whatsapp + (message ? '?text=' + encodeURIComponent(message) : ''), label: 'Contactar por WhatsApp', external: true };
+      const phone = String(tenant.phone || '').replace(/[^0-9+]/g, '');
+      if (phone) return { url: 'tel:' + phone, label: 'Llamar a la tienda', external: false };
+      const email = String(tenant.email || '').trim();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { url: 'mailto:' + encodeURIComponent(email) + '?body=' + encodeURIComponent(message), label: 'Contactar por correo', external: false };
+      return null;
+    }
+
+    requestPropertyContact(product, tour = false) {
+      if (tour && this.tenant && this.tenant.featureMatrix && this.tenant.featureMatrix.royal_agenda && this.tenant.featureMatrix.royal_agenda.enabled) {
+        this.closeProductModal(false);
+        this.openAgendaModal({ title: product.name, price: product.priceWithTax, sku: product.sku || product.code });
+        return;
+      }
+      const message = (tour ? 'Hola, me interesa agendar una visita para: ' : 'Hola, solicito información sobre: ') + product.name;
+      const contact = this.getStoreContact(message);
+      if (!contact) { this.showToast('La tienda todavía no tiene un contacto configurado.', 'warning'); return; }
+      if (contact.external) window.open(contact.url, '_blank', 'noopener,noreferrer');
+      else window.location.href = contact.url;
+    }
+
     createCardElement(p, globalIdx = 0) {
       const self = this;
-      const currentArchetype = $('body').attr('data-archetype') || (self.tenant && self.tenant.archetype) || 'maison';
-      const card = $('<div class="qx-card"></div>');
-      card.attr('data-product-id', p.id);
-
-      const photos = p.photos && p.photos.length ? p.photos : [{ thumb: p.cover, url: p.cover }];
-      const initialPhoto = photos[0].url || photos[0].thumb || p.cover;
-
-      // Media Stage
-      const cardImg = $(`<img class="qx-card-img" src="${self.esc(initialPhoto)}" alt="${self.esc(p.name)}">`);
-      self.autoFitImage(cardImg[0]);
-      cardImg.on('load', function() { self.autoFitImage(this); });
-
-      // Real-Time Floating Flacon Isolation for Catalog Card
-      self.flaconEngine.isolateSilhouette(initialPhoto).then(transUrl => {
-        cardImg.attr('src', transUrl);
-      });
-
-      const media = $('<div class="qx-card-media" title="Haz clic para ver detalles y fotos"></div>');
-      media.prepend(cardImg);
-
-      // Archetype-Specific Badges & Inlays
-      const isRealEstate = (self.tenant && (self.tenant.industry === 'real_estate' || self.tenant.slug === 'bracsa')) ||
-        $('body').attr('data-industry') === 'real_estate' ||
-        (self.tenant && self.tenant.brandName && self.tenant.brandName.toLowerCase().includes('bracsa'));
-
-      if (currentArchetype === 'maison') {
-        if (globalIdx % 4 === 0) {
-          card.addClass('qx-card-editorial-featured');
+      const isProperty = self.isRealEstateBusiness();
+      const key = self.currentArchetype || document.body.getAttribute('data-archetype') || 'maison';
+      const photos = p.photos && p.photos.length ? p.photos : (p.cover ? [{ url: p.cover }] : []);
+      const photo = photos[0] && (photos[0].url || photos[0].thumb);
+      const amount = Number(p.priceWithTax);
+      const price = Number.isFinite(amount) && amount > 0 ? '$ ' + self.formatMoney(amount) : 'Consultar precio';
+      const category = p.category || (isProperty ? 'Propiedad' : 'Catálogo');
+      const card = $('<article class="qx-card qx-design-card"></article>').attr('data-product-id', p.id);
+      if (key === 'maison' && globalIdx % 5 === 0) card.addClass('qx-card-editorial-featured');
+      card.append($('<span class="qx-design-card-index" aria-hidden="true"></span>').text(String(globalIdx + 1).padStart(2, '0')));
+      const media = $('<button type="button" class="qx-card-media qx-design-card-media"></button>').attr('aria-label', (isProperty ? 'Ver propiedad: ' : 'Ver detalle: ') + p.name);
+      if (photo) {
+        const img = $('<img class="qx-card-img" loading="lazy" decoding="async">').attr({ src: photo, alt: p.name || '' });
+        img.on('error', function() { $(this).hide(); media.addClass('qx-image-unavailable').append('<span>Imagen no disponible</span>'); });
+        media.append(img);
+        if (p.autoIsolate && self.tenant && self.tenant.isPerfumery && self.flaconEngine) {
+          self.flaconEngine.isolateSilhouette(photo).then(function(url) { if (url) img.attr('src', url); }).catch(function() {});
         }
-        const sealText = isRealEstate ? '✦ RESIDENCIA EXCLUSIVA' : '✦ ÉDITION MAISON';
-        const zoomText = isRealEstate ? 'Ver Galería' : 'Ver Ficha';
-        media.append(`<div class="qx-maison-seal"><span>${sealText}</span></div>`);
-        media.append(`<div class="qx-card-zoom-badge">${zoomText}</div>`);
-        if (!isRealEstate && self.tenant?.quantixStorePerfums === 'SI' && p.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
-          media.append('<div class="qx-shield-badge" title="Garantía Blind-Buy Shield: 100% bonificable">🛡️ Shield</div>');
-        }
-      } else if (currentArchetype === 'titan') {
-        media.append(`
-          <div class="qx-titan-header" style="position:absolute; top:8px; left:8px; right:8px; z-index:3;">
-            <span class="qx-titan-badge-full">⚡ FULL 24H</span>
-            <span class="qx-titan-discount-pill">-20% HOY</span>
-          </div>
-        `);
-      } else if (currentArchetype === 'nordic') {
-        // Pure minimalist - zero noisy badges
-      } else if (currentArchetype === 'social') {
-        media.append(`
-          <div class="qx-social-top-badges">
-            <span class="qx-social-live-pulse">🔴 EN VIVO</span>
-            <span class="qx-social-buyers-pill">🔥 18 vendidos hoy</span>
-          </div>
-        `);
+      } else { media.addClass('qx-image-unavailable').append('<span>Imagen no disponible</span>'); }
+      if (photos.length > 1) media.append($('<span class="qx-design-photo-count"></span>').text(photos.length + ' fotos'));
+      media.on('click', function() { self.openProductModal(p); });
+      const body = $('<div class="qx-card-body"></div>');
+      const meta = $('<div class="qx-card-meta"></div>').append($('<span class="qx-card-category"></span>').text(category));
+      if (p.sku || p.code) meta.append($('<span class="qx-card-sku"></span>').text('Ref. ' + (p.sku || p.code)));
+      body.append(meta);
+      const title = $('<h3 class="qx-design-card-heading"></h3>');
+      title.append($('<button type="button" class="qx-card-title"></button>').text(p.name || (isProperty ? 'Propiedad' : 'Artículo')).on('click', function() { self.openProductModal(p); }));
+      body.append(title);
+      const footer = $('<div class="qx-card-footer"></div>');
+      footer.append($('<div class="qx-card-price-block"></div>').append($('<span class="qx-card-price"></span>').text(price)).append($('<span class="qx-card-tax"></span>').text(amount > 0 ? 'MXN' : 'Información con la tienda')));
+      const actions = $('<div class="qx-card-actions"></div>');
+      if (self.comparisonStudio) {
+        const selected = self.comparisonStudio.isSelected(p.id);
+        actions.append($('<button type="button" class="qx-btn-compare-toggle qx-design-compare"></button>').attr({ 'data-id': p.id, 'aria-label': 'Comparar ' + p.name, 'aria-pressed': selected ? 'true' : 'false', title: 'Comparar' }).toggleClass('active', selected).text('⇄').on('click', function() { self.comparisonStudio.toggleProduct(p); $(this).attr('aria-pressed', self.comparisonStudio.isSelected(p.id) ? 'true' : 'false'); }));
       }
-
-      // Hover-Scrub Filmstrip Dots
-      if (photos.length > 1 && currentArchetype !== 'nordic') {
-        const scrubBar = $('<div class="qx-card-scrub-bar"></div>');
-        photos.forEach((photo, idx) => {
-          const dot = $(`<div class="qx-scrub-dot ${idx === 0 ? 'active' : ''}" data-idx="${idx}"></div>`);
-          dot.on('mouseenter click', function(e) {
-            e.stopPropagation();
-            scrubBar.find('.qx-scrub-dot').removeClass('active');
-            $(this).addClass('active');
-            const imgEl = media.find('.qx-card-img');
-            imgEl.attr('src', photo.url || photo.thumb);
-            self.autoFitImage(imgEl[0]);
-          });
-          scrubBar.append(dot);
-        });
-        media.append(scrubBar);
-      }
-
-      // Click on image opens Product Detail Modal
-      media.on('click', () => {
-        self.openProductModal(p);
-      });
-
-      // Construct Archetype-Specific Body
-      let body;
-      if (currentArchetype === 'titan') {
-        const rawPrice = parseFloat(p.priceWithTax) || parseFloat(p.price) || 0;
-        const listPrice = Math.round(rawPrice * 1.25);
-        const discountDiff = listPrice - rawPrice;
-
-        body = $(`
-          <div class="qx-card-body">
-            <div class="qx-card-meta">
-              <span class="qx-card-category">${self.esc(p.category || 'General')}</span>
-              ${p.sku ? `<span class="qx-card-sku">SKU: ${self.esc(p.sku)}</span>` : ''}
-            </div>
-            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
-            <div class="qx-titan-reviews">
-              <span class="qx-stars">★★★★★</span>
-              <span class="qx-rating-num">4.9</span>
-              <span class="qx-review-count">(128)</span>
-            </div>
-            <div class="qx-titan-pricing">
-              <span class="qx-titan-original-price">$ ${self.formatMoney(listPrice)}</span>
-              <span class="qx-card-price">$ ${self.formatMoney(rawPrice)}</span>
-              <span class="qx-titan-save-badge">Ahorras $ ${self.formatMoney(discountDiff)} MXN</span>
-            </div>
-            <div class="qx-titan-direct-actions">
-              <div class="qx-titan-qty-stepper">
-                <button type="button" class="qx-titan-qty-dec" aria-label="Disminuir">-</button>
-                <input type="number" class="qx-titan-qty-input" value="1" min="1" max="99" readonly>
-                <button type="button" class="qx-titan-qty-inc" aria-label="Aumentar">+</button>
-              </div>
-              <button type="button" class="qx-titan-btn-buy">
-                <span>⚡ Comprar</span>
-              </button>
-              <button type="button" class="qx-titan-btn-add" title="Agregar al Carrito">+</button>
-            </div>
-          </div>
-        `);
-
-        // Titan Stepper events
-        const qtyInput = body.find('.qx-titan-qty-input');
-        body.find('.qx-titan-qty-dec').on('click', (e) => {
-          e.stopPropagation();
-          let v = parseInt(qtyInput.val(), 10) || 1;
-          if (v > 1) qtyInput.val(v - 1);
-        });
-        body.find('.qx-titan-qty-inc').on('click', (e) => {
-          e.stopPropagation();
-          let v = parseInt(qtyInput.val(), 10) || 1;
-          if (v < 99) qtyInput.val(v + 1);
-        });
-        body.find('.qx-titan-btn-buy').on('click', (e) => {
-          e.stopPropagation();
-          const q = parseInt(qtyInput.val(), 10) || 1;
-          self.addToCart(p, q, card.find('.qx-card-img'));
-          $('#qx_cart_drawer, #qx_cart_backdrop').addClass('active');
-        });
-        body.find('.qx-titan-btn-add').on('click', (e) => {
-          e.stopPropagation();
-          const q = parseInt(qtyInput.val(), 10) || 1;
-          self.addToCart(p, q, card.find('.qx-card-img'));
-        });
-
-      } else if (currentArchetype === 'nordic') {
-        body = $(`
-          <div class="qx-card-body">
-            <div class="qx-nordic-meta">ref. ${self.esc(p.sku || p.code || '01')} / ${self.esc(p.category || 'artículo')}</div>
-            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
-            <div class="qx-nordic-price-row">
-              <span class="qx-nordic-price">$ ${self.formatMoney(p.priceWithTax)}</span>
-              <span class="qx-nordic-vat">SAT CFDI 4.0</span>
-            </div>
-          </div>
-        `);
-
-        // Invisible Hover Action Overlay for Nordic
-        const hoverOverlay = $(`
-          <div class="qx-nordic-hover-action">
-            <button type="button" class="qx-nordic-btn-action">Especificaciones Técnicas →</button>
-            <button type="button" class="qx-nordic-btn-secondary">+ Agregar a Selección</button>
-          </div>
-        `);
-        hoverOverlay.on('click', (e) => {
-          if (!$(e.target).closest('.qx-nordic-btn-secondary').length) {
-            e.stopPropagation();
-            self.openProductModal(p);
-          }
-        });
-        hoverOverlay.find('.qx-nordic-btn-action').on('click', (e) => {
-          e.stopPropagation();
-          self.openProductModal(p);
-        });
-        hoverOverlay.find('.qx-nordic-btn-secondary').on('click', (e) => {
-          e.stopPropagation();
-          self.addToCart(p, 1, card.find('.qx-card-img'));
-        });
-        card.append(hoverOverlay);
-
-      } else if (currentArchetype === 'social') {
-        // Stock progress calculation
-        const safeSeed = String(p.id || '1').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-        const remaining = 2 + (safeSeed % 5);
-        const progressPercent = Math.min(92, Math.max(20, 100 - (remaining * 8)));
-
-        body = $(`
-          <div class="qx-card-body">
-            <div class="qx-card-meta">
-              <span class="qx-card-category">${self.esc(p.category || 'Drop')}</span>
-              <span class="qx-social-stock-left">¡Solo quedan ${remaining}!</span>
-            </div>
-            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
-            <div class="qx-social-depletion">
-              <div class="qx-social-depletion-track">
-                <div class="qx-social-depletion-fill" style="width: ${progressPercent}%;"></div>
-              </div>
-              <div class="qx-social-depletion-label">
-                <span>⚡ ${progressPercent}% Reclamado</span>
-                <span class="qx-social-stock-left">🔥 Alta demanda</span>
-              </div>
-            </div>
-            <div class="qx-card-price-block">
-              <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)}</span>
-              <span class="qx-card-tax">IVA 16% incluido</span>
-            </div>
-            <div class="qx-social-card-footer">
-              <div class="qx-social-avatar-stack">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=faces" class="qx-avatar" alt="">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop&crop=faces" class="qx-avatar" alt="">
-                <span class="qx-social-count">+34</span>
-              </div>
-              <button type="button" class="qx-social-btn-buy">
-                <span>🔥 ¡LO QUIERO YA!</span>
-              </button>
-            </div>
-          </div>
-        `);
-
-        body.find('.qx-social-btn-buy').on('click', (e) => {
-          e.stopPropagation();
-          self.addToCart(p, 1, card.find('.qx-card-img'));
-        });
-
-      } else {
-        // Maison (Default Luxury Atelier & Architectural Portfolio)
-        const defaultCategory = isRealEstate ? 'Propiedad Exclusiva' : 'Haute Cosecha';
-        const actionLabel = isRealEstate ? 'Explorar Residencia →' : 'Descubrir Obra';
-        const taxLabel = isRealEstate ? 'Facturación SAT CFDI 4.0' : 'IVA 16% incluido';
-
-        body = $(`
-          <div class="qx-card-body">
-            <div class="qx-card-meta">
-              <span class="qx-card-category">${self.esc(p.category || defaultCategory)}</span>
-              ${p.sku ? `<span class="qx-card-sku">REF: ${self.esc(p.sku)}</span>` : ''}
-            </div>
-            <div class="qx-card-title" title="${self.esc(p.name)}" style="cursor:pointer">${self.esc(p.name)}</div>
-            <div class="qx-card-footer">
-              <div class="qx-card-price-block">
-                <span class="qx-card-price">$ ${self.formatMoney(p.priceWithTax)} ${isRealEstate ? '<small style="font-size:11px; font-weight:400; color:var(--qx-text-muted)">MXN</small>' : ''}</span>
-                <span class="qx-card-tax">${taxLabel}</span>
-              </div>
-              <div class="qx-card-actions">
-                <button type="button" class="qx-btn-compare-toggle ${self.comparisonStudio && self.comparisonStudio.isSelected(p.id) ? 'active' : ''}" data-id="${p.id}" title="${isRealEstate ? 'Comparar Residencias' : 'Comparar en Quantum Studio'}">
-                  <span>⚖️</span>
-                </button>
-                <button type="button" class="qx-btn-add-cart ${isRealEstate ? 'qx-btn-explore-residence' : ''}">
-                  <span>✦</span> ${actionLabel}
-                </button>
-              </div>
-            </div>
-          </div>
-        `);
-
-        body.find('.qx-btn-compare-toggle').on('click', (e) => {
-          e.stopPropagation();
-          if (self.comparisonStudio) {
-            self.comparisonStudio.toggleProduct(p);
-          }
-        });
-
-        body.find('.qx-btn-add-cart').on('click', (e) => {
-          e.stopPropagation();
-          self.openProductModal(p);
-        });
-      }
-
-      body.find('.qx-card-title').on('click', () => {
-        self.openProductModal(p);
-      });
-
-      // 3D Parallax Micro-Tilt on Card Hover (Desktop)
-      if (currentArchetype !== 'nordic') {
-        card.on('mousemove', function(e) {
-          if (window.innerWidth <= 768) return;
-          const rect = this.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const cx = rect.width / 2;
-          const cy = rect.height / 2;
-          const rx = ((y - cy) / cy) * -8;
-          const ry = ((x - cx) / cx) * 10;
-          card.css('transform', `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale3d(1.025, 1.025, 1.025)`);
-        });
-
-        card.on('mouseleave', function() {
-          card.css('transform', '');
-        });
-      }
-
-      card.append(media).append(body);
+      actions.append($('<button type="button" class="qx-design-card-action"></button>').text(isProperty ? 'Ver propiedad ↗' : 'Ver detalle ↗').on('click', function() { self.openProductModal(p); }));
+      if (!isProperty && key === 'titan') actions.append($('<button type="button" class="qx-design-add"></button>').attr('aria-label', 'Agregar al carrito: ' + p.name).text('+').on('click', function() { self.addToCart(p, 1, media.find('img')); }));
+      footer.append(actions); body.append(footer); card.append(media, body);
       return card;
     }
 
@@ -3812,6 +3508,7 @@ ${shareUrl}`;
         product = this.products.find(p => p.id == productOrId);
       }
       if (!product) return;
+      if (this.isRealEstateBusiness()) { this.openProductModal(product); return; }
 
       const isDecant = format === 'decant';
       const isSubscription = options.isSubscription || false;
@@ -4304,7 +4001,7 @@ ${shareUrl}`;
 
       // [Iter 2] Ticket-Adaptive & Domain Architecture Logic
       const rawPrice = parseFloat(product.priceWithTax || product.price || 0);
-      const isHighTicket = (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((product.name || '') + ' ' + (product.category || ''));
+      const isHighTicket = self.isRealEstateBusiness();
       const isArchitectural = /inmueble|terreno|edificio|residencia|casa|departamento|propiedad|planta/i.test(product.name + ' ' + (product.category || ''));
 
       if (isArchitectural) {
@@ -4316,41 +4013,11 @@ ${shareUrl}`;
         else $('#qx_tilt_hint').hide();
       }
 
-      if (isHighTicket) {
-        $('.pmodal-stepper, #qx_pmodal_stepper').hide();
-        const waPhone = (self.tenant && self.tenant.supportPhone) ? self.tenant.supportPhone.replace(/[^0-9]/g, '') : '';
-        const waText = encodeURIComponent(`Hola, me interesa agendar un recorrido privado para el inmueble: ${product.name} (Ref: $${self.formatMoney(product.priceWithTax)} MXN)`);
-        const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waText}` : `https://wa.me/?text=${waText}`;
-
-        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy, #qx_pmodal_bar_buy').html('<span>📅 Agendar Recorrido</span>')
-          .attr('title', 'Agendar recorrido privado con un broker VIP')
-          .off('click.highTicket').on('click.highTicket', function(e) {
-            e.preventDefault();
-            self.showToast('✨ Conectando con Broker Exclusivo & Asesoría Notarial...');
-            try {
-              // Security Shield: Prevent reverse tabnabbing via noopener,noreferrer
-            console.info('[QuantixMobile:Observability] High-Ticket Broker Tour Action Triggered', {
-              productId: product.id,
-              name: product.name,
-              price: product.priceWithTax,
-              timestamp: new Date().toISOString()
-            });
-            const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
-              if (!win || win.closed || typeof win.closed === 'undefined') {
-                window.location.href = waUrl;
-              }
-            } catch (err) {
-              window.location.href = waUrl;
-            }
-          });
-      } else {
-        $('.pmodal-stepper, #qx_pmodal_stepper').show();
-        $('#qx_pmodal_btn_add, #qx_btn_pmodal_buy').html('<span>⚡ Comprar Ahora</span>')
-          .off('click.highTicket');
-      }
+      $('.pmodal-stepper, #qx_pmodal_stepper').toggle(!isHighTicket);
+      $('#qx_pmodal_btn_add, #qx_pmodal_btn_buy, #qx_pmodal_bar_buy').off('click.highTicket');
       const isRealEstate = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || isHighTicket);
       if (isRealEstate) {
-        $('#qx_pmodal_stock').text(`🏛️ Certeza Jurídica & Posesión Inmediata`).show();
+        $('#qx_pmodal_stock').text('Información y disponibilidad con el asesor').show();
         $('.pmodal-stepper, #qx_pmodal_stepper, .qx-pmodal-actions-box, #qx_pmodal_metrics_box, #qx_pmodal_radar_section').hide();
         $('#qx_format_selector, #qx_shield_guarantee_card, #qx_refill_subscription_card, #qx_pmodal_btn_layering, #qx_pmodal_btn_compare').hide();
         $('#qx_tilt_hint, #qx_pmodal_glass_sheen').hide();
@@ -4360,18 +4027,18 @@ ${shareUrl}`;
           '--tilt-rx': '0deg',
           '--tilt-ry': '0deg'
         });
-      } else if (product.stock > 0) {
+      } else if (self.tenant && self.tenant.showStock !== false && product.inInventory && product.stock > 0) {
         $('#qx_pmodal_stock').text(`📦 ${product.stock} disponibles`).show();
       } else {
-        $('#qx_pmodal_stock').text(`📦 Disponible para envío inmediato`).show();
+        $('#qx_pmodal_stock').text('Consulta disponibilidad').show();
       }
 
       const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
 
       // Specs / Description (Commercial Dossier)
       if (!isRealEstate) {
-        const defaultGenericDesc = `Artículo garantizado de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
-        const defaultPerfumeDesc = `Fragancia y artículo exclusivo de ${self.tenant ? self.tenant.brandName : 'Boutique Oficial'}. Calidad premium garantizada con emisión de comprobante fiscal SAT CFDI 4.0 al instante.`;
+        const defaultGenericDesc = 'Consulta con la tienda para conocer más detalles de este artículo.';
+        const defaultPerfumeDesc = defaultGenericDesc;
         const desc = (product.storeDesc && product.storeDesc.trim())
           ? product.storeDesc
           : (product.notes ? product.notes : (isPerfums ? defaultPerfumeDesc : defaultGenericDesc));
@@ -4491,40 +4158,12 @@ ${shareUrl}`;
       $('#qx_product_modal').attr('data-modal-archetype', currentArchetype);
       $('#qx_product_modal_backdrop').attr('data-modal-archetype', currentArchetype);
 
-      // Archetype-Specific Badges & Button Labels
-      if (currentArchetype === 'titan') {
-        $('#qx_pmodal_badge').text('⚡ LLEGA MAÑANA CON ENVÍO FULL').show();
-        $('#qx_pmodal_btn_add span').text('+ Agregar a Carrito');
-        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Comprar con 1-Clic');
-      } else if (currentArchetype === 'nordic') {
-        $('#qx_pmodal_badge').hide();
-        $('#qx_pmodal_btn_add span').text('Guardar');
-        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('Adquirir');
-      } else if (currentArchetype === 'social') {
-        $('#qx_pmodal_badge').text('🔥 Drop Limitado • Alta Demanda').show();
-        $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Drop');
-        $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('🔥 ¡COMPRAR AHORA!');
-      } else {
-        // Maison
-        const isRealEstate = (self.tenant?.industry === 'real_estate' || isHighTicket);
-        if (isRealEstate) {
-          if (product.isFeatured) {
-            $('#qx_pmodal_badge').text('✦ Residencia Destacada').show();
-          } else {
-            $('#qx_pmodal_badge').text('✦ Propiedad Exclusiva').show();
-          }
-          $('#qx_pmodal_btn_add span, #qx_pmodal_bar_buy span').text('📅 Agendar Recorrido Privado');
-          $('#qx_pmodal_btn_buy span').text('✦ Contactar Broker Exclusivo');
-        } else {
-          if (product.isFeatured) {
-            $('#qx_pmodal_badge').text('✦ Édition Haute Maison').show();
-          } else {
-            $('#qx_pmodal_badge').text('✦ Édition Limitée').show();
-          }
-          $('#qx_pmodal_btn_add span').text('🛍️ Reservar en Atelier');
-          $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text('⚡ Adquirir Pieza');
-        }
-      }
+      // Visual identity never changes price, availability, or the commercial action.
+      $('#qx_pmodal_badge').text(product.isFeatured ? 'Destacado' : '').toggle(Boolean(product.isFeatured));
+      $('#qx_pmodal_btn_add span').text(isRealEstate ? 'Agendar visita' : 'Agregar al carrito');
+      $('#qx_pmodal_btn_buy span, #qx_pmodal_bar_buy span').text(isRealEstate ? 'Consultar con un asesor' : 'Comprar');
+      $('#qx_pmodal_tax').text(!isRealEstate && Number(product.vatRate) > 0 ? 'IVA ' + Number(product.vatRate) + '% incluido' : '').toggle(!isRealEstate && Number(product.vatRate) > 0);
+      if (window.QuantixStoreDesigns) window.QuantixStoreDesigns.detail(this, product);
 
       // Open Modal
       $('#qx_product_modal_backdrop').addClass('active');
@@ -4748,6 +4387,7 @@ ${shareUrl}`;
       const wrapper = $('#qx_hero_carousel_wrapper');
       const stage = $('#qx_3d_stage');
       const dotsContainer = $('#qx_3d_dots');
+      this.stop3DAutoPlay();
 
       // Honor explicit disabled toggle
       if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) {
@@ -4768,7 +4408,6 @@ ${shareUrl}`;
 
       this.heroFeatured = items;
       this.heroActiveIndex = 0;
-      this.heroAutoPlayTimer = null;
 
       const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
         $('body').attr('data-industry') === 'real_estate' ||
@@ -4778,8 +4417,8 @@ ${shareUrl}`;
 
       items.forEach((p, idx) => {
         const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
-        const badgeText = isRealEstate ? 'Residencia Exclusiva' : (isPerfumery ? 'Alta Cosecha' : 'Pieza Destacada');
-        const btnText = isRealEstate ? 'Explorar Residencia →' : (isPerfumery ? 'Adquirir' : 'Ver Detalles');
+        const badgeText = isRealEstate ? 'Propiedad' : (isPerfumery ? 'Alta Cosecha' : 'Pieza Destacada');
+        const btnText = isRealEstate ? 'Ver propiedad →' : (isPerfumery ? 'Adquirir' : 'Ver Detalles');
         const cardHtml = `
           <div class="qx-3d-card" data-index="${idx}" data-id="${self.esc(p.id)}">
             <span class="qx-3d-badge">${badgeText}</span>
@@ -4921,6 +4560,11 @@ ${shareUrl}`;
 
     start3DAutoPlay() {
       this.stop3DAutoPlay();
+      const disclosure = document.getElementById('qx_design_showcase');
+      if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && !disclosure.open)) return;
+      if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) return;
+      if (!this.heroFeatured || this.heroFeatured.length < 2) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       this.heroAutoPlayTimer = setInterval(() => {
         this.next3DSlide();
       }, 5500);
@@ -5323,22 +4967,15 @@ ${shareUrl}`;
         descBody = rawText;
       }
 
-      // 4. Extract Broker / Contact
-      let brokerName = 'Lic. Mauricio Gama K.';
-      let brokerPhone = '525514595381';
-      if (/LIC\.\s*MAURICIO\s*GAMA/i.test(rawText)) {
-        brokerName = 'Lic. Mauricio Gama K.';
-      }
-      if (/55-?1459-?5381/.test(rawText)) {
-        brokerPhone = '525514595381';
-      }
+      const brokerName = (self.tenant && self.tenant.brandName) || 'Asesor de la tienda';
+      const brokerContact = self.getStoreContact('Hola, solicito información sobre: ' + product.name);
 
       // 5. Render Structured Sections into #qx_pmodal_desc
       let formattedHtml = '';
       if (ubicacionText) {
         formattedHtml += `
           <div class="qx-re-section-block">
-            <div class="qx-re-section-title">📍 Ubicación Privilegiada</div>
+            <div class="qx-re-section-title">Ubicación</div>
             <div class="qx-re-section-content">${self.esc(ubicacionText)}</div>
           </div>
         `;
@@ -5350,53 +4987,31 @@ ${shareUrl}`;
           .replace(/PA\./g, '<br><strong>Planta Alta:</strong>');
         formattedHtml += `
           <div class="qx-re-section-block">
-            <div class="qx-re-section-title">🏛️ Arquitectura & Distribución</div>
+            <div class="qx-re-section-title">Descripción de la propiedad</div>
             <div class="qx-re-section-content">${cleanBody}</div>
           </div>
         `;
       }
 
-      formattedHtml += `
+      if (brokerContact) formattedHtml += `
         <div class="qx-re-broker-plaque">
           <div class="qx-re-broker-info">
             <span class="qx-re-broker-name">👤 ${self.esc(brokerName)}</span>
-            <span class="qx-re-broker-agency">Asesor Patrimonial Senior · BRACSA & Gama</span>
+            <span class="qx-re-broker-agency">Información y citas</span>
           </div>
-          <a href="https://wa.me/${brokerPhone}?text=${encodeURIComponent('Hola ' + brokerName + ', me interesa agendar un recorrido para: ' + product.name + ' ($' + self.formatMoney(product.priceWithTax) + ' MXN)')}" target="_blank" class="qx-re-broker-wa-btn" rel="noopener noreferrer">
-            <span>💬 WhatsApp VIP</span>
+          <a href="${self.esc(brokerContact.url)}" target="_blank" class="qx-re-broker-wa-btn" rel="noopener noreferrer">
+            <span>${self.esc(brokerContact.label)}</span>
           </a>
         </div>
       `;
 
       $('#qx_pmodal_desc').html(formattedHtml);
 
-      // 6. Wire Above-The-Fold Actions
-      const waMsg = encodeURIComponent(`Hola, me interesa agendar un recorrido privado para el inmueble: ${product.name} (Ref: $${self.formatMoney(product.priceWithTax)} MXN)`);
-      const waUrl = `https://wa.me/${brokerPhone}?text=${waMsg}`;
-
-      $('#qx_re_actions_box').show();
-      $('#qx_btn_re_tour').off('click.reTour').on('click.reTour', function(e) {
-        e.preventDefault();
-        self.playHaptic('light');
-        if ($('#qx_agenda_modal').length) {
-          self.closeProductModal();
-          setTimeout(() => {
-            self.openAgendaModal({
-              title: product.name,
-              price: product.priceWithTax,
-              sku: product.sku || product.code
-            });
-          }, 200);
-        } else {
-          window.open(waUrl, '_blank', 'noopener,noreferrer');
-        }
-      });
-
-      $('#qx_btn_re_broker').off('click.reBroker').on('click.reBroker', function(e) {
-        e.preventDefault();
-        self.playHaptic('light');
-        window.open(waUrl, '_blank', 'noopener,noreferrer');
-      });
+      // Contact routing uses this tenant's configured details only.
+      const hasAgenda = Boolean(self.tenant && self.tenant.featureMatrix && self.tenant.featureMatrix.royal_agenda && self.tenant.featureMatrix.royal_agenda.enabled);
+      $('#qx_re_actions_box').toggle(Boolean(brokerContact) || hasAgenda);
+      $('#qx_btn_re_tour').toggle(hasAgenda || Boolean(brokerContact)).off('click.reTour').on('click.reTour', function() { self.requestPropertyContact(product, true); });
+      $('#qx_btn_re_broker').toggle(Boolean(brokerContact)).off('click.reBroker').on('click.reBroker', function() { self.requestPropertyContact(product, false); });
     }
 
     // =========================================================================
@@ -5996,7 +5611,7 @@ ${shareUrl}`;
       const isSocial = (this.currentArchetype === 'social');
       const storiesExplicit = this.tenant && this.tenant.modules && this.tenant.modules.stories;
 
-      if (!storiesExplicit && (!isSocial || isRealEstate)) {
+      if (!storiesExplicit) {
         $('.qx-stories-section').hide();
         return;
       }
@@ -6005,7 +5620,7 @@ ${shareUrl}`;
       if (topItems.length === 0) return;
 
       const topLabel = isRealEstate ? '✦ Destacadas' : (isPerfumery ? '👑 Alta Cosecha' : 'Top Selección');
-      const topTitle = isRealEstate ? 'Residencias Más Solicitadas' : (isPerfumery ? 'Top Fragancias Más Vendidas' : 'Artículos Más Vendidos');
+      const topTitle = isRealEstate ? 'Propiedades destacadas' : (isPerfumery ? 'Fragancias destacadas' : 'Artículos destacados');
 
       this.stories = [
         { id: 'top_destacados', label: topLabel, title: topTitle, slides: topItems.slice(0, 3).map(p => ({ mediaUrl: p.cover, productId: p.id })) },

@@ -12,6 +12,7 @@ $textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' 
 $resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
 $isRealEstate = ($resolvedIndustry === 'real_estate');
 $isIndustrial = ($resolvedIndustry === 'industrial');
+$designKey = in_array(strtolower($tenant->archetype ?? ''), ['nordic', 'maison', 'titan', 'social'], true) ? strtolower($tenant->archetype) : 'maison';
 
 $isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']);
 $isTastingActive = $isPerfumsTenant && !empty($featMatrix['tasting_room']['enabled']);
@@ -29,6 +30,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <meta name="description" content="<?php echo htmlspecialchars($tenant->description); ?>">
   <link rel="stylesheet" href="css/storefront_luxury.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_luxury.css'); ?>">
   <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
+  <link rel="stylesheet" href="css/storefront_designs.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_designs.css'); ?>">
   <style>
     :root {
       --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
@@ -36,7 +38,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
+<body data-design="<?php echo htmlspecialchars($designKey); ?>" data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
@@ -85,6 +87,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <input type="text" id="qx_search_input" class="qx-search-input" placeholder="<?php echo $isRealEstate ? 'Buscar residencias, terrenos o espacios corporativos... (⌘K)' : ($isIndustrial ? 'Buscar válvulas, actuadores o refacciones... (⌘K)' : 'Buscar por nombre, notas o acordes... (⌘K)'); ?>" autocomplete="off">
       </div>
 
+        <button type="button" id="qx_design_mobile_search" class="qx-design-mobile-search" aria-label="Buscar en el catálogo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
         <button type="button" class="qx-agenda-nav-btn <?php echo $isRealEstate ? 'qx-realestate-nav-btn' : ''; ?>" id="qx_btn_nav_agenda" title="<?php echo $isRealEstate ? 'Agendar Cita Privada / Visita' : 'Agenda VIP & Concierge Privado'; ?>" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
           <span class="qx-agenda-sparkle"><?php echo $isRealEstate ? '✦' : '🗓️'; ?></span>
           <span><?php echo $isRealEstate ? 'Agendar Cita' : 'Agenda VIP'; ?></span>
@@ -123,128 +126,23 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </header>
 
   <!-- Flash Deals Urgency Rail (Only for Commercial Retail / Titan) -->
-  <?php $showFlash = !empty($tenant->modules['flash_deals']) && !$isRealEstate && $tenant->archetype !== 'maison'; ?>
+  <?php $showFlash = !empty($tenant->modules['flash_deals']); ?>
   <section class="qx-flash-deals-banner" id="qx_flash_deals_banner" style="<?php echo $showFlash ? '' : 'display:none;'; ?>">
-    <div class="qx-flash-deals-inner">
-      <div class="qx-flash-left">
-        <span class="qx-flash-flame">⚡</span>
-        <span class="qx-flash-title">OFERTAS RELÁMPAGO DE TEMPORADA</span>
-        <span class="qx-flash-tag">TIEMPO LIMITADO</span>
-      </div>
-      <div class="qx-flash-timer-wrapper">
-        <span class="qx-timer-label">Termina en:</span>
-        <div class="qx-timer-clock">
-          <span class="qx-timer-unit" id="qx_deal_hours">04</span><span class="qx-timer-sep">:</span>
-          <span class="qx-timer-unit" id="qx_deal_mins">28</span><span class="qx-timer-sep">:</span>
-          <span class="qx-timer-unit" id="qx_deal_secs">19</span>
-        </div>
-      </div>
-      <div class="qx-flash-coupon">
-        <span class="qx-coupon-code" id="qx_flash_coupon_code">FLASH20</span>
-        <button type="button" class="qx-coupon-copy-btn" id="qx_btn_copy_coupon" title="Copiar cupón de descuento">
-          <span>Copiar Cupón</span>
-        </button>
-      </div>
-    </div>
+    <div class="qx-flash-deals-inner"><span class="qx-flash-title">Descubre la selección de la tienda</span><a href="#qx_catalog_start" class="qx-design-banner-link">Explorar el catálogo →</a></div>
   </section>
 
   <!-- SAT CFDI 4.0 & Commercial Trust Ribbon (Context-Aware) -->
   <?php $showTrust = !empty($tenant->modules['cfdi_trust']); ?>
   <div class="qx-trust-ribbon" id="qx_trust_bar" style="<?php echo $showTrust ? '' : 'display:none;'; ?>">
     <div class="qx-trust-container">
-      <?php if ($isRealEstate): ?>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">🏛️</span>
-          <div class="qx-trust-text">
-            <strong>Arquitectura & Alta Gama</strong>
-            <span>Ubicaciones AAA y residencias verificadas</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">📜</span>
-          <div class="qx-trust-text">
-            <strong>Certeza Jurídica</strong>
-            <span>Estatus legal y título de propiedad en orden</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">🛡️</span>
-          <div class="qx-trust-text">
-            <strong>Facturación SAT CFDI 4.0</strong>
-            <span>Cumplimiento fiscal y deducción autorizada</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">🗝️</span>
-          <div class="qx-trust-text">
-            <strong>Atención Confidencial</strong>
-            <span>Asesoría patrimonial y concierge privado</span>
-          </div>
-        </div>
-      <?php elseif ($isIndustrial): ?>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">⚙️</span>
-          <div class="qx-trust-text">
-            <strong>Certificación de Calidad</strong>
-            <span>Equipos de alta ingeniería y especificación SAT</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">📦</span>
-          <div class="qx-trust-text">
-            <strong>Logística Especializada</strong>
-            <span>Flete asegurado a planta o almacén</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">🛡️</span>
-          <div class="qx-trust-text">
-            <strong>Facturación Inmediata SAT</strong>
-            <span>CFDI 4.0 con clave de producto/servicio</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">💳</span>
-          <div class="qx-trust-text">
-            <strong>Condiciones Comerciales</strong>
-            <span>Transferencia SPEI y crédito corporativo</span>
-          </div>
-        </div>
-      <?php else: ?>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">💎</span>
-          <div class="qx-trust-text">
-            <strong>Garantía Auténtica</strong>
-            <span>Producto 100% original directo de emisor</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">⚡</span>
-          <div class="qx-trust-text">
-            <strong>Envíos Express</strong>
-            <span>Entrega asegurada a todo México</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">💳</span>
-          <div class="qx-trust-text">
-            <strong>Pago Seguro</strong>
-            <span>Cifrado bancario SSL 256-Bit</span>
-          </div>
-        </div>
-        <div class="qx-trust-item">
-          <span class="qx-trust-icon">🛡️</span>
-          <div class="qx-trust-text">
-            <strong>Facturación CFDI 4.0</strong>
-            <span>Inmediata y 100% deducible SAT</span>
-          </div>
-        </div>
-      <?php endif; ?>
+      <div class="qx-trust-item"><div class="qx-trust-text"><strong><?php echo $isRealEstate ? 'Propiedades' : 'Catálogo'; ?></strong><span>Fotografías e información de la tienda</span></div></div>
+      <div class="qx-trust-item"><div class="qx-trust-text"><strong>Información detallada</strong><span>Consulta la ficha de cada <?php echo $isRealEstate ? 'propiedad' : 'artículo'; ?></span></div></div>
+      <div class="qx-trust-item"><div class="qx-trust-text"><strong>Contacto</strong><span>Consulta disponibilidad y condiciones</span></div></div>
     </div>
   </div>
 
   <!-- Boutique Stories Bar (Only for Social Archetype or when configured) -->
-  <?php $showStories = !empty($tenant->modules['stories']) || ($tenant->archetype === 'social' && !$isRealEstate); ?>
+  <?php $showStories = !empty($tenant->modules['stories']); ?>
   <section class="qx-stories-section" style="<?php echo $showStories ? '' : 'display:none;'; ?>">
     <div class="qx-stories-container" id="qx_stories_container"></div>
   </section>
@@ -305,6 +203,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       </div>
     </div>
 
+    <div class="qx-design-hero-copy">
     <!-- Kicker Ribbon / Micro-Badge -->
     <?php
       $heroKickerDefault = $isRealEstate ? 'PORTAFOLIO EXCLUSIVO' : ($isPerfumsTenant ? 'HAUTE COSECHA 2026' : 'CATÁLOGO OFICIAL 2026');
@@ -328,6 +227,20 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     <h1 class="qx-hero-title <?php echo "{$heroShaderClass} {$heroTypoClass} {$heroTrackClass}{$heroShimmerClass}"; ?>" id="qx_hero_title"><?php echo renderHeroHeadlineFormatted($heroHeadlineRaw); ?></h1>
     <p class="qx-hero-subtitle" id="qx_hero_subtitle"><?php echo htmlspecialchars(!empty($tenant->heroSubheadline) ? $tenant->heroSubheadline : $tenant->description); ?></p>
     
+    <div class="qx-design-hero-actions">
+      <a class="qx-design-primary" href="#qx_catalog_start"><?php echo $isRealEstate ? 'Explorar propiedades' : 'Explorar catálogo'; ?> <span aria-hidden="true">↗</span></a>
+      <button type="button" class="qx-design-secondary" id="qx_design_contact" hidden><?php echo $isRealEstate ? 'Consultar con un asesor' : 'Contactar'; ?> <span aria-hidden="true">→</span></button>
+    </div>
+    </div>
+    <figure class="qx-design-hero-media" id="qx_design_hero_media">
+      <button type="button" id="qx_design_hero_open" class="qx-design-hero-open" aria-label="Ver detalle" disabled>
+        <span class="qx-design-image-empty">La colección comienza aquí</span>
+        <img id="qx_design_hero_image" alt="" hidden fetchpriority="high">
+        <span class="qx-design-image-action" id="qx_design_image_action"><?php echo $isRealEstate ? 'Ver propiedad' : 'Ver detalle'; ?> <span aria-hidden="true">↗</span></span>
+      </button>
+      <figcaption><span id="qx_design_hero_caption"></span><span id="qx_design_hero_price"></span></figcaption>
+    </figure>
+
     <!-- Quantix Holo-Studio 3D Interactive Spatial Showcase -->
     <?php 
       $studio3DActive = $tenant->isStudio3DEnabled();
@@ -461,8 +374,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <section class="qx-deals-rails-section" id="qx_deals_rails_section" style="<?php echo $showRails ? '' : 'display:none;'; ?>">
     <div class="qx-deals-header">
       <div class="qx-deals-headline">
-        <span class="qx-deals-badge">🚀 MÁS VENDIDOS & DESTACADOS</span>
-        <h2 class="qx-deals-title">Ofertas Más Calientes del Catálogo</h2>
+        <span class="qx-deals-badge">SELECCIÓN DE LA TIENDA</span>
+        <h2 class="qx-deals-title">Más para descubrir</h2>
       </div>
       <div class="qx-deals-nav-arrows">
         <button type="button" class="qx-deals-arrow prev" id="qx_deals_prev" aria-label="Desplazar a la izquierda">‹</button>
@@ -476,6 +389,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     </div>
   </section>
 
+  <section class="qx-design-collection-heading" id="qx_catalog_start" tabindex="-1">
+    <div><span class="qx-design-eyebrow"><?php echo $isRealEstate ? 'EL PORTAFOLIO' : 'LA COLECCIÓN'; ?></span><h2><?php echo $isRealEstate ? 'Encuentra tu próximo espacio.' : 'Encuentra algo para ti.'; ?></h2></div>
+    <span id="qx_design_collection_count" aria-live="polite"></span>
+  </section>
   <!-- Category Filter Chips & View Switcher Bar -->
   <div class="qx-catalog-controls" style="max-width: 1400px; margin: 0 auto; padding: 0 24px 16px;">
     <nav class="qx-categories-bar" id="qx_categories_bar"></nav>
@@ -491,24 +408,6 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
 
   <!-- Main Product Showroom Grid -->
   <main class="qx-main-container">
-    <!-- Archetype II: Titan Hyper-Velocity Express Ticker -->
-    <div class="qx-titan-ticker-bar" id="qx_titan_ticker_bar">
-      <div class="qx-titan-ticker-inner">
-        <span class="qx-titan-ticker-icon">⚡</span>
-        <span class="qx-titan-ticker-text"><strong>ENVÍO FULL EXPRESS 24H:</strong> Compra en los próximos <span class="qx-titan-ticker-timer" id="qx_titan_countdown">42 min 18 seg</span> y recibe mañana garantizado.</span>
-        <span class="qx-titan-ticker-badge">STOCK LOCAL INMEDIATO</span>
-      </div>
-    </div>
-
-    <!-- Archetype IV: Social Live Activity Ticker -->
-    <div class="qx-social-ticker-bar" id="qx_social_ticker_bar">
-      <div class="qx-social-ticker-inner">
-        <span class="qx-social-live-dot"></span>
-        <span class="qx-social-ticker-text">🔥 <strong id="qx_social_active_count">38 personas</strong> comprando en vivo en este momento • <strong>14 productos</strong> despachados en la última hora</span>
-        <span class="qx-social-ticker-tag">DROP LIMITADO</span>
-      </div>
-    </div>
-
     <div class="qx-grid view-2col" id="qx_product_grid"></div>
   </main>
 
@@ -768,7 +667,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
             <span class="qx-pmodal-currency">MXN</span>
           </div>
           <div class="qx-pmodal-badges">
-            <span class="qx-pmodal-pill tax">✔ IVA 16% Incluido</span>
+            <span class="qx-pmodal-pill tax" id="qx_pmodal_tax"></span>
             <span class="qx-pmodal-pill cfdi">⚡ Facturación CFDI 4.0</span>
             <span class="qx-pmodal-pill stock" id="qx_pmodal_stock">📦 En Existencia</span>
           </div>
@@ -777,10 +676,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <!-- High-Ticket / Real Estate Instant Action Bar (Above The Fold) -->
         <div class="qx-re-actions-box" id="qx_re_actions_box" style="display:none;">
           <button type="button" class="qx-btn-re-tour" id="qx_btn_re_tour">
-            <span>📅 Agendar Recorrido Privado</span>
+            <span>📅 Agendar visita</span>
           </button>
           <button type="button" class="qx-btn-re-broker" id="qx_btn_re_broker">
-            <span>💬 Contactar Broker VIP</span>
+            <span>💬 Consultar con un asesor</span>
           </button>
         </div>
 
@@ -1020,7 +919,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     <div class="qx-pmodal-bottom-bar" id="qx_pmodal_bottom_bar">
       <div class="qx-pmodal-bar-price">
         <div class="qx-pmodal-bar-num" id="qx_pmodal_bar_price">$ 0.00</div>
-        <div class="qx-pmodal-bar-sub">IVA 16% Incluido</div>
+        <div class="qx-pmodal-bar-sub" id="qx_pmodal_bar_sub">MXN</div>
       </div>
       <div class="qx-pmodal-bar-actions">
         <div class="pmodal-stepper compact">
@@ -1365,10 +1264,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </div>
 
   <!-- Universal Concierge Matchmaker Floating Pill & Wizard Modal -->
-  <div class="qx-concierge-float-pill" id="qx_concierge_btn" title="Asistente de Selección Personalizada">
-    <span>✨</span>
-    <span>Matchmaker Concierge</span>
-  </div>
+  <button type="button" class="qx-concierge-float-pill" id="qx_concierge_btn">
+    <span aria-hidden="true">✦</span>
+    <span><?php echo $isPerfumsTenant ? 'Ayúdame a elegir' : 'Hablar con un asesor'; ?></span>
+  </button>
 
   <div class="qx-quiz-backdrop" id="qx_quiz_backdrop"></div>
   <div class="qx-quiz-modal" id="qx_quiz_modal" role="dialog" aria-modal="true">
@@ -2179,7 +2078,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <span class="qx-dock-icon">🧪</span>
       <span class="qx-dock-label">Alquimia</span>
     </button>
-    <button type="button" class="qx-dock-item" id="qx_dock_cart" aria-label="Bolsa de Compras">
+    <button type="button" class="qx-dock-item" id="qx_dock_cart" aria-label="Bolsa de Compras" style="<?php echo $isRealEstate ? 'display:none;' : ''; ?>">
       <span class="qx-dock-icon-wrap">
         <span class="qx-dock-icon">🛍️</span>
         <span class="qx-dock-badge" id="qx_dock_cart_badge">0</span>
@@ -2193,19 +2092,35 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <script src="js/vendor/GLTFLoader.js"></script>
   <script src="js/quantix_haptic_audio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_haptic_audio.js') ? filemtime(__DIR__ . '/js/quantix_haptic_audio.js') : '1'; ?>"></script>
   <script src="js/quantix_spatial_studio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_spatial_studio.js') ? filemtime(__DIR__ . '/js/quantix_spatial_studio.js') : '1'; ?>"></script>
+  <script src="https://evinux.net/cfdadmin/js2/quantix_design_contract.js?v=<?php echo @filemtime(__DIR__ . '/../../cfdadmin/js2/quantix_design_contract.js') ?: '1'; ?>"></script>
+  <script src="js/storefront_designs.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_designs.js'); ?>"></script>
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
     // Quantix Glass Twin Live Simulator Synchronization Listener
     let persistentAtmosphere = null;
 
     window.addEventListener('message', function(e) {
-      if (e.data && e.data.source === 'QUANTIX_APEX_COMMAND_TOWER') {
+      if (window.QuantixStoreDesigns && window.QuantixStoreDesigns.isTrustedPreviewMessage(e) && e.data && e.data.source === 'QUANTIX_APEX_COMMAND_TOWER') {
         const type = e.data.type;
         const payload = e.data.payload;
+        if (type === 'FOCUS_INSPECTOR_SECTION') {
+          window.QuantixStoreDesigns.focusSection(payload && payload.section);
+          return;
+        }
+        if (type === 'SYNC_INSPECTOR_MODE') {
+          window.QuantixStoreDesigns.setInspectorMode(Boolean(payload && payload.enabled), e.origin);
+          return;
+        }
         if (!persistentAtmosphere) {
           persistentAtmosphere = $('body').attr('data-atmosphere') || 'obsidian';
         }
         if (type === 'SYNC_FEATURE_MATRIX') {
+          if (!payload || typeof payload !== 'object') return;
+          if (window.quantixStore) {
+            window.quantixStore.tenant = window.quantixStore.tenant || {};
+            window.quantixStore.tenant.featureMatrix = Object.assign({}, window.quantixStore.tenant.featureMatrix || {}, payload);
+            window.QuantixStoreDesigns.refresh(window.quantixStore);
+          }
           const isPerfumery = $('body').attr('data-perfumery') === '1';
           if (payload.royal_agenda) {
             $('#qx_btn_nav_agenda, #qx_dock_agenda').toggle(Boolean(payload.royal_agenda.enabled));
@@ -2253,6 +2168,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         }
 
         if (type === 'SYNC_HERO_CURATION') {
+          if (payload && Array.isArray(payload.featured_products)) window.QuantixStoreDesigns.setFeatured(payload.featured_products, window.quantixStore);
           if (payload.headline !== undefined) {
             $('.qx-hero-title, .qx-hero-banner h1').html(formatHeroHeadlineJs(payload.headline));
           }
