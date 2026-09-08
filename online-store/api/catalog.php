@@ -56,7 +56,7 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
     }
 
     $unitPrice = (float)($p['valorUnitario'] ?: 0);
-    $vatRate = (float)($p['IVAtasa'] ?: 16);
+    $vatRate = (float)($p['IVAtasa'] ?? 16);
     if ($vatRate > 0 && $vatRate <= 1) {
         $vatRate = $vatRate * 100;
     }
@@ -71,8 +71,8 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
         ? trim(str_replace(['<br>', '<br/>', '<br />'], "\n", $p['descripcion_tienda']))
         : (!empty($p['Observaciones']) ? trim(str_replace(['<br>', '<br/>', '<br />'], "\n", $p['Observaciones'])) : $cleanDesc);
 
-    $hasDecant = $isPerfumery ? (($p['TieneDecant'] ?? 'SI') !== 'NO') : false;
-    $decantPrice = $hasDecant ? (!empty($p['PrecioDecant']) ? (float)$p['PrecioDecant'] : round(max(150.0, min(350.0, $priceWithTax * 0.18)), 2)) : 0;
+    $hasDecant = $isPerfumery && ($p['TieneDecant'] ?? 'NO') === 'SI' && (float)($p['PrecioDecant'] ?? 0) > 0;
+    $decantPrice = $hasDecant ? (float)$p['PrecioDecant'] : 0;
     $auraColor = !empty($p['AuraColor']) ? $p['AuraColor'] : 'cyan';
     $auraParticles = !empty($p['AuraParticulas']) ? $p['AuraParticulas'] : 'breeze';
     $autoIsolate = $isPerfumery ? (($p['AutoIsolate'] ?? 'SI') !== 'NO') : false;
@@ -356,45 +356,25 @@ try {
         $products[] = format_catalog_product($p, $mediaByProduct);
     }
 
-    // Extract Featured Curated Products
-    $stmtFeat = $db->prepare("SELECT Valor FROM emisoresde WHERE EmisorID = ? AND Variable = 'STORE_FEATURED_PRODS' LIMIT 1");
-    $stmtFeat->execute([$tenant->emisorId]);
-    $rowFeat = $stmtFeat->fetch();
-    $featuredIds = [];
-    if ($rowFeat && !empty($rowFeat['Valor'])) {
-        $featuredIds = array_filter(array_map('trim', explode(',', $rowFeat['Valor'])));
-    }
-    if (empty($featuredIds) && !empty($tenant->apexConfig['hero_curation']['featured_products']) && is_array($tenant->apexConfig['hero_curation']['featured_products'])) {
-        foreach ($tenant->apexConfig['hero_curation']['featured_products'] as $fp) {
-            if (!empty($fp['product_id'])) {
-                $featuredIds[] = trim((string)$fp['product_id']);
-            }
+    // Configured slots are authoritative, including an explicitly cleared selection.
+    require_once dirname(__DIR__) . '/includes/control_contract.php';
+    $hero = $tenant->apexConfig['hero_curation'] ?? [];
+    $explicitFeatured = array_key_exists('featured_products', $hero);
+    $records = $explicitFeatured ? $hero['featured_products'] : [];
+    if (!$explicitFeatured) {
+        $stmtFeat = $db->prepare("SELECT Valor FROM emisoresde WHERE EmisorID = ? AND Variable = 'STORE_FEATURED_PRODS' LIMIT 1");
+        $stmtFeat->execute([$tenant->emisorId]);
+        if ($rowFeat = $stmtFeat->fetch()) {
+            $explicitFeatured = true;
+            foreach (array_filter(array_map('trim', explode(',', $rowFeat['Valor']))) as $id) $records[] = ['product_id'=>$id, 'slot'=>count($records)+1];
         }
     }
+    $featuredProducts = QuantixControlContract::featuredProducts($products, $records, $explicitFeatured);
+    $featuredIds = array_column($featuredProducts, 'id');
+    foreach ($products as &$product) $product['isFeatured'] = in_array($product['id'], $featuredIds, true);
+    unset($product);
 
-    $featuredProducts = [];
-    foreach ($products as &$prod) {
-        $prod['isFeatured'] = in_array($prod['id'], $featuredIds);
-        if ($prod['isFeatured']) {
-            $featuredProducts[] = $prod;
-        }
-    }
-    unset($prod);
-
-    // Fallback: if fewer than 3 featured products, take top 4 with photos
-    if (count($featuredProducts) < 3) {
-        $featuredProducts = [];
-        foreach ($products as &$prod) {
-            if (!empty($prod['photos']) && count($featuredProducts) < 5) {
-                $prod['isFeatured'] = true;
-                $featuredProducts[] = $prod;
-            }
-        }
-        unset($prod);
-    }
-
-    $textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
-    $resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
+    $resolvedIndustry = $tenant->getIndustry();
 
     echo json_encode([
         'Status'     => 'OK',
@@ -405,6 +385,10 @@ try {
             'logo'        => $tenant->logo,
             'theme'       => $tenant->theme,
             'primaryColor'=> $tenant->primaryColor,
+            'showWhatsapp' => (bool)$tenant->showWhatsapp,
+            'whatsappPhone' => $tenant->whatsappPhone,
+            'whatsappGreeting' => $tenant->whatsappGreeting,
+            'paymentSettings' => $tenant->paymentSettings ?? [],
             'description' => $tenant->description,
             'email'       => $tenant->email,
             'phone'       => $tenant->phone,

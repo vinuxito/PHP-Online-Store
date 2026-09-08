@@ -331,7 +331,7 @@
 
     async loadPassport(code = 'PASS-2026-VIP') {
       try {
-        const tenant = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenant = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/passport.php?tenant=${encodeURIComponent(tenant)}&code=${encodeURIComponent(code)}`);
         const data = await res.json();
         if (data.Status === 'OK') {
@@ -514,7 +514,7 @@
             const journal = card.find('.qx-journal-textarea').val();
 
             try {
-              const tenant = self.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+              const tenant = self.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
               const fd = new URLSearchParams();
               fd.append('action', 'submit_tasting_review');
               fd.append('tenant', tenant);
@@ -596,7 +596,7 @@
     async loadVaultData(code) {
       if (code) this.accessCode = code;
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/loyalty.php?tenant=${tenantId}&action=vault_status&code=${encodeURIComponent(this.accessCode)}`);
         const data = await res.json();
         if (data.Status === 'OK') {
@@ -835,7 +835,7 @@
 
     async redeemReward(reward) {
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const formData = new URLSearchParams();
         formData.append('tenant', tenantId);
         formData.append('action', 'redeem_reward');
@@ -882,7 +882,7 @@
 
     async openWhatsAppConcierge(subId) {
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/loyalty.php?tenant=${tenantId}&action=generate_wa_refill_link&subscriptionId=${subId}`);
         const data = await res.json();
         if (data.Status === 'OK' && data.WhatsAppUrl) {
@@ -916,7 +916,7 @@
 
     async loadSlots(dateStr) {
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const date = dateStr || new Date().toISOString().split('T')[0];
         const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=get_available_slots&date=${date}`);
         const data = await res.json();
@@ -1027,7 +1027,7 @@
       }
 
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=book_session`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1047,7 +1047,7 @@
         if (data.Status === 'OK') {
           this.sessionCode = data.Session.bookingCode;
           this.activeSession = data.Session;
-          this.storefront.showToast('🍷 ¡Cita VIP agendada! Conectando a Sala de Cata...');
+          this.storefront.showToast(data.Message || 'Horario registrado; confirma la atención con la tienda.');
           this.switchView('live');
           this.startLiveSession(this.sessionCode);
         } else {
@@ -1096,7 +1096,7 @@
     async startLiveSession(code) {
       const targetCode = code || this.sessionCode;
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=get_session_status&code=${encodeURIComponent(targetCode)}`);
         const data = await res.json();
 
@@ -1115,11 +1115,11 @@
       const sess = data.Session;
       $('#qx_live_client_name').text(sess.clientName || 'Alexander von Humboldt');
       $('#qx_live_session_code').text(sess.bookingCode || 'TASTE-2026-VIP');
-      $('#qx_live_box_status').text(sess.discoveryBoxStatus === 'DELIVERED' ? 'Entregado 📦' : 'En Camino 🚚');
-      $('#qx_live_voucher_val').text(`$ ${Number(sess.cashBackAmount || 499).toFixed(2)} MXN`);
+      $('#qx_live_box_status').text({DELIVERED: 'Entregado', DISPATCHED: 'Enviado', PENDING: 'Pendiente'}[sess.discoveryBoxStatus] || 'Sin confirmar');
+      $('#qx_live_voucher_val').text(`$ ${Number(sess.cashBackAmount || 0).toFixed(2)} MXN`);
 
       // WhatsApp link setup
-      const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+      const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
       $('#qx_btn_live_wa_link').attr('href', `api/tasting_room.php?tenant=${tenantId}&action=generate_wa_session_link&code=${encodeURIComponent(sess.bookingCode)}`);
 
       // Render Active Canvas Projection
@@ -1210,7 +1210,7 @@
       this.pollTimer = setInterval(async () => {
         if (!self.currentView || self.currentView !== 'live') return;
         try {
-          const tenantId = self.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+          const tenantId = self.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
           const res = await fetch(`api/tasting_room.php?tenant=${tenantId}&action=poll_canvas_events&sessionId=${sessionId}&lastEventId=${self.lastEventId}`);
           const data = await res.json();
           if (data.Status === 'OK' && data.NewEvents && data.NewEvents.length > 0) {
@@ -1250,22 +1250,10 @@
       const prod = this.currentProjectedProduct || this.storefront.products[0];
       if (!prod) return;
 
-      const voucherCode = this.activeSession?.cashBackVoucher || 'TASTEVOUCH-2026-AVH';
-      
-      // Add full bottle (100ml) to cart
       this.storefront.addToCart(prod.id, 1, false);
-
-      // Apply $499 credit voucher
-      this.storefront.appliedVoucher = {
-        code: voucherCode,
-        amount: 499.00,
-        formattedAmount: '$ 499.00 MXN'
-      };
-      this.storefront.renderCartUI();
-
       this.closeTastingModal();
       this.storefront.openCart();
-      this.storefront.showToast(`🏆 ¡Frasco de 100ml añadido con $499.00 de bono de cata aplicado!`);
+      this.storefront.showToast('Producto agregado al carrito. Consulta cualquier beneficio con la tienda.');
     }
   }
 
@@ -1300,7 +1288,7 @@
       }
 
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=quick_scan_keycard&input=${encodeURIComponent(input)}`);
         const data = await res.json();
 
@@ -1309,7 +1297,10 @@
           this.renderKeycardUI(data.Member);
           this.flipKeycard();
           this.storefront.playHaptic('success');
-          this.storefront.showToast(`👑 Llave autenticada: ${data.Member.name} (${data.Member.tierLabel})`);
+          this.storefront.showToast('Datos de contacto cargados. Confírmalos antes de solicitar la cita.');
+          if (data.IsRegistered) $('#qx_agenda_contact_name').val(data.Member.name || '');
+          $('#qx_agenda_contact_email').val(data.Member.email || '');
+          $('#qx_agenda_contact_phone').val(data.Member.phone || '');
         }
       } catch (err) {
         console.warn('scanKeycard error:', err);
@@ -1346,7 +1337,7 @@
 
     async loadAtmosphericSlots(dateStr) {
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const date = dateStr || new Date().toISOString().split('T')[0];
         const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=get_atmospheric_slots&date=${date}`);
         const data = await res.json();
@@ -1523,14 +1514,15 @@
     }
 
     async submitAppointment() {
-      const clientName = this.scannedMember?.name || 'Alexander von Humboldt';
-      const clientEmail = this.scannedMember?.email || $('#qx_agenda_keycard_input').val().trim();
-      const clientPhone = this.scannedMember?.phone || '+523318259000';
-      const clientTier = this.scannedMember?.tier || 'MASTER_PERFUMER';
+      const clientName = String($('#qx_agenda_contact_name').val() || '').trim();
+      const clientEmail = String($('#qx_agenda_contact_email').val() || '').trim();
+      const clientPhone = String($('#qx_agenda_contact_phone').val() || '').trim();
+      const clientTier = 'GUEST';
+      if (!clientName || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail) || !clientPhone) { this.storefront.showToast('Completa nombre, correo y teléfono para solicitar la cita.'); return; }
       const notes = $('#qx_intake_notes').val().trim();
 
       try {
-        const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/concierge_agenda.php?tenant=${tenantId}&action=submit_appointment_request`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1547,7 +1539,7 @@
             occasionMood: this.selectedOccasion,
             intensityDial: this.intensityDial,
             projectionMode: this.projectionMode,
-            referenceFragrances: 'Rasasi Hawas, Afnan 9AM Dive',
+            referenceFragrances: '',
             clientNotes: notes
           })
         });
@@ -1557,9 +1549,10 @@
           this.activeAppointment = data.Appointment;
           this.renderBoardingPassUI(data.Appointment);
           this.goToStep(4);
-          this.startLoungeCountdown();
+          if (data.Appointment.status === 'CONFIRMED') this.startLoungeCountdown();
+          else { this.stopLoungeCountdown(); $('#qx_lounge_countdown').text('Pendiente de confirmación'); }
           this.storefront.playHaptic('success');
-          this.storefront.showToast('🎟️ ¡Pase de Gala emitido! Cita agendada exitosamente.');
+          this.storefront.showToast(data.Message || 'Solicitud registrada; la tienda confirmará el horario.');
         } else {
           this.storefront.showToast(`⚠️ ${data.Error || 'Error al agendar cita'}`);
         }
@@ -1569,11 +1562,11 @@
     }
 
     renderBoardingPassUI(app) {
-      $('#qx_bpass_code').text(app.code || 'AGENDA-2026-VIP');
-      $('#qx_bpass_client_name').text(app.clientName || 'Alexander von Humboldt');
+      $('#qx_bpass_code').text(app.code || '');
+      $('#qx_bpass_client_name').text(app.clientName || '');
       $('#qx_bpass_date').text(app.scheduledDate || 'Hoy, 31 de Agosto');
       $('#qx_bpass_time').text(`${app.scheduledTime} hrs`);
-      $('#qx_bpass_sommelier').text(app.sommelierName || 'Jean-Luc Moreau');
+      $('#qx_bpass_sommelier').text(app.sommelierName || 'Pendiente de asignación');
       
       const bandNames = {
         'SOLARIUM': 'The Daylight Solarium',
@@ -1581,14 +1574,14 @@
         'MIDNIGHT': 'The Midnight Salon'
       };
       $('#qx_bpass_band').text(bandNames[app.atmosphericBand] || 'The Golden Hour Atelier');
-      $('#qx_bpass_voucher_val').text(`$ ${Number(app.cashBackAmount || 499).toFixed(2)} MXN`);
+      $('#qx_bpass_voucher_val').text(Number(app.cashBackAmount || 0) > 0 ? `$ ${Number(app.cashBackAmount).toFixed(2)} MXN` : 'Sin bono asignado');
 
-      const tenantId = this.storefront.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+      const tenantId = this.storefront.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
       $('#qx_btn_download_ics').attr('href', `api/concierge_agenda.php?tenant=${tenantId}&action=generate_ics_calendar&code=${encodeURIComponent(app.code)}`);
       $('#qx_btn_wa_agenda_link').attr('href', `api/concierge_agenda.php?tenant=${tenantId}&action=generate_wa_concierge_link&code=${encodeURIComponent(app.code)}`);
 
-      $('#qx_lounge_somm_msg').text(`${app.sommelierName || 'Jean-Luc Moreau'} está preparando tu set de catas...`);
-      $('#qx_btn_lounge_enter_room').text(`🍷 Entrar a la Sala Privada con ${app.sommelierName || 'Jean-Luc Moreau'}`);
+      $('#qx_lounge_somm_msg').text(app.status === 'CONFIRMED' ? 'Horario confirmado por la tienda.' : 'La tienda debe confirmar la atención. No se ha enviado una notificación automática.');
+      $('#qx_btn_lounge_enter_room').prop('disabled', app.status !== 'CONFIRMED' || !app.meetingUrl).text(app.status === 'CONFIRMED' && app.meetingUrl ? 'Entrar a la sala' : 'Sala pendiente de confirmación');
     }
 
     startLoungeCountdown() {
@@ -1620,8 +1613,9 @@
     openAgendaModal() {
       this.goToStep(1);
       const isPerfumery = $('body').attr('data-perfumery') === '1';
-      const defaultEmail = isPerfumery ? 'alexander@humboldt-expeditions.org' : 'cliente.vip@empresa.com';
-      this.scanKeycard(defaultEmail);
+      if (!$('#qx_agenda_contact_fields').length) {
+        $('#qx_intake_notes').before('<fieldset id="qx_agenda_contact_fields" style="display:grid;gap:10px;border:0;padding:0;margin:0 0 16px"><legend>Datos para solicitar la cita</legend><label>Nombre<input id="qx_agenda_contact_name" class="qx-form-input" autocomplete="name" maxlength="128"></label><label>Correo<input id="qx_agenda_contact_email" class="qx-form-input" type="email" autocomplete="email" maxlength="128"></label><label>Teléfono<input id="qx_agenda_contact_phone" class="qx-form-input" type="tel" autocomplete="tel" maxlength="32"></label></fieldset>');
+      }
       $('#qx_agenda_backdrop').addClass('active');
       $('#qx_agenda_modal').addClass('active');
       $('body').css('overflow', 'hidden');
@@ -3142,7 +3136,9 @@ ${shareUrl}`;
             const serverTenant = window.QX_TENANT || {};
             const sameTenant = String(serverTenant.emisorId || '').toLowerCase() === String((resp.Tenant && resp.Tenant.emisorId) || '').toLowerCase();
             self.tenant = Object.assign({}, sameTenant ? serverTenant : {}, resp.Tenant);
+            if (window.QuantixControlRuntime) window.QuantixControlRuntime.refreshContact();
             self.products = resp.Products || [];
+            if (window.spatialStudio) { window.spatialStudio.syncControls(); window.spatialStudio.updatePriceDisplay(); }
             if (self.tenant) {
               const urlArch = urlParams.get('archetype');
               if (urlArch && ['maison', 'titan', 'nordic', 'social'].includes(urlArch.toLowerCase())) {
@@ -3220,13 +3216,7 @@ ${shareUrl}`;
       if (modules.hero_vitrina !== undefined) {
         if (modules.hero_vitrina) {
           $('#qx_hero_section').show();
-          if (this.heroFeatured && this.heroFeatured.length > 0) {
-            $('#qx_hero_carousel_wrapper').show();
-            this.update3DCarousel();
-          } else {
-            const fallback = (this.products && this.products.length > 0) ? this.products.slice(0, 4) : [];
-            this.renderHero3DCarousel(fallback);
-          }
+          this.renderHero3DCarousel(Array.isArray(this.heroFeatured) ? this.heroFeatured : null);
         } else {
           $('#qx_hero_carousel_wrapper').hide();
         }
@@ -3446,6 +3436,12 @@ ${shareUrl}`;
       return null;
     }
 
+    openAgendaModal(context = {}) {
+      if (!this.royalAgenda) return;
+      this.royalAgenda.openAgendaModal();
+      if (context.title) $('#qx_intake_notes').val('Consulta sobre: ' + context.title);
+    }
+
     requestPropertyContact(product, tour = false) {
       if (tour && this.tenant && this.tenant.featureMatrix && this.tenant.featureMatrix.royal_agenda && this.tenant.featureMatrix.royal_agenda.enabled) {
         this.closeProductModal(false);
@@ -3536,7 +3532,7 @@ ${shareUrl}`;
         }
       }
 
-      const vatRate = product.vatRate || 16;
+      const vatRate = product.vatRate == null ? 16 : Number(product.vatRate);
       const unitPrice = itemPriceWithTax / (1 + vatRate / 100);
 
       const existing = this.cart.items.find(item => item.id === itemId);
@@ -3737,7 +3733,7 @@ ${shareUrl}`;
     async applyVoucher(code) {
       if (!code) return;
       try {
-        const tenant = this.tenant?.emisorId || '00163e311ce9a3e711f1591962781ba6';
+        const tenant = this.tenant?.emisorId || window.QX_TENANT?.emisorId || '';
         const res = await fetch(`api/passport.php?action=apply_voucher&tenant=${encodeURIComponent(tenant)}&code=${encodeURIComponent(code)}`);
         const data = await res.json();
         if (data.Status === 'OK' && data.Valid) {
@@ -4247,15 +4243,17 @@ ${shareUrl}`;
       const submitBtn = $('#qx_btn_place_order');
       $('#qx_checkout_alert').hide();
 
+      if (this.isRealEstateBusiness()) { this.showCheckoutAlert('Las propiedades se atienden por consulta o visita.', 'error'); return; }
+      if (!this.tenant || !this.tenant.paymentSettings || !this.tenant.paymentSettings.spei_ready) { this.showCheckoutAlert('La tienda todavía no tiene SPEI configurado.', 'error'); return; }
       if (!this.cart.items.length) {
         this.showCheckoutAlert('Tu carrito está vacío. Agrega al menos un producto para continuar.', 'error');
         return;
       }
 
-      submitBtn.prop('disabled', true).text('Procesando Pedido...');
+      submitBtn.prop('disabled', true).text('Registrando solicitud...');
 
       const orderData = {
-        emisorId: this.tenant ? this.tenant.emisorId : '58',
+        emisorId: this.tenant.emisorId,
         customerName: $('#qx_cust_name').val(),
         customerEmail: $('#qx_cust_email').val(),
         customerPhone: $('#qx_cust_phone').val(),
@@ -4270,8 +4268,21 @@ ${shareUrl}`;
         items: this.cart.items
       };
 
+      const signature = JSON.stringify(orderData);
+      if (!this._pendingOrderAttempt || this._pendingOrderAttempt.signature !== signature) {
+        if (!window.crypto || !window.crypto.getRandomValues) {
+          this.showCheckoutAlert('Tu navegador no permite crear un intento seguro. Actualízalo para continuar.', 'error');
+          submitBtn.prop('disabled', false).text('Registrar solicitud');
+          return;
+        }
+        const bytes = new Uint8Array(16);
+        window.crypto.getRandomValues(bytes);
+        this._pendingOrderAttempt = { signature: signature, token: Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('') };
+      }
+      orderData.idempotencyKey = this._pendingOrderAttempt.token;
+
       $.ajax({
-        url: 'api/order.php',
+        url: 'api/order.php?emisor=' + encodeURIComponent(this.tenant.emisorId),
         method: 'POST',
         data: JSON.stringify(orderData),
         contentType: 'application/json',
@@ -4279,6 +4290,8 @@ ${shareUrl}`;
       })
       .done(function(resp) {
         if (resp.Status === 'OK') {
+          submitBtn.prop('disabled', !self.tenant || !self.tenant.paymentSettings || !self.tenant.paymentSettings.spei_ready || self.isRealEstateBusiness()).text('Registrar solicitud');
+          self._pendingOrderAttempt = null;
           self.cart.items = [];
           self.saveCart();
           self.closeCheckout();
@@ -4296,12 +4309,12 @@ ${shareUrl}`;
           self.showOrderSuccessModal(resp);
         } else {
           self.showCheckoutAlert(resp.Error || 'Error al procesar pedido. Revisa tus datos e intenta nuevamente.', 'error');
-          submitBtn.prop('disabled', false).text('Confirmar y Pagar Orden');
+          submitBtn.prop('disabled', false).text('Registrar solicitud');
         }
       })
-      .fail(function() {
-        self.showCheckoutAlert('Hubo una interrupción momentánea de conexión. Tus datos están a salvo; pulsa Reintentar.', 'error');
-        submitBtn.prop('disabled', false).text('Reintentar Pago');
+      .fail(function(xhr) {
+        self.showCheckoutAlert((xhr.responseJSON && xhr.responseJSON.Error) || 'No se confirmó el registro. Reintenta para consultar el mismo intento sin duplicarlo.', 'error');
+        submitBtn.prop('disabled', false).text('Reintentar solicitud');
       });
     }
 
@@ -4310,14 +4323,16 @@ ${shareUrl}`;
         <div style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:39999; display:flex; align-items:center; justify-content:center; padding:20px;">
           <div style="background:var(--qx-surface); border:1px solid var(--qx-border); border-radius:var(--qx-radius-lg); max-width:500px; width:100%; padding:32px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.7);">
             <div style="font-size:48px; margin-bottom:12px">🎉</div>
-            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">¡Pedido Confirmado!</h2>
-            <p style="font-size:14px; color:var(--qx-text-muted); margin-bottom:20px">Folio de Orden: <strong style="color:var(--qx-accent)">#${orderResp.OrderFolio || '1001'}</strong></p>
+            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">Solicitud registrada</h2>
+            <p style="font-size:14px; color:var(--qx-text-muted); margin-bottom:20px">Folio de Orden: <strong style="color:var(--qx-accent)">#${this.esc(orderResp.OrderFolio || '')}</strong></p>
             <div style="background:rgba(255,255,255,0.04); border:1px solid var(--qx-border); border-radius:var(--qx-radius-md); padding:16px; text-align:left; font-size:13px; margin-bottom:24px;">
               <div><strong>Cliente:</strong> ${this.esc(orderResp.CustomerName || '')}</div>
               <div><strong>Total:</strong> $ ${this.formatMoney(orderResp.Total || 0)} MXN</div>
               <div><strong>Método:</strong> ${this.esc(orderResp.PaymentMethod || '')}</div>
               ${orderResp.folioQFS ? `<div style="margin-top:6px;"><strong>Nota de Venta:</strong> <span style="color:#d4af37; font-weight:800;">${this.esc(orderResp.folioQFS)}</span> <span style="font-size:11px; color:#10b981;">(● 0 timbres)</span></div>` : ''}
-              ${orderResp.CfdiStatus ? `<div style="margin-top:8px; color:var(--qx-emerald)">✔ Factura Fiscal CFDI 4.0 timbrada con éxito</div>` : ''}
+              <div style="margin-top:8px;">Pago pendiente de verificación. La tienda debe confirmar la disponibilidad.</div>
+              ${orderResp.CfdiStatus === 'REQUESTED' ? `<div style="margin-top:8px;">Solicitud de factura registrada; no se ha emitido ni timbrado.${orderResp.InvoiceSeries ? ' Serie solicitada: ' + this.esc(orderResp.InvoiceSeries) : ''}</div>` : ''}
+              <div style="margin-top:8px;">No se ha enviado una notificación automática.</div>
             </div>
             ${orderResp.receiptUrl ? `<a href="${orderResp.receiptUrl}" target="_blank" class="qx-btn-checkout" style="background:#2563eb; color:#fff; text-decoration:none; display:block; margin-bottom:10px; padding:10px; font-weight:700;">📥 Descargar Recibo Digital</a>` : ''}
             ${orderResp.facturarUrl ? `<a href="${orderResp.facturarUrl}" target="_blank" class="qx-btn-checkout" style="background:linear-gradient(135deg, #d4af37, #b3860b); color:#0b1329; text-decoration:none; display:block; margin-bottom:10px; font-weight:800; padding:10px;">⚡ Facturar esta Nota (CFDI 4.0)</a>` : ''}
@@ -4389,15 +4404,12 @@ ${shareUrl}`;
       const dotsContainer = $('#qx_3d_dots');
       this.stop3DAutoPlay();
 
-      // Honor explicit disabled toggle
-      if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) {
-        wrapper.hide();
-        return;
-      }
-
-      let items = (featured && featured.length > 0) ? featured : ((this.products && this.products.length > 0) ? this.products.slice(0, 4) : []);
-
-      if (!items || items.length === 0) {
+      // null means legacy fallback; [] means the owner explicitly selected nothing.
+      const items = Array.isArray(featured) ? featured : (Array.isArray(this.products) ? this.products.slice(0, 4) : []);
+      this.heroFeatured = items;
+      if ((this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) || items.length === 0) {
+        stage.empty();
+        dotsContainer.empty();
         wrapper.hide();
         return;
       }
@@ -6006,7 +6018,7 @@ ${shareUrl}`;
         </div>
       `);
 
-      const tenantParam = (this.tenant && this.tenant.emisorId) ? this.tenant.emisorId : '00163e311ce9a3e711f1591962781ba6';
+      const tenantParam = (this.tenant && this.tenant.emisorId) ? this.tenant.emisorId : (window.QX_TENANT?.emisorId || '');
 
       $.ajax({
         url: 'api/sommelier.php',

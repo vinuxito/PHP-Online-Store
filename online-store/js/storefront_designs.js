@@ -43,6 +43,24 @@
         if (referrer.origin === window.location.origin || (referrer.protocol === 'https:' && /(^|\.)evinux\.net$/.test(referrer.hostname))) window.parent.postMessage({ source: 'QUANTIX_STOREFRONT_READY', type: 'QUANTIX_STOREFRONT_READY' }, referrer.origin);
       } catch (error) {}
     },
+    applyHeroSettings: function(payload) {
+      if (!payload || typeof payload !== 'object') return;
+      var body = document.body;
+      var modes = ['static', 'circadian'];
+      if (modes.indexOf(String(payload.background_mode || '').toLowerCase()) !== -1) {
+        body.setAttribute('data-hero-background', String(payload.background_mode).toLowerCase());
+      }
+      var circadian = payload.circadian;
+      if (circadian && Object.prototype.hasOwnProperty.call(circadian, 'enabled')) {
+        body.setAttribute('data-hero-background', circadian.enabled === true || circadian.enabled === 1 || circadian.enabled === '1' ? 'circadian' : 'static');
+      }
+      var phase = payload.phase || (circadian && (circadian.phase || circadian.current_phase));
+      var phases = ['aube', 'zenith', 'crepuscule', 'nuit'];
+      if (phases.indexOf(phase) !== -1) {
+        phases.forEach(function(key) { body.classList.toggle('qx-circadian-' + key, key === phase); });
+        body.setAttribute('data-circadian-phase', phase);
+      }
+    },
     featuredSelection: null,
     setFeatured: function(records, store) {
       if (!Array.isArray(records)) return;
@@ -62,12 +80,14 @@
       document.body.setAttribute('data-design', key);
       document.body.setAttribute('data-archetype', key);
       var products = store.products || [];
-      if (Surface.featuredSelection !== null && products.length) { featured = Surface.resolveFeatured(store); store.heroFeatured = featured; }
-      var candidates = (featured && featured.length ? featured : (store.heroFeatured && store.heroFeatured.length ? store.heroFeatured : products));
-      var selected = candidates.find(function(p) { return p.cover || (p.photos && p.photos.length); }) || candidates[0];
+      if (Surface.featuredSelection !== null) { featured = Surface.resolveFeatured(store); store.heroFeatured = featured; }
+      // An explicit empty selection is intentional; only absent curation may fall back.
+      var candidates = Array.isArray(featured) ? featured : (Array.isArray(store.heroFeatured) ? store.heroFeatured : products);
+      var selected = candidates[0];
       var image = document.getElementById('qx_design_hero_image');
       var button = document.getElementById('qx_design_hero_open');
       var media = document.getElementById('qx_design_hero_media');
+      if (media) media.hidden = !selected;
       if (image && selected) {
         var photo = selected.photos && selected.photos[0];
         var url = photo && (photo.url || photo.thumb) || selected.cover;
@@ -80,7 +100,11 @@
         document.getElementById('qx_design_hero_caption').textContent = selected.name || '';
         document.getElementById('qx_design_hero_price').textContent = Number(selected.priceWithTax) > 0 ? '$ ' + store.formatMoney(selected.priceWithTax) + ' MXN' : 'Consultar precio';
       }
-      if (!selected && button) { button.disabled = true; image.hidden = true; }
+      if (!selected && button) {
+        button.disabled = true; button.onclick = null; image.hidden = true;
+        document.getElementById('qx_design_hero_caption').textContent = '';
+        document.getElementById('qx_design_hero_price').textContent = '';
+      }
       var count = document.getElementById('qx_design_collection_count');
       if (count) count.textContent = products.length ? String(products.length).padStart(2, '0') + ' ' + (store.isRealEstateBusiness() ? (products.length === 1 ? 'propiedad' : 'propiedades') : (products.length === 1 ? 'artículo' : 'artículos')) : '';
       var contact = document.getElementById('qx_design_contact');
@@ -112,7 +136,8 @@
       }
       var details = document.getElementById('qx_design_showcase');
       if (details) {
-        details.hidden = Boolean(store.tenant && store.tenant.modules && store.tenant.modules.hero_vitrina === false);
+        var noFeatured = Surface.featuredSelection !== null ? !Surface.resolveFeatured(store).length : (Array.isArray(store.heroFeatured) && !store.heroFeatured.length);
+        details.hidden = noFeatured || Boolean(store.tenant && store.tenant.modules && store.tenant.modules.hero_vitrina === false);
         if (details.hidden || !details.open) store.stop3DAutoPlay();
       }
     },

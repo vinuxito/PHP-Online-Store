@@ -4,28 +4,35 @@
  */
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/storefront_control_contract.php';
 
 class StorefrontTenant {
-    public $emisorId = '58';
-    public $brandName = 'MISTIQ GLOBAL BRANDS';
-    public $rfc = 'CAAV800329JZ8';
-    public $slug = 'mistiq';
+    public $emisorId = '';
+    public $resolutionError = '';
+    public $bankName = '';
+    public $bankClabe = '';
+    public $bankBeneficiary = '';
+    public $paymentSettings = [];
+    public $apexConfig = [];
+    public $brandName = 'Tienda';
+    public $rfc = '';
+    public $slug = '';
     public $logo = 'images/mistiq_logo.png';
     public $theme = 'obsidian'; // 'obsidian' (dark luxury), 'light' (clean), 'gold'
     public $primaryColor = '#3b82f6';
-    public $email = 'contacto@mistiq.com';
+    public $email = '';
     public $phone = '';
     public $address = '';
-    public $description = 'Alta Perfumería & Fragancias Exclusivas';
-    public $headline = 'COLECCIÓN IMPERIAL & {ALTA COSECHA 2026}';
-    public $heroKicker = 'HAUTE COSECHA 2026';
+    public $description = '';
+    public $headline = '';
+    public $heroKicker = '';
     public $heroKickerEnabled = true;
     public $heroKickerIcon = 'sparkle';
     public $heroTypography = 'imperial_serif';
     public $heroShader = 'liquid_gold';
     public $heroShimmer = true;
     public $heroLetterSpacing = 'wide';
-    public $heroSubheadline = 'Extractos puros de perfumería nicho elaborados artesanalmente en Grasse.';
+    public $heroSubheadline = '';
     public $cartTitle = 'Carrito de Compras';
     public $quantixFrontStore = 'NO';
     public $quantixStorePerfums = 'NO';
@@ -35,8 +42,13 @@ class StorefrontTenant {
     public $whatsappPhone = '';
     public $whatsappGreeting = '';
 
+    public function getIndustry() {
+        $hint = $this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false;
+        return QuantixIndustryContract::resolve($this->apexConfig ?: [], $this->brandName . ' ' . $this->description . ' ' . $this->slug, $hint);
+    }
+
     public function isPerfumery() {
-        return ($this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false);
+        return $this->getIndustry() === 'perfumery';
     }
 
     public function isStudio3DEnabled() {
@@ -54,170 +66,88 @@ class StorefrontTenant {
     }
 
     public function getStudio3DConfig() {
-        $cfg = $this->studio3DConfig ?: [];
-        if (!isset($cfg['enabled'])) $cfg['enabled'] = false;
-        if (!isset($cfg['auto_orbit'])) $cfg['auto_orbit'] = true;
-        if (!isset($cfg['auto_orbit_speed'])) $cfg['auto_orbit_speed'] = 1.2;
-        if (!isset($cfg['allow_zoom'])) $cfg['allow_zoom'] = true;
-        if (!isset($cfg['allow_explode'])) $cfg['allow_explode'] = true;
-
-        if ($this->isPerfumery()) {
-            if (empty($cfg['archetype_model'])) {
-                $cfg['archetype_model'] = 'perfume_flacon_imperial';
-            }
-            if (empty($cfg['lighting_preset'])) {
-                $cfg['lighting_preset'] = 'studio_softbox';
-            }
-            if (empty($cfg['finishes'])) {
-                $cfg['finishes'] = [
-                    ['id' => 'obsidian_stealth', 'name' => 'Obsidian Stealth', 'color' => '#111827', 'roughness' => 0.20, 'metalness' => 0.80, 'clearcoat' => 0.90, 'price_delta' => 0],
-                    ['id' => 'liquid_gold', 'name' => 'Liquid Gold 24k', 'color' => '#D4AF37', 'roughness' => 0.10, 'metalness' => 0.95, 'clearcoat' => 1.00, 'price_delta' => 350],
-                    ['id' => 'titanium_frost', 'name' => 'Titanium Frost', 'color' => '#E2E8F0', 'roughness' => 0.35, 'metalness' => 0.60, 'clearcoat' => 0.50, 'price_delta' => 0],
-                    ['id' => 'rose_champagne', 'name' => 'Rose Champagne', 'color' => '#FDA4AF', 'roughness' => 0.15, 'metalness' => 0.85, 'clearcoat' => 0.80, 'price_delta' => 200]
-                ];
-            }
-            if (empty($cfg['hotspots'])) {
-                $cfg['hotspots'] = [
-                    ['id' => 'hs_cap', 'label' => 'Tapa Zamak Magnética', 'description' => 'Aleación pesada pulida a mano con sellado hermético al vacío.', 'position' => [0.0, 0.85, 0.0], 'camera_target' => [0.0, 0.85, 1.2]],
-                    ['id' => 'hs_heart', 'label' => 'Concentración Extrait 35%', 'description' => 'Formulación de alta maceración artesanal con aceites puros.', 'position' => [0.0, 0.15, 0.25], 'camera_target' => [0.0, 0.15, 1.4]],
-                    ['id' => 'hs_base', 'label' => 'Autenticidad & Batch SAT', 'description' => 'Grabado láser al ácido con número de lote e invoice fiscal SAT.', 'position' => [0.0, -0.65, 0.0], 'camera_target' => [0.0, -0.65, 1.2]]
-                ];
-            }
-        } else {
-            if (empty($cfg['archetype_model']) || $cfg['archetype_model'] === 'perfume_flacon_imperial') {
-                $cfg['archetype_model'] = 'industrial_solenoid_valve';
-            }
-            if (empty($cfg['lighting_preset'])) {
-                $cfg['lighting_preset'] = 'studio_softbox';
-            }
-            if (empty($cfg['finishes'])) {
-                $cfg['finishes'] = [
-                    ['id' => 'danfoss_blue', 'name' => 'Danfoss Blue Enamel', 'color' => '#0284c7', 'roughness' => 0.3, 'metalness' => 0.7, 'clearcoat' => 0.8, 'price_delta' => 0],
-                    ['id' => 'cast_iron_gray', 'name' => 'Cast Iron Slate', 'color' => '#334155', 'roughness' => 0.6, 'metalness' => 0.5, 'clearcoat' => 0.2, 'price_delta' => 0],
-                    ['id' => 'brass_valve', 'name' => 'Forged Brass Alloy', 'color' => '#b45309', 'roughness' => 0.25, 'metalness' => 0.9, 'clearcoat' => 0.6, 'price_delta' => 150]
-                ];
-            }
-            if (empty($cfg['hotspots'])) {
-                $cfg['hotspots'] = [
-                    ['id' => 'hs_seal', 'label' => 'Junta Hermética IP67', 'description' => 'Resistencia certificada contra polvos finos y humedad extrema.', 'position' => [0.0, 0.6, 0.0], 'camera_target' => [0.0, 0.6, 1.2]],
-                    ['id' => 'hs_coil', 'label' => 'Bobinado de Cobre Clase H', 'description' => 'Aislamiento térmico continuo hasta 180°C bajo carga inductiva.', 'position' => [0.0, 0.1, 0.25], 'camera_target' => [0.0, 0.1, 1.4]],
-                    ['id' => 'hs_sat', 'label' => 'Clave SAT 40141600', 'description' => 'Válvulas y solenoides industriales con timbrado CFDI 4.0 inmediato.', 'position' => [0.0, -0.5, 0.0], 'camera_target' => [0.0, -0.5, 1.2]]
-                ];
-            }
-        }
-        if (!empty($cfg['custom_model_url'])) {
-            $cfg['custom_model_url'] = htmlspecialchars(trim($cfg['custom_model_url']), ENT_QUOTES, 'UTF-8');
-            $cfg['model_source'] = 'custom_gltf';
-        } else {
-            $cfg['model_source'] = 'procedural';
-        }
-        if (!empty($cfg['custom_model_name'])) {
-            $cfg['custom_model_name'] = htmlspecialchars(trim($cfg['custom_model_name']), ENT_QUOTES, 'UTF-8');
-        }
-        if (!empty($cfg['custom_hotspots']) && is_array($cfg['custom_hotspots'])) {
-            $cfg['custom_hotspots'] = array_values($cfg['custom_hotspots']);
-        }
-
-        // AR Spatial Calibration defaults
-        if (!isset($cfg['ar_calibration']) || !is_array($cfg['ar_calibration'])) {
-            $cfg['ar_calibration'] = [
-                'enabled' => true,
-                'anchor' => 'surface',
-                'height_mm' => $this->isPerfumery() ? 150 : 240,
-                'width_mm' => $this->isPerfumery() ? 65 : 120,
-                'depth_mm' => $this->isPerfumery() ? 65 : 120,
-                'lock_scale' => true
-            ];
-        } else {
-            if (!isset($cfg['ar_calibration']['enabled'])) $cfg['ar_calibration']['enabled'] = true;
-            if (!isset($cfg['ar_calibration']['anchor'])) $cfg['ar_calibration']['anchor'] = 'surface';
-            if (!isset($cfg['ar_calibration']['height_mm'])) $cfg['ar_calibration']['height_mm'] = $this->isPerfumery() ? 150 : 240;
-            if (!isset($cfg['ar_calibration']['width_mm'])) $cfg['ar_calibration']['width_mm'] = $this->isPerfumery() ? 65 : 120;
-            if (!isset($cfg['ar_calibration']['depth_mm'])) $cfg['ar_calibration']['depth_mm'] = $this->isPerfumery() ? 65 : 120;
-            if (!isset($cfg['ar_calibration']['lock_scale'])) $cfg['ar_calibration']['lock_scale'] = true;
-        }
-
+        $cfg = is_array($this->studio3DConfig) ? $this->studio3DConfig : [];
+        $property = StorefrontControlContract::isRealEstate($this->apexConfig ?: [], $this->description);
+        $defaults = [
+            'enabled' => false, 'auto_orbit' => true, 'auto_orbit_speed' => 1.2,
+            'allow_zoom' => true, 'allow_explode' => false,
+            'archetype_model' => $property ? 'architectural_space' : ($this->isPerfumery() ? 'perfume_flacon_imperial' : 'industrial_solenoid_valve'),
+            'lighting_preset' => 'studio_softbox',
+            'finishes' => [
+                ['id' => 'neutral_light', 'name' => 'Claro', 'color' => '#E2E8F0', 'roughness' => 0.5, 'metalness' => 0.1, 'clearcoat' => 0.2, 'price_delta' => 0],
+                ['id' => 'neutral_dark', 'name' => 'Oscuro', 'color' => '#334155', 'roughness' => 0.5, 'metalness' => 0.1, 'clearcoat' => 0.2, 'price_delta' => 0]
+            ],
+            'hotspots' => []
+        ];
+        $cfg = array_replace($defaults, $cfg);
+        if ($property && in_array($cfg['archetype_model'], ['perfume_flacon_imperial', 'industrial_solenoid_valve'], true)) $cfg['archetype_model'] = 'architectural_space';
+        $cfg['model_source'] = !empty($cfg['custom_model_url']) ? 'custom_gltf' : 'procedural';
+        if (isset($cfg['custom_model_url'])) $cfg['custom_model_url'] = html_entity_decode(trim((string)$cfg['custom_model_url']), ENT_QUOTES, 'UTF-8');
+        if (isset($cfg['custom_model_name'])) $cfg['custom_model_name'] = html_entity_decode(trim((string)$cfg['custom_model_name']), ENT_QUOTES, 'UTF-8');
+        if (!empty($cfg['custom_hotspots']) && is_array($cfg['custom_hotspots'])) $cfg['custom_hotspots'] = array_values($cfg['custom_hotspots']);
+        $calibration = isset($cfg['ar_calibration']) && is_array($cfg['ar_calibration']) ? $cfg['ar_calibration'] : [];
+        $cfg['ar_calibration'] = array_replace([
+            'enabled' => false, 'anchor' => 'surface', 'height_mm' => 150,
+            'width_mm' => 65, 'depth_mm' => 65, 'lock_scale' => true
+        ], $calibration);
         return $cfg;
     }
 
-    public static function resolve() {
+    private static function rowBySlug($db, $slug) {
+        $emisorId = '';
+        try {
+            $stmt = $db->prepare("SELECT EmisorID FROM config_tienda_tenants WHERE JSON_UNQUOTE(JSON_EXTRACT(ConfigJSON, '$.subdomain_slug')) = ? LIMIT 1");
+            $stmt->execute([$slug]);
+            if ($row = $stmt->fetch()) $emisorId = $row['EmisorID'];
+        } catch (Exception $e) {}
+        if (!$emisorId) {
+            try {
+                $stmt = $db->prepare("SELECT note FROM quantix_subdomains.subdomain WHERE label = ? AND zone = 'evinux.net' LIMIT 1");
+                $stmt->execute([$slug]);
+                if (($row = $stmt->fetch()) && preg_match('/(?:^|\s)Tenant:\s*([a-zA-Z0-9_-]+)(?:\s|$)/', (string)$row['note'], $match)) $emisorId = $match[1];
+            } catch (Exception $e) {}
+        }
+        // Exact legacy aliases only; never guess a tenant from a partial business name.
+        if (!$emisorId && $slug === 'mistiq') $emisorId = '00163e311ce9a3e711f1591962781ba6';
+        if (!$emisorId && $slug === 'beskolab') $emisorId = '00155d3c42c29a0411e9a4c358646c44';
+        if (!$emisorId) return null;
+        $stmt = $db->prepare('SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1');
+        $stmt->execute([$emisorId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public static function resolve($requestBody = null) {
         $tenant = new self();
         $db = get_store_db();
 
-        $reqEmisor = trim($_GET['emisor'] ?? '');
-        $reqSlug = trim($_GET['slug'] ?? '');
-        $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
-
-        // 1. Detect subdomain slug if running on *.evinux.net or similar
-        $detectedSlug = '';
-        if (preg_match('/^([a-z0-9\-]+)\.evinux\.net$/i', $host, $m)) {
-            $sub = strtolower($m[1]);
-            if (!in_array($sub, ['www', 'speed', 'quantix-panel', 'mail', 'api'])) {
-                $detectedSlug = $sub;
-            }
+        if ($requestBody === null) {
+            $requestBody = json_decode(file_get_contents('php://input'), true);
         }
-
-        $targetSlug = $reqSlug ?: ($detectedSlug ?: '');
-        $targetId = $reqEmisor;
-
-        // Query database to find Emisor
-        $row = null;
-        if (!empty($targetId)) {
-            $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1");
-            $stmt->execute([$targetId]);
-            $row = $stmt->fetch();
-        } elseif (!empty($targetSlug)) {
-            // 1. Direct match by subdomain_slug in config_tienda_tenants
-            try {
-                $stmtSlug = $db->prepare("SELECT EmisorID FROM config_tienda_tenants WHERE JSON_UNQUOTE(JSON_EXTRACT(ConfigJSON, '$.subdomain_slug')) = ? LIMIT 1");
-                $stmtSlug->execute([$targetSlug]);
-                if ($rowSlug = $stmtSlug->fetch()) {
-                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1");
-                    $stmt->execute([$rowSlug['EmisorID']]);
-                    $row = $stmt->fetch();
-                }
-            } catch (\Exception $eSlug) {}
-
-            // 2. Check quantix_subdomains.subdomain note if still not resolved
-            if (!$row) {
-                try {
-                    $stmtSub = $db->prepare("SELECT note FROM quantix_subdomains.subdomain WHERE label = ? LIMIT 1");
-                    $stmtSub->execute([$targetSlug]);
-                    if ($rowSub = $stmtSub->fetch()) {
-                        if (!empty($rowSub['note']) && preg_match('/Tenant:\s*([a-zA-Z0-9_-]+)/', $rowSub['note'], $mSub)) {
-                            $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1");
-                            $stmt->execute([$mSub[1]]);
-                            $row = $stmt->fetch();
-                        }
-                    }
-                } catch (\Exception $eSub) {}
+        try {
+            $context = StorefrontControlContract::context($_GET, $_POST, $requestBody, $_SERVER['HTTP_HOST'] ?? '');
+            $slugRow = $context['slug'] !== '' ? self::rowBySlug($db, $context['slug']) : null;
+            $row = null;
+            if ($context['id'] !== '') {
+                $stmt = $db->prepare('SELECT * FROM emisores WHERE EmisorID = ? LIMIT 1');
+                $stmt->execute([$context['id']]);
+                $row = $stmt->fetch();
+                if (!$row || ($context['slug'] !== '' && (!$slugRow || (string)$slugRow['EmisorID'] !== (string)$row['EmisorID']))) throw new InvalidArgumentException('La tienda solicitada no coincide con este dominio.');
+            } elseif ($slugRow) {
+                $row = $slugRow;
+            } elseif (!$context['explicit']) {
+                // Preserve the original base URL entry only when no tenant was requested.
+                $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00163e311ce9a3e711f1591962781ba6' LIMIT 1");
+                $stmt->execute();
+                $row = $stmt->fetch();
             }
-
-            // 3. Heuristics fallback
-            if (!$row) {
-                if ($targetSlug === 'mistiq' || strpos($targetSlug, 'mistiq') !== false) {
-                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00163e311ce9a3e711f1591962781ba6' OR nombre LIKE '%MISTIQ%' LIMIT 1");
-                    $stmt->execute();
-                    $row = $stmt->fetch();
-                } elseif ($targetSlug === 'beskolab' || strpos($targetSlug, 'besko') !== false) {
-                    $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00155d3c42c29a0411e9a4c358646c44' OR nombre LIKE '%BESKOLAB%' LIMIT 1");
-                    $stmt->execute();
-                    $row = $stmt->fetch();
-                } else {
-                    $stmt = $db->prepare("SELECT * FROM emisores WHERE nombre LIKE ? OR rfc LIKE ? LIMIT 1");
-                    $stmt->execute(["%{$targetSlug}%", "%{$targetSlug}%"]);
-                    $row = $stmt->fetch();
-                }
-            }
+            if (!$row) throw new InvalidArgumentException('La tienda solicitada no está disponible.');
+        } catch (InvalidArgumentException $e) {
+            $tenant->resolutionError = $e->getMessage();
+            $tenant->isStoreActive = false;
+            http_response_code(404);
+            return $tenant;
         }
-
-        // Default fallback to MISTIQ GLOBAL BRANDS if nothing found
-        if (!$row) {
-            $stmt = $db->prepare("SELECT * FROM emisores WHERE EmisorID = '00163e311ce9a3e711f1591962781ba6' OR EmisorID = '58' LIMIT 1");
-            $stmt->execute();
-            $row = $stmt->fetch();
-        }
-
+        $explicitHero = [];
         if ($row) {
             $tenant->emisorId = $row['EmisorID'];
             $tenant->brandName = !empty($row['nombre']) ? $row['nombre'] : 'Tienda Oficial';
@@ -296,27 +226,31 @@ class StorefrontTenant {
             $tenant->whatsappGreeting = $deMap['STORE_WHATSAPP_GREETING'] ?? '¡Hola! Requiero asistencia.';
 
             // Load Quantix Apex Command Tower configuration
-            $tenant->apexConfig = null;
+            $tenant->apexConfig = [];
             try {
-                $stmtApex = $db->prepare("SELECT ConfigJSON FROM config_tienda_tenants WHERE EmisorID = ? LIMIT 1");
+                $stmtApex = $db->prepare("SELECT ConfigJSON, Industria FROM config_tienda_tenants WHERE EmisorID = ? LIMIT 1");
                 $stmtApex->execute([$tenant->emisorId]);
                 if ($rowApex = $stmtApex->fetch()) {
                     $decodedApex = json_decode($rowApex['ConfigJSON'], true);
                     if (is_array($decodedApex)) {
+                        if (QuantixIndustryContract::kind($rowApex['Industria'] ?? null) !== null) $decodedApex['_industria'] = $rowApex['Industria'];
                         $tenant->apexConfig = $decodedApex;
                         if (!empty($decodedApex['tenant_name'])) {
                             $tenant->brandName = $decodedApex['tenant_name'];
                         }
                         if (!empty($decodedApex['hero_curation']) && is_array($decodedApex['hero_curation'])) {
                             $hc = $decodedApex['hero_curation'];
-                            if (!empty($hc['headline'])) {
+                            if (array_key_exists('headline', $hc)) {
+                                $explicitHero['headline'] = true;
                                 $tenant->headline = $hc['headline'];
                             }
-                            if (!empty($hc['subheadline'])) {
+                            if (array_key_exists('subheadline', $hc)) {
+                                $explicitHero['subheadline'] = true;
                                 $tenant->description = $hc['subheadline'];
                                 $tenant->heroSubheadline = $hc['subheadline'];
                             }
-                            if (isset($hc['kicker'])) {
+                            if (array_key_exists('kicker', $hc)) {
+                                $explicitHero['kicker'] = true;
                                 $tenant->heroKicker = $hc['kicker'];
                             }
                             if (isset($hc['kicker_enabled'])) {
@@ -373,6 +307,10 @@ class StorefrontTenant {
                     }
                 }
             } catch (\Exception $e) {}
+            $tenant->paymentSettings = StorefrontControlContract::payments($tenant->apexConfig, $deMap);
+            $tenant->bankName = $tenant->paymentSettings['spei_bank'];
+            $tenant->bankClabe = $tenant->paymentSettings['spei_clabe'];
+            $tenant->bankBeneficiary = $tenant->paymentSettings['spei_beneficiary'];
         }
 
         if (isset($_GET['studio_3d'])) {
@@ -387,27 +325,11 @@ class StorefrontTenant {
             }
         }
 
-        // Industry-Aware Defaults (Zero Perfume Leak for Non-Perfumery Tenants)
-        if ($tenant->isPerfumery()) {
-            $tenant->cartTitle = 'Bolsa de Compras';
-            if (empty($tenant->heroKicker)) {
-                $tenant->heroKicker = 'HAUTE COSECHA ' . date('Y');
-            }
-            if (empty($tenant->headline)) {
-                $tenant->headline = 'COLECCIÓN IMPERIAL & {ALTA COSECHA ' . date('Y') . '}';
-            }
-        } else {
-            $tenant->cartTitle = 'Carrito de Compras';
-            if (empty($tenant->heroKicker) || trim($tenant->heroKicker) === 'HAUTE COSECHA 2026') {
-                $tenant->heroKicker = 'ALTA DISPONIBILIDAD & ENVÍO EXPRESS';
-            }
-            if (empty($tenant->headline) || trim($tenant->headline) === 'COLECCIÓN IMPERIAL & {ALTA COSECHA 2026}') {
-                $tenant->headline = strtoupper($tenant->brandName) . ' & {CATÁLOGO OFICIAL}';
-            }
-            if (empty($tenant->heroSubheadline) || strpos($tenant->heroSubheadline, 'Grasse') !== false) {
-                $tenant->heroSubheadline = 'Catálogo de alta disponibilidad con timbrado CFDI 4.0 SAT inmediato y garantía directa.';
-            }
-        }
+        // Only absent fields receive neutral defaults; intentionally empty copy stays empty.
+        $tenant->cartTitle = $tenant->isPerfumery() ? 'Bolsa de Compras' : 'Carrito de Compras';
+        if (!isset($explicitHero['headline']) && $tenant->headline === '') $tenant->headline = $tenant->brandName;
+        if (!isset($explicitHero['kicker']) && $tenant->heroKicker === '') $tenant->heroKicker = 'NUESTRA SELECCIÓN';
+        if (!isset($explicitHero['subheadline']) && $tenant->heroSubheadline === '') $tenant->heroSubheadline = 'Explora la colección y consulta los detalles.';
 
         if (!empty($_GET['theme'])) {
             $tenant->theme = strtolower(trim($_GET['theme']));

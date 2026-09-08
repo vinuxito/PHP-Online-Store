@@ -26,7 +26,8 @@ if (!$db) {
     exit;
 }
 
-$tenantParam = $tenant->emisorId ?: ($_GET['tenant'] ?? $_POST['tenant'] ?? '00163e311ce9a3e711f1591962781ba6');
+$tenantParam = $tenant->emisorId;
+if (!$tenant->isStoreActive || !$tenantParam || !$tenant->isPerfumery() || (isset($tenant->apexConfig['feature_matrix']['tasting_room']['enabled']) && !$tenant->apexConfig['feature_matrix']['tasting_room']['enabled'])) { http_response_code(403); echo json_encode(['Status' => 'Error', 'Error' => 'La sala de cata no está disponible para esta tienda.']); exit; }
 $action = trim((string)($_GET['action'] ?? $_POST['action'] ?? 'get_available_slots'));
 
 function generateUuid(): string {
@@ -67,11 +68,11 @@ try {
             'Status' => 'OK',
             'Date' => $date,
             'Sommelier' => [
-                'name' => 'Jean-Luc Moreau',
-                'title' => 'Master Perfumer & Chief Sommelier',
-                'avatar' => 'assets/sommelier_avatar.jpg',
-                'rating' => 4.98,
-                'completedTastings' => 342
+                'name' => 'Equipo de la tienda',
+                'title' => 'Atención sujeta a confirmación',
+                'avatar' => '',
+                'rating' => null,
+                'completedTastings' => null
             ],
             'Slots' => $slots
         ]);
@@ -90,8 +91,8 @@ try {
             $prodDetails = [];
             if (!empty($prodIds)) {
                 $inQuery = implode(',', array_fill(0, count($prodIds), '?'));
-                $pStmt = $db->prepare("SELECT ProductoID, descripcion, valorUnitario FROM productos WHERE ProductoID IN ($inQuery)");
-                $pStmt->execute($prodIds);
+                $pStmt = $db->prepare("SELECT ProductoID, descripcion, valorUnitario FROM productos WHERE EmisorID = ? AND ProductoID IN ($inQuery)");
+                $pStmt->execute(array_merge([$tenantParam], $prodIds));
                 while ($p = $pStmt->fetch(PDO::FETCH_ASSOC)) {
                     $prodDetails[] = [
                         'productId' => $p['ProductoID'],
@@ -106,7 +107,7 @@ try {
                 'templateId' => $tmpl['TemplateID'],
                 'title' => $tmpl['Title'],
                 'price' => (float)$tmpl['Price'],
-                'cashBackGuarantee' => '100% Bonificable en Frasco 100ml',
+                'cashBackGuarantee' => '',
                 'description' => $tmpl['Description'],
                 'products' => $prodDetails
             ];
@@ -131,19 +132,19 @@ try {
         $channel = in_array(strtoupper($input['channel'] ?? ''), ['WEBRTC', 'WHATSAPP']) ? strtoupper($input['channel']) : 'WEBRTC';
         $notes = trim((string)($input['notes'] ?? ''));
 
-        if (!$clientName || !$clientEmail || !$clientPhone) {
+        if (!$clientName || !filter_var($clientEmail, FILTER_VALIDATE_EMAIL) || !$clientPhone) {
             echo json_encode(['Status' => 'Error', 'Error' => 'Por favor completa nombre, email y teléfono.']);
             exit;
         }
 
-        $sessionId = 'SESS-' . strtoupper(substr(md5(uniqid('', true)), 0, 8));
-        $bookingCode = 'TASTE-' . strtoupper(substr(md5(uniqid('', true)), 0, 6)) . '-VIP';
-        $voucherCode = 'TASTEVOUCH-' . strtoupper(substr(md5(uniqid('', true)), 0, 6));
+        $sessionId = 'SESS-' . strtoupper(bin2hex(random_bytes(12)));
+        $bookingCode = 'TASTE-' . strtoupper(bin2hex(random_bytes(12)));
+        $voucherCode = '';
 
         $stmt = $db->prepare("
             INSERT INTO tasting_sessions 
             (SessionID, EmisorID, BookingCode, ClientName, ClientEmail, ClientPhone, ClientCity, ScheduledDate, ScheduledTime, DurationMinutes, SommelierName, Channel, Status, DiscoveryBoxStatus, CashBackVoucherCode, CashBackAmount, Notes, CreatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 20, 'Jean-Luc Moreau (Master Perfumer)', ?, 'SCHEDULED', 'DELIVERED', ?, 499.00, ?, NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 20, 'Pendiente de asignación', ?, 'SCHEDULED', 'PENDING', ?, 0.00, ?, NOW())
         ");
         $stmt->execute([
             $sessionId,
@@ -160,25 +161,12 @@ try {
             $notes
         ]);
 
-        // Insert initial canvas projection event
-        $firstProdStmt = $db->prepare("SELECT ProductoID, descripcion FROM productos WHERE EmisorID = ? AND EnTiendaOnline = 1 LIMIT 1");
-        $firstProdStmt->execute([$tenantParam]);
-        $firstProd = $firstProdStmt->fetch(PDO::FETCH_ASSOC);
-
-        $payload = json_encode([
-            'productId' => $firstProd['ProductoID'] ?? 'PROD-001',
-            'action' => 'PROJECT_PRODUCT',
-            'title' => $firstProd['descripcion'] ?? 'Fragancia Exclusiva',
-            'sommelierNote' => 'Bienvenido a tu sesión privada de cata.',
-            'auraColor' => 'purple'
-        ]);
-
-        $evStmt = $db->prepare("INSERT INTO tasting_canvas_events (SessionID, ActionType, PayloadJson, CreatedAt) VALUES (?, 'PROJECT_PRODUCT', ?, NOW())");
-        $evStmt->execute([$sessionId, $payload]);
+        // A new session has no product projection or delivered discovery box until the store supplies it.
 
         echo json_encode([
             'Status' => 'OK',
-            'Message' => 'Cita de cata virtual agendada con éxito',
+            'Message' => 'Horario registrado; confirma la atención con la tienda. No se ha enviado una notificación.',
+            'NotificationStatus' => 'unavailable',
             'Session' => [
                 'sessionId' => $sessionId,
                 'bookingCode' => $bookingCode,
@@ -188,9 +176,9 @@ try {
                 'scheduledTime' => $scheduledTime,
                 'durationMinutes' => 20,
                 'channel' => $channel,
-                'sommelier' => 'Jean-Luc Moreau (Master Perfumer)',
+                'sommelier' => 'Pendiente de asignación',
                 'cashBackVoucher' => $voucherCode,
-                'cashBackAmount' => 499.00,
+                'cashBackAmount' => 0,
                 'status' => 'SCHEDULED'
             ]
         ]);
@@ -198,9 +186,10 @@ try {
     }
 
     if ($action === 'get_session_status') {
-        $code = trim((string)($_GET['code'] ?? 'TASTE-2026-VIP'));
+        $code = trim((string)($_GET['code'] ?? ''));
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,36}$/D', $code)) { http_response_code(400); echo json_encode(['Status' => 'Error', 'Error' => 'Código de sesión inválido.']); exit; }
 
-        $stmt = $db->prepare("SELECT * FROM tasting_sessions WHERE EmisorID = ? AND (BookingCode = ? OR SessionID = ? OR BookingCode = 'TASTE-2026-VIP') LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM tasting_sessions WHERE EmisorID = ? AND (BookingCode = ? OR SessionID = ?) LIMIT 1");
         $stmt->execute([$tenantParam, $code, $code]);
         $session = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -252,7 +241,10 @@ try {
     if ($action === 'sync_canvas_event') {
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 
-        $sessionId = trim((string)($input['sessionId'] ?? 'SESS-2026-AVH-VIP'));
+        $sessionId = trim((string)($input['sessionId'] ?? ''));
+        $owner = $db->prepare('SELECT SessionID FROM tasting_sessions WHERE EmisorID = ? AND SessionID = ? LIMIT 1');
+        $owner->execute([$tenantParam, $sessionId]);
+        if (!$owner->fetch()) { http_response_code(404); echo json_encode(['Status' => 'Error', 'Error' => 'Sesión no encontrada en esta tienda.']); exit; }
         $actionType = trim((string)($input['actionType'] ?? 'PROJECT_PRODUCT'));
         $payload = $input['payload'] ?? [];
 
@@ -272,7 +264,10 @@ try {
     }
 
     if ($action === 'poll_canvas_events') {
-        $sessionId = trim((string)($_GET['sessionId'] ?? 'SESS-2026-AVH-VIP'));
+        $sessionId = trim((string)($_GET['sessionId'] ?? ''));
+        $owner = $db->prepare('SELECT SessionID FROM tasting_sessions WHERE EmisorID = ? AND SessionID = ? LIMIT 1');
+        $owner->execute([$tenantParam, $sessionId]);
+        if (!$owner->fetch()) { http_response_code(404); echo json_encode(['Status' => 'Error', 'Error' => 'Sesión no encontrada en esta tienda.']); exit; }
         $lastEventId = (int)($_GET['lastEventId'] ?? 0);
 
         $stmt = $db->prepare("SELECT * FROM tasting_canvas_events WHERE SessionID = ? AND EventID > ? ORDER BY EventID ASC");
@@ -299,9 +294,10 @@ try {
     }
 
     if ($action === 'generate_wa_session_link') {
-        $code = trim((string)($_GET['code'] ?? 'TASTE-2026-VIP'));
+        $code = trim((string)($_GET['code'] ?? ''));
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,36}$/D', $code)) { http_response_code(400); echo json_encode(['Status' => 'Error', 'Error' => 'Código de sesión inválido.']); exit; }
 
-        $stmt = $db->prepare("SELECT * FROM tasting_sessions WHERE EmisorID = ? AND (BookingCode = ? OR SessionID = ? OR BookingCode = 'TASTE-2026-VIP') LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM tasting_sessions WHERE EmisorID = ? AND (BookingCode = ? OR SessionID = ?) LIMIT 1");
         $stmt->execute([$tenantParam, $code, $code]);
         $session = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -310,7 +306,8 @@ try {
             exit;
         }
 
-        $phone = '523318259000';
+        $phone = $tenant->showWhatsapp ? preg_replace('/[^0-9]/', '', $tenant->whatsappPhone) : '';
+        if (!$phone) { http_response_code(422); echo json_encode(['Status' => 'Error', 'Error' => 'WhatsApp no está configurado en esta tienda.']); exit; }
         $msg = "🍷 *CATA VIRTUAL PRIVADA 1-A-1*\n\n"
              . "¡Hola Master Perfumer! Soy *{$session['ClientName']}*.\n"
              . "📌 Código de Sesión: *{$session['BookingCode']}*\n"
@@ -333,5 +330,5 @@ try {
 
 } catch (\Throwable $e) {
     http_response_code(500);
-    echo json_encode(['Status' => 'Error', 'Error' => $e->getMessage()]);
+    echo json_encode(['Status' => 'Error', 'Error' => 'No se pudo completar la operación de la sala de cata.']);
 }

@@ -1,195 +1,90 @@
 <?php
-/**
- * api/order.php — Secure Order Processing & CFDI Invoicing Bridge
- */
-
+/** Records an idempotent request awaiting manual SPEI verification. No sale or stock mutation. */
 header('Content-Type: application/json; charset=utf-8');
-
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
+require_once dirname(__DIR__) . '/includes/pending_order_contract.php';
 
-$raw = file_get_contents('php://input');
-$data = json_decode($raw, true);
-
-if (!$data || empty($data['items']) || !is_array($data['items']) || count($data['items']) > 100) {
-    http_response_code(400);
-    echo json_encode([
-        'Status' => 'Error',
-        'Error'  => 'Datos de la orden inválidos o carrito excede el límite permitido (100 productos).'
-    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+function qxOrderError($code, $message) {
+    http_response_code($code);
+    echo json_encode(['Status' => 'Error', 'Error' => $message], JSON_UNESCAPED_UNICODE);
     exit;
 }
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') qxOrderError(405, 'Usa POST para registrar una solicitud.');
+$data = json_decode(file_get_contents('php://input'), true);
+if (!is_array($data) || empty($data['items']) || !is_array($data['items']) || count($data['items']) > 100) qxOrderError(400, 'Agrega entre 1 y 100 productos válidos.');
+$tenant = StorefrontTenant::resolve($data);
+if (!$tenant->isStoreActive || !$tenant->emisorId) qxOrderError(403, $tenant->resolutionError ?: 'La tienda no está activa.');
+if (StorefrontControlContract::isRealEstate($tenant->apexConfig, $tenant->description . ' ' . $tenant->headline)) qxOrderError(403, 'Las propiedades se atienden por consulta o visita; no se compran en este carrito.');
+$payments = $tenant->paymentSettings;
+if (($data['paymentMethod'] ?? '') !== 'SPEI') qxOrderError(422, 'Este método de pago todavía no está integrado.');
+if (empty($payments['spei_ready'])) qxOrderError(422, 'La tienda aún no tiene instrucciones SPEI válidas.');
+$key = isset($data['idempotencyKey']) && is_string($data['idempotencyKey']) ? $data['idempotencyKey'] : '';
+if (!preg_match('/^[a-zA-Z0-9_-]{16,64}$/D', $key)) qxOrderError(400, 'Falta el identificador del intento. Actualiza la página e intenta nuevamente.');
+try { $customer = QuantixPendingOrderContract::customer($data); }
+catch (InvalidArgumentException $e) { qxOrderError(400, $e->getMessage()); }
+if ($customer['customerName'] === '' || !filter_var($customer['customerEmail'], FILTER_VALIDATE_EMAIL) || $customer['shippingAddress'] === '') qxOrderError(400, 'Completa nombre, correo válido y dirección de entrega.');
+$invoice = !empty($data['requireCfdi']);
+if ($invoice && empty($payments['invoice_request_enabled'])) qxOrderError(422, 'La tienda no recibe solicitudes de factura desde este formulario.');
+if ($invoice && (!preg_match('/^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/uD', $customer['rfc']) || !preg_match('/^[0-9]{5}$/D', $customer['cp']) || !preg_match('/^[0-9]{3}$/D', $customer['regimen']) || !preg_match('/^[A-Z][0-9]{2}$/D', $customer['usoCfdi']) || $customer['razonSocial'] === '')) qxOrderError(400, 'Completa los datos fiscales válidos para solicitar la factura.');
 
+// Prices and names are deliberately excluded from request identity and computed from the catalog.
+$requestItems = [];
+foreach ($data['items'] as $item) {
+    if (!is_array($item) || !isset($item['id']) || !is_scalar($item['id'])) qxOrderError(400, 'Producto inválido.');
+    $requestItems[] = ['id' => (string)$item['id'], 'qty' => $item['qty'] ?? null, 'decant' => !empty($item['isDecant']), 'subscription' => !empty($item['isSubscription']), 'bundle' => !empty($item['isDuoPack']), 'gift' => !empty($item['isGift']), 'finish' => !empty($item['customFinish'])];
+}
+$requestHash = hash('sha256', json_encode([$customer, $invoice, $requestItems], JSON_UNESCAPED_UNICODE));
 $db = get_store_db();
-$tenant = StorefrontTenant::resolve();
-
-if (!$tenant->isStoreActive) {
-    http_response_code(403);
-    echo json_encode([
-        'Status' => 'ServiceInactive',
-        'Error'  => 'El servicio de tienda en línea no se encuentra activo para este emisor (Requiere QUANTIXFRONTSTORE = SI).'
-    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-$customerName = trim($data['customerName'] ?? 'Cliente General');
-$customerEmail = trim($data['customerEmail'] ?? '');
-$customerPhone = trim($data['customerPhone'] ?? '');
-$shippingAddress = trim($data['shippingAddress'] ?? '');
-$paymentMethod = trim($data['paymentMethod'] ?? 'SPEI');
-$requireCfdi = !empty($data['requireCfdi']);
-$rfc = strtoupper(trim($data['rfc'] ?? 'XAXX010101000'));
-$razonSocial = trim($data['razonSocial'] ?? $customerName);
-$cp = trim($data['cp'] ?? '01000');
-$regimen = trim($data['regimen'] ?? '616');
-$usoCfdi = trim($data['usoCfdi'] ?? 'G03');
-
-if (empty($customerEmail) || !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
-    http_response_code(400);
-    echo json_encode([
-        'Status' => 'Error',
-        'Error'  => 'Ingresa un correo electrónico válido para recibir tu confirmación.'
-    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if (empty($shippingAddress)) {
-    http_response_code(400);
-    echo json_encode([
-        'Status' => 'Error',
-        'Error'  => 'La dirección de entrega es requerida para el envío.'
-    ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if ($requireCfdi) {
-    if (!preg_match('/^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/u', $rfc)) {
-        http_response_code(400);
-        echo json_encode([
-            'Status' => 'Error',
-            'Error'  => 'El RFC proporcionado no cumple con el formato fiscal oficial del SAT (12 o 13 caracteres).'
-        ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
+try {
+    $lookup = $db->prepare('SELECT RequestHash, ResponseJSON FROM quantix_pending_orders WHERE EmisorID = ? AND IdempotencyKey = ? LIMIT 1');
+    $lookup->execute([$tenant->emisorId, $key]);
+    if ($existing = $lookup->fetch(PDO::FETCH_ASSOC)) {
+        if (!hash_equals($existing['RequestHash'], $requestHash)) qxOrderError(409, 'Este intento ya corresponde a otros datos. Inicia una solicitud nueva.');
+        echo $existing['ResponseJSON'];
         exit;
     }
-    if (!preg_match('/^[0-9]{5}$/', $cp)) {
-        http_response_code(400);
-        echo json_encode([
-            'Status' => 'Error',
-            'Error'  => 'El Código Postal fiscal debe ser de 5 dígitos numéricos.'
-        ], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);
-        exit;
+    $lines = [];
+    $quantities = [];
+    $subtotal = $iva = $ieps = $total = 0;
+    $productQuery = $db->prepare("SELECT p.ProductoID, p.descripcion, p.valorUnitario, p.IVAtasa, p.IEPStasa, p.cantidad, p.EnInventario, ps.TieneDecant, ps.PrecioDecant FROM productos p LEFT JOIN productos_sensorial ps ON ps.ProductoID = p.ProductoID AND ps.EmisorID = p.EmisorID WHERE p.EmisorID = ? AND p.ProductoID = ? AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL) AND (p.TiendaInicio IS NULL OR p.TiendaInicio <= NOW()) AND (p.TiendaFin IS NULL OR p.TiendaFin >= NOW()) LIMIT 1");
+    foreach ($data['items'] as $item) {
+        $id = (string)$item['id'];
+        $baseId = !empty($item['isDecant']) ? preg_replace('/__decant$/D', '', $id) : $id;
+        if (!preg_match('/^[a-zA-Z0-9_-]{1,80}$/D', $baseId)) throw new InvalidArgumentException('Identificador de producto inválido.');
+        $productQuery->execute([$tenant->emisorId, $baseId]);
+        $product = $productQuery->fetch(PDO::FETCH_ASSOC);
+        $line = QuantixPendingOrderContract::line($item, $product, $tenant->isPerfumery());
+        $quantities[$baseId] = ($quantities[$baseId] ?? 0) + ($line['format'] === 'full' ? $line['qty'] : 0);
+        if ($product['EnInventario'] === 'SI' && $line['format'] === 'full' && $quantities[$baseId] > (float)$product['cantidad']) throw new InvalidArgumentException('La cantidad solicitada supera la disponibilidad del catálogo.');
+        $lines[] = $line;
+        $subtotal += $line['subtotal']; $iva += $line['iva']; $ieps += $line['ieps']; $total += $line['total'];
     }
-}
-
-$items = $data['items'];
-$subtotal = 0;
-$totalIva = 0;
-
-foreach ($items as $item) {
-    $qty = max(1, (int)($item['qty'] ?? 1));
-    $unitPrice = (float)($item['unitPrice'] ?? 0);
-    $vatRate = (float)($item['vatRate'] ?? 16);
-    $lineSub = $unitPrice * $qty;
-    $lineIva = $lineSub * ($vatRate / 100);
-    $subtotal += $lineSub;
-    $totalIva += $lineIva;
-}
-
-$grandTotal = $subtotal + $totalIva;
-$orderFolio = 'QX-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
-
-// Attempt recording inventory movements in productos_kardex if table exists
-try {
-    foreach ($items as $item) {
-        $pId = $item['id'] ?? '';
-        $qty = max(1, (int)($item['qty'] ?? 1));
-        if (!empty($pId)) {
-            // Decrement stock in productos
-            $stmtUp = $db->prepare("UPDATE productos SET cantidad = GREATEST(0, cantidad - ?) WHERE ProductoID = ? AND EmisorID = ?");
-            $stmtUp->execute([$qty, $pId, $tenant->emisorId]);
-
-            // Insert Kardex row
-            $kardexId = md5(uniqid(rand(), true));
-            $stmtK = $db->prepare("
-                INSERT INTO productos_kardex (
-                    MovimientoID, ProductoID, EmisorID, Fecha, TipoMovimiento,
-                    Cantidad, CostoUnitario, DocumentoTipo, DocumentoFolio, Usuario, DetalleHTML
-                ) VALUES (
-                    ?, ?, ?, NOW(), 'SALIDA_VENTA',
-                    ?, ?, 'STORE_ORDER', ?, 'Storefront', ?
-                )
-            ");
-            $stmtK->execute([
-                $kardexId,
-                $pId,
-                $tenant->emisorId,
-                $qty,
-                $item['unitPrice'] ?? 0,
-                $orderFolio,
-                "Venta Storefront Online #{$orderFolio} a {$customerName}"
-            ]);
-        }
+    $id = bin2hex(random_bytes(16));
+    $folio = 'QX-' . date('Ymd') . '-' . strtoupper(substr($id, 0, 12));
+    $response = [
+        'Status' => 'OK', 'OrderStatus' => 'PENDING_PAYMENT', 'PaymentStatus' => 'UNVERIFIED',
+        'OrderFolio' => $folio, 'CustomerName' => $customer['customerName'],
+        'Total' => round($total, 2), 'Subtotal' => round($subtotal, 2), 'IVA' => round($iva, 2), 'IEPS' => round($ieps, 2),
+        'PaymentMethod' => 'SPEI', 'CfdiStatus' => $invoice ? 'REQUESTED' : null,
+        'InvoiceSeries' => $invoice ? $payments['cfdi_serie'] : '', 'NotificationStatus' => 'unavailable',
+        'Message' => 'Solicitud registrada. El pago y la disponibilidad requieren confirmación de la tienda. No se ha emitido una factura ni enviado una notificación.'
+    ];
+    $responseJson = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    $payload = json_encode(['customer' => $customer, 'items' => $lines, 'invoice_requested' => $invoice, 'invoice_series' => $payments['cfdi_serie']], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    $insert = $db->prepare("INSERT INTO quantix_pending_orders (OrderID, EmisorID, IdempotencyKey, RequestHash, OrderFolio, Status, PaymentMethod, Total, InvoiceRequested, InvoiceSeries, NotificationStatus, PayloadJSON, ResponseJSON, CreatedAt) VALUES (?, ?, ?, ?, ?, 'PENDING_PAYMENT', 'SPEI', ?, ?, ?, 'unavailable', ?, ?, NOW())");
+    try {
+        $insert->execute([$id, $tenant->emisorId, $key, $requestHash, $folio, round($total, 2), $invoice ? 1 : 0, $invoice ? $payments['cfdi_serie'] : '', $payload, $responseJson]);
+    } catch (PDOException $e) {
+        if ((string)$e->getCode() !== '23000') throw $e;
+        $lookup->execute([$tenant->emisorId, $key]);
+        $existing = $lookup->fetch(PDO::FETCH_ASSOC);
+        if (!$existing || !hash_equals($existing['RequestHash'], $requestHash)) qxOrderError(409, 'El intento ya fue utilizado con otros datos.');
+        $responseJson = $existing['ResponseJSON'];
     }
+    echo $responseJson;
+} catch (InvalidArgumentException $e) {
+    qxOrderError(422, $e->getMessage());
 } catch (Exception $e) {
-    error_log('[Storefront Order Warning] ' . $e->getMessage());
+    // No database detail or customer payload is exposed in public responses/logs.
+    qxOrderError(503, 'No se pudo registrar la solicitud. La tienda debe revisar la disponibilidad del registro de pedidos; puedes reintentar sin duplicarla.');
 }
-
-$qfsResult = null;
-try {
-    require_once '/lamp/www/cfdadmin/lib/nota_qfs.php';
-    $qfsConceptos = [];
-    foreach ($items as $it) {
-        $qfsConceptos[] = [
-            'sku'            => $it['sku'] ?? 'QFS-PROD',
-            'productoID'     => $it['id'] ?? '',
-            'descripcion'    => $it['title'] ?? 'Producto QuantiX Storefront',
-            'cantidad'       => $it['qty'] ?? 1,
-            'precioUnitario' => $it['unitPrice'] ?? 0,
-            'descuento'      => 0,
-            'claveProdServ'  => '53131600',
-            'claveUnidad'    => 'H87'
-        ];
-    }
-    $qfsResult = NotaQFSManager::emitirNotaQFS($tenant->emisorId, [
-        'clienteNombre'    => $customerName,
-        'clienteEmail'     => $customerEmail,
-        'clienteTelefono'  => $customerPhone,
-        'rfc'              => $rfc,
-        'conceptos'        => $qfsConceptos,
-        'formaDePago'      => $paymentMethod === 'SPEI' ? '03' : '04',
-        'origen'           => 'QUANTIXFRONTSTORE',
-        'origenReferencia' => $orderFolio
-    ]);
-} catch (Exception $e) {
-    error_log('[QFS Note Warning] ' . $e->getMessage());
-}
-
-$logLine = sprintf(
-    "[%s] ORDER_CREATED Folio=%s QFS=%s EmisorID=%s Customer='%s' Email='%s' Total=%.2f Items=%d CFDI=%s\n",
-    date('Y-m-d H:i:s'),
-    $orderFolio,
-    $qfsResult['folioCompleto'] ?? 'NONE',
-    $tenant->emisorId,
-    $customerName,
-    $customerEmail,
-    $grandTotal,
-    count($items),
-    $requireCfdi ? 'SI' : 'NO'
-);
-@file_put_contents('/lamp/www/cfdadmin/logs/storefront.log', $logLine, FILE_APPEND | LOCK_EX);
-
-echo json_encode([
-    'Status'        => 'OK',
-    'OrderFolio'    => $orderFolio,
-    'folioQFS'      => $qfsResult['folioCompleto'] ?? null,
-    'receiptUrl'    => !empty($qfsResult['receiptUrl']) ? '/cfdadmin/' . $qfsResult['receiptUrl'] : null,
-    'facturarUrl'   => !empty($qfsResult['facturarUrl']) ? '/cfdadmin/' . $qfsResult['facturarUrl'] : null,
-    'CustomerName'  => $customerName,
-    'CustomerEmail' => $customerEmail,
-    'Total'         => round($grandTotal, 2),
-    'Subtotal'      => round($subtotal, 2),
-    'IVA'           => round($totalIva, 2),
-    'PaymentMethod' => $paymentMethod,
-    'CfdiStatus'    => $requireCfdi ? 'SOLICITADO_CFDI40' : null,
-    'RFC'           => $requireCfdi ? $rfc : null,
-    'Message'       => 'Orden registrada exitosamente.'
-], JSON_INVALID_UTF8_SUBSTITUTE | JSON_UNESCAPED_UNICODE);

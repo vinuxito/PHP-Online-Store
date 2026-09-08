@@ -35,6 +35,7 @@
         ar_calibration: {}
       }, domConfig, userConfig);
 
+      this.config = this.normalizeConfig(this.config);
       this.arCalibration = Object.assign({
         enabled: true,
         anchor: 'surface',
@@ -43,6 +44,9 @@
         depth_mm: 65,
         lock_scale: true
       }, this.config.ar_calibration || {});
+
+      ['enabled', 'lock_scale'].forEach(key => { this.arCalibration[key] = this.arCalibration[key] === true || this.arCalibration[key] === 1 || this.arCalibration[key] === '1'; });
+      this.arCalibration.anchor = this.arCalibration.anchor === 'floor' ? 'floor' : 'surface';
 
       this.container = this.wrapper.querySelector('#qx_studio_canvas_container') || this.wrapper;
       this.hotspotsLayer = this.wrapper.querySelector('#qx_studio_hotspots_layer');
@@ -53,9 +57,21 @@
       this.isExploded = false;
       this.isAutoOrbiting = Boolean(this.config.auto_orbit);
       this.isStationary = false;
-      this.isIdle = false;
+      this.isIdle = !this.config.enabled;
+      this.isInView = true;
+      this.modelGeneration = 0;
+      this.customModelUrl = '';
+      this.modelLoadError = '';
+      this.isModelLoading = false;
+      this.autoARLaunchPending = false;
       this.activeHotspotId = null;
       this.activeFinish = null;
+
+      if (typeof THREE === 'undefined') {
+        this.wrapper.hidden = true;
+        console.warn('QuantixSpatialStudio: 3D runtime unavailable.');
+        return;
+      }
 
       // Camera Spherical Coordinates for smooth damping
       this.spherical = { radius: 2.6, phi: Math.PI / 2 - 0.15, theta: 0.2 };
@@ -76,20 +92,19 @@
         console.warn('QuantixSpatialStudio: WebGL initialization failed or unsupported. Falling back to 2D.');
         if (this.wrapper) this.wrapper.style.display = 'none';
         const fallbackCarousel = document.getElementById('qx_hero_carousel_wrapper');
-        if (fallbackCarousel) fallbackCarousel.style.display = '';
+        if (fallbackCarousel && window.quantixStore && window.QuantixStoreDesigns) window.QuantixStoreDesigns.modules(window.quantixStore);
         return;
       }
 
       this.buildLighting();
       this.buildModel();
       this.initHotspots();
-      this.initShelfAndFinishes();
       this.bindEvents();
       this.initARBridge();
-      this.initVisibilityObserver();
-
       this.animate = this.animate.bind(this);
-      this.animFrameId = requestAnimationFrame(this.animate);
+      this.initVisibilityObserver();
+      this.syncControls();
+      this.updateRenderState();
     }
 
     initThree() {
@@ -161,6 +176,7 @@
 
     applyLightingPreset(preset) {
       this.config.lighting_preset = preset;
+      this.fillLight.color.setHex(0xdbeafe);
       switch (preset) {
         case 'obsidian_rimlight':
         case 'obsidian':
@@ -207,162 +223,184 @@
       }
     }
 
+    normalizeConfig(config) {
+      const next = Object.assign({}, config);
+      ['enabled', 'auto_orbit', 'allow_zoom', 'allow_explode'].forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(next, key)) next[key] = next[key] === true || next[key] === 1 || next[key] === '1';
+      });
+      const speed = Number(next.auto_orbit_speed);
+      next.auto_orbit_speed = Number.isFinite(speed) ? Math.max(0, Math.min(4, speed)) : 1.2;
+      next.finishes = Array.isArray(next.finishes) ? next.finishes : [];
+      next.hotspots = Array.isArray(next.hotspots) ? next.hotspots : [];
+      return next;
+    }
+
+    applyConfig(payload) {
+      if (!payload || typeof payload !== 'object') return;
+      const before = this.config;
+      const next = this.normalizeConfig(Object.assign({}, before, payload));
+      next.ar_calibration = Object.assign({}, before.ar_calibration || {}, payload.ar_calibration || {});
+      const rebuild = ['archetype_model', 'model_source', 'custom_model_url'].some(key => before[key] !== next[key]);
+      const finishesChanged = JSON.stringify(before.finishes) !== JSON.stringify(next.finishes) || before.default_finish !== next.default_finish;
+      this.config = next;
+      if (!this.modelGroup) { this.wrapper.hidden = true; return; }
+      if (Object.prototype.hasOwnProperty.call(payload, 'auto_orbit')) this.isAutoOrbiting = next.auto_orbit;
+      if (rebuild && this.modelGroup) this.buildModel();
+      if (before.lighting_preset !== next.lighting_preset && this.ambientLight) this.applyLightingPreset(next.lighting_preset);
+      if (finishesChanged) this.initShelfAndFinishes();
+      if (payload.hotspots || payload.custom_hotspots) this.initHotspots();
+      this.applyARCalibration(next.ar_calibration);
+      this.syncControls();
+      this.onResize();
+      this.updateRenderState();
+    }
+
+    clearModel() {
+      if (!this.modelGroup) return;
+      while (this.modelGroup.children.length) {
+        const obj = this.modelGroup.children[0];
+        this.modelGroup.remove(obj);
+        obj.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          const materials = child.material ? (Array.isArray(child.material) ? child.material : [child.material]) : [];
+          materials.forEach(material => { if (material.map) material.map.dispose(); material.dispose(); });
+        });
+      }
+      this.parts = {};
+      this.capMesh = null;
+      this.activeCustomModel = null;
+      this.customModelUrl = '';
+      this.isExploded = false;
+    }
+
+    modelKind() {
+      if (this.config.archetype_model === 'architectural_space') return 'architecture';
+      if (['industrial_solenoid_valve', 'industrial_part'].includes(this.config.archetype_model)) return 'industrial';
+      if (this.config.archetype_model === 'perfume_flacon_imperial') return 'perfume';
+      return 'reference';
+    }
+
     buildModel() {
-      while (this.modelGroup.children.length > 0) {
-        const obj = this.modelGroup.children[0];
-        this.modelGroup.remove(obj);
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-          else obj.material.dispose();
-        }
-      }
-      this.parts = {};
-
-      const isCustomGltf = Boolean(this.config.custom_model_url && this.config.model_source !== 'procedural');
-      const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
-
-      if (isCustomGltf) {
-        this.loadCustomGltfModel(this.config.custom_model_url, isIndustrial);
-      } else if (isIndustrial) {
-        this.buildIndustrialSolenoid();
-        this.buildGroundShadow(-0.38);
+      this.modelGeneration += 1;
+      // A cancelled GLTF request cannot retain its spinner over the next model.
+      this.setLoadingState(false);
+      this.clearModel();
+      this.modelLoadError = '';
+      if (this.config.custom_model_url && this.config.model_source !== 'procedural') {
+        this.loadCustomGltfModel(this.config.custom_model_url);
       } else {
-        this.buildPerfumeFlacon();
-        this.buildGroundShadow(-0.68);
+        this.buildProceduralModel();
       }
+      this.syncControls();
     }
 
-    loadCustomGltfModel(url, fallbackIsIndustrial) {
-      if (!url) {
-        this.fallbackToProcedural(fallbackIsIndustrial);
-        return;
-      }
-
-      if (typeof THREE.GLTFLoader === 'undefined') {
-        console.warn('[QuantixSpatialStudio] GLTFLoader unavailable. Falling back to procedural geometry.');
-        this.fallbackToProcedural(fallbackIsIndustrial);
-        return;
-      }
-
-      this.setLoadingState(true);
-
-      try {
-        let dracoLoader = null;
-        if (typeof THREE.DRACOLoader !== 'undefined') {
-          dracoLoader = new THREE.DRACOLoader();
-          dracoLoader.setDecoderPath('js/vendor/draco/');
-        }
-
-        const loader = new THREE.GLTFLoader();
-        if (dracoLoader) {
-          loader.setDRACOLoader(dracoLoader);
-        }
-
-        loader.load(
-          url,
-          (gltf) => {
-            this.setLoadingState(false);
-            const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
-            if (!model) {
-              console.warn('[QuantixSpatialStudio] GLTF file contains no scene. Falling back to procedural model.');
-              this.fallbackToProcedural(fallbackIsIndustrial);
-              return;
-            }
-
-            // Remove previous objects in modelGroup
-            while (this.modelGroup.children.length > 0) {
-              const obj = this.modelGroup.children[0];
-              this.modelGroup.remove(obj);
-              if (obj.geometry) obj.geometry.dispose();
-              if (obj.material) {
-                if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-                else obj.material.dispose();
-              }
-            }
-            this.parts = {};
-
-            // Traverse and enhance mesh materials
-            model.traverse((child) => {
-              if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
-                if (child.material) {
-                  child.material.needsUpdate = true;
-                }
-              }
-            });
-
-            // Compute Bounding Box & Center
-            const bbox = new THREE.Box3().setFromObject(model);
-            const center = bbox.getCenter(new THREE.Vector3());
-            const size = bbox.getSize(new THREE.Vector3());
-
-            model.position.x = -center.x;
-            model.position.y = -center.y;
-            model.position.z = -center.z;
-
-            // Normalize scale to standard stage unit dimension (2.2)
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const targetDim = 2.2;
-            const scale = targetDim / (maxDim || 1);
-
-            const pivotGroup = new THREE.Group();
-            pivotGroup.add(model);
-            pivotGroup.scale.setScalar(scale);
-
-            this.modelGroup.add(pivotGroup);
-            this.activeCustomModel = pivotGroup;
-
-            // Ground shadow positioned at normalized base
-            const minY = (bbox.min.y - center.y) * scale;
-            this.buildGroundShadow(minY - 0.05);
-
-            // Re-render hotspots
-            this.initHotspots();
-
-            console.info('[QuantixSpatialStudio] Custom GLTF loaded and auto-centered successfully:', url);
-          },
-          (xhr) => {
-            // Optional progress tracking
-          },
-          (error) => {
-            this.setLoadingState(false);
-            console.warn('[QuantixSpatialStudio] Circuit breaker triggered! Failed to load (' + url + '). Reverting to procedural mesh:', error);
-            this.fallbackToProcedural(fallbackIsIndustrial);
-          }
-        );
-      } catch (e) {
-        this.setLoadingState(false);
-        console.warn('[QuantixSpatialStudio] Exception in GLTF loading pipeline. Executing circuit breaker:', e);
-        this.fallbackToProcedural(fallbackIsIndustrial);
-      }
-    }
-
-    fallbackToProcedural(isIndustrial) {
-      while (this.modelGroup.children.length > 0) {
-        const obj = this.modelGroup.children[0];
-        this.modelGroup.remove(obj);
-      }
-      this.parts = {};
-
-      if (isIndustrial) {
-        this.buildIndustrialSolenoid();
-        this.buildGroundShadow(-0.38);
-      } else {
-        this.buildPerfumeFlacon();
-        this.buildGroundShadow(-0.68);
-      }
+    buildProceduralModel() {
+      const kind = this.modelKind();
+      if (kind === 'industrial') { this.buildIndustrialSolenoid(); this.buildGroundShadow(-0.38); }
+      else if (kind === 'perfume') { this.buildPerfumeFlacon(); this.buildGroundShadow(-0.68); }
+      else { this.buildArchitecturalSpace(kind === 'reference'); this.buildGroundShadow(-0.46); }
+      // Custom assets hide these controls; rebuilding a procedural model restores them.
+      this.initShelfAndFinishes();
       this.initHotspots();
     }
 
+    buildArchitecturalSpace(neutral) {
+      const finish = (this.config.finishes || []).find(item => item.id === this.config.default_finish) || this.config.finishes[0] || {};
+      const wall = new THREE.MeshStandardMaterial({ color: 0xd6d2c8, roughness: 0.75 });
+      const roof = new THREE.MeshStandardMaterial({ color: finish.color || '#586b69', metalness: 0.2, roughness: 0.6 });
+      const glass = new THREE.MeshPhysicalMaterial({ color: 0x8ec5cb, transparent: true, opacity: 0.36, metalness: 0.08, roughness: 0.12, side: THREE.DoubleSide });
+      const floor = new THREE.MeshStandardMaterial({ color: 0xb6aa95, roughness: 0.8 });
+      const add = (name, size, position, material, explode) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), material.clone());
+        mesh.position.set(...position);
+        this.modelGroup.add(mesh);
+        this.parts[name] = { mesh, basePos: mesh.position.clone(), explodeDelta: new THREE.Vector3(...explode) };
+        return mesh;
+      };
+      add('floor', [1.8, 0.1, 1.35], [0, -0.4, 0], floor, [0, -0.25, 0]);
+      if (neutral) {
+        this.capMesh = add('body', [0.9, 0.75, 0.9], [0, 0.025, 0], roof, [0, 0.3, 0]);
+        [wall, roof, glass, floor].forEach(material => material.dispose());
+        return;
+      }
+      add('back', [1.7, 0.9, 0.08], [0, 0.1, -0.59], wall, [0, 0.15, -0.45]);
+      add('side', [0.08, 0.9, 1.18], [-0.81, 0.1, 0], wall, [-0.45, 0.1, 0]);
+      add('partition', [0.07, 0.72, 0.72], [0.26, 0.01, -0.18], wall, [0.22, 0.2, 0]);
+      add('glazing', [1.45, 0.75, 0.035], [0.05, 0.02, 0.58], glass, [0, 0.1, 0.45]);
+      this.capMesh = add('roof', [1.86, 0.1, 1.4], [0, 0.6, 0], roof, [0, 0.65, 0]);
+      [wall, roof, glass, floor].forEach(material => material.dispose());
+    }
+
+    loadCustomGltfModel(url) {
+      const generation = this.modelGeneration;
+      const safeUrl = this.sceneUrl(url);
+      if (!safeUrl || typeof THREE.GLTFLoader === 'undefined') {
+        this.modelLoadError = 'El archivo 3D no está disponible. Se muestra un modelo de referencia.';
+        this.fallbackToProcedural();
+        return;
+      }
+      this.setLoadingState(true);
+      this.customModelUrl = '';
+      this.syncControls();
+      let dracoLoader = null;
+      const fail = () => {
+        if (generation !== this.modelGeneration) return;
+        this.setLoadingState(false);
+        this.modelLoadError = 'No se pudo cargar el archivo 3D. Se muestra un modelo de referencia.';
+        this.fallbackToProcedural();
+      };
+      try {
+        const loader = new THREE.GLTFLoader();
+        if (typeof THREE.DRACOLoader !== 'undefined') {
+          dracoLoader = new THREE.DRACOLoader();
+          dracoLoader.setDecoderPath('js/vendor/draco/');
+          loader.setDRACOLoader(dracoLoader);
+        }
+        loader.load(safeUrl, gltf => {
+          if (dracoLoader) dracoLoader.dispose();
+          const model = gltf.scene || (gltf.scenes && gltf.scenes[0]);
+          if (generation !== this.modelGeneration) {
+            if (model) model.traverse(child => { if (child.geometry) child.geometry.dispose(); });
+            return;
+          }
+          if (!model) { fail(); return; }
+          this.clearModel();
+          this.setLoadingState(false);
+          const bbox = new THREE.Box3().setFromObject(model);
+          const center = bbox.getCenter(new THREE.Vector3());
+          const size = bbox.getSize(new THREE.Vector3());
+          model.position.set(-center.x, -center.y, -center.z);
+          const scale = 2.2 / (Math.max(size.x, size.y, size.z) || 1);
+          const pivot = new THREE.Group();
+          pivot.add(model);
+          pivot.scale.setScalar(scale);
+          this.modelGroup.add(pivot);
+          this.activeCustomModel = pivot;
+          this.customModelUrl = safeUrl;
+          this.modelLoadError = '';
+          this.buildGroundShadow((bbox.min.y - center.y) * scale - 0.05);
+          this.initHotspots();
+          this.initShelfAndFinishes();
+          this.syncControls();
+        }, undefined, () => { if (dracoLoader) dracoLoader.dispose(); fail(); });
+      } catch (error) { if (dracoLoader) dracoLoader.dispose(); fail(); }
+    }
+
+    fallbackToProcedural() {
+      this.clearModel();
+      this.setLoadingState(false);
+      this.buildProceduralModel();
+      this.syncControls();
+    }
+
     setLoadingState(isLoading) {
+      this.isModelLoading = Boolean(isLoading);
       let pill = this.wrapper ? this.wrapper.querySelector('#qx_3d_loading_pill') : null;
       if (!pill && this.wrapper && isLoading) {
         pill = document.createElement('div');
         pill.id = 'qx_3d_loading_pill';
         pill.className = 'qx-3d-loading-pill';
-        pill.innerHTML = `<span>💎 Ingestando Modelo Espacial 3D...</span>`;
+        pill.innerHTML = `<span>Cargando modelo 3D…</span>`;
         this.wrapper.appendChild(pill);
       }
       if (pill) {
@@ -372,14 +410,9 @@
 
     loadCustomModel(url, name, hotspots) {
       if (!url) return;
-      this.config.custom_model_url = url;
-      this.config.custom_model_name = name || 'custom_model.glb';
-      this.config.model_source = 'custom_gltf';
-      if (hotspots && Array.isArray(hotspots)) {
-        this.config.custom_hotspots = hotspots;
-      }
-      const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
-      this.loadCustomGltfModel(url, isIndustrial);
+      const payload = { custom_model_url: url, custom_model_name: name || '', model_source: 'custom_gltf' };
+      if (Array.isArray(hotspots)) payload.custom_hotspots = hotspots;
+      this.applyConfig(payload);
     }
 
     setCustomHotspots(hotspots) {
@@ -390,12 +423,7 @@
     }
 
     resetToProcedural() {
-      this.config.custom_model_url = '';
-      this.config.custom_model_name = '';
-      this.config.model_source = 'procedural';
-      this.config.custom_hotspots = [];
-      const isIndustrial = this.config.archetype_model === 'industrial_solenoid_valve';
-      this.fallbackToProcedural(isIndustrial);
+      this.applyConfig({ custom_model_url: '', custom_model_name: '', model_source: 'procedural', custom_hotspots: [] });
     }
 
     buildPerfumeFlacon() {
@@ -590,7 +618,7 @@
         pin.innerHTML = `
           <div class="qx-hotspot-dot">${spot.icon ? `<span style="font-size:9px;">${this.escapeHtml(spot.icon)}</span>` : ''}</div>
           <div class="qx-hotspot-ripple"></div>
-          <div class="qx-hotspot-card" id="card_${spot.id}">
+          <div class="qx-hotspot-card" id="card_${this.escapeHtml(spot.id)}">
             <div class="qx-hotspot-card-title">${this.escapeHtml(spot.label)}</div>
             <div class="qx-hotspot-card-desc">${this.escapeHtml(spot.description)}</div>
             <button type="button" class="qx-hotspot-close" aria-label="Cerrar">&times;</button>
@@ -682,7 +710,7 @@
 
       const t = spot.camera_target || [0, spot.position[1], 1.8];
       const targetRadius = Math.sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]) || 2.0;
-      this.targetSpherical.radius = Math.max(1.3, Math.min(3.5, targetRadius));
+      if (this.config.allow_zoom) this.targetSpherical.radius = Math.max(1.3, Math.min(3.5, targetRadius));
       this.targetCameraLook.set(spot.position[0] * 0.5, spot.position[1], spot.position[2] * 0.5);
 
       this.hotspotPins.forEach(pinItem => {
@@ -706,30 +734,25 @@
     }
 
     initShelfAndFinishes() {
-      if (!this.swatchesContainer) return;
-      this.swatchesContainer.innerHTML = '';
-
       const finishes = this.config.finishes || [];
-      if (finishes.length > 0) {
-        this.activeFinish = finishes[0];
-      }
-
-      finishes.forEach((fin, idx) => {
-        const sw = document.createElement('button');
-        sw.type = 'button';
-        sw.className = `qx-swatch-item ${idx === 0 ? 'active' : ''}`;
-        sw.setAttribute('data-id', fin.id);
-        sw.setAttribute('title', `${fin.name}${fin.price_delta ? ` (+$${fin.price_delta})` : ''}`);
-        sw.style.setProperty('--swatch-color', fin.color);
-        sw.innerHTML = `<span class="qx-swatch-dot" style="background:${fin.color};"></span>`;
-
-        sw.addEventListener('click', () => {
-          this.applyFinish(fin.id);
+      const chosen = finishes.find(fin => fin.id === this.config.default_finish) || finishes.find(fin => this.activeFinish && fin.id === this.activeFinish.id) || finishes[0];
+      this.activeFinish = chosen || null;
+      if (this.swatchesContainer) {
+        this.swatchesContainer.innerHTML = '';
+        // Uploaded assets retain their authored materials; no target material mapping exists.
+        this.swatchesContainer.hidden = Boolean(this.activeCustomModel) || !finishes.length;
+        finishes.forEach(fin => {
+          const sw = document.createElement('button');
+          sw.type = 'button'; sw.className = 'qx-swatch-item';
+          sw.setAttribute('data-id', fin.id);
+          sw.setAttribute('title', fin.name || fin.id);
+          const dot = document.createElement('span'); dot.className = 'qx-swatch-dot'; dot.style.background = fin.color || '#64748b';
+          sw.appendChild(dot);
+          sw.addEventListener('click', () => this.applyFinish(fin.id));
+          this.swatchesContainer.appendChild(sw);
         });
-
-        this.swatchesContainer.appendChild(sw);
-      });
-
+      }
+      if (chosen) this.applyFinish(chosen.id);
       this.updatePriceDisplay();
     }
 
@@ -763,37 +786,33 @@
       this.updateARVariant(finish);
     }
 
+    getBoundProduct() {
+      const store = window.quantixStore;
+      const id = this.config.product_id || this.config.bound_product_id;
+      if (!id || !store || !Array.isArray(store.products)) return null;
+      return store.products.find(product => String(product.id) === String(id)) || null;
+    }
+
     updatePriceDisplay() {
-      if (!this.priceValEl) return;
-      let basePrice = 4250;
-      if (this.config.archetype_model === 'industrial_solenoid_valve') {
-        basePrice = 1850;
+      const product = this.getBoundProduct();
+      const price = product && Number(product.priceWithTax);
+      if (this.priceValEl) this.priceValEl.textContent = product ? (price > 0 ? '$ ' + price.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN' : 'Consultar precio') : 'Modelo de referencia';
+      if (this.addBtn) {
+        this.addBtn.hidden = !product;
+        this.addBtn.disabled = !product || !this.config.enabled;
+        this.addBtn.textContent = window.quantixStore && window.quantixStore.isRealEstateBusiness && window.quantixStore.isRealEstateBusiness() ? 'Ver propiedad' : 'Ver artículo';
       }
-      const delta = (this.activeFinish && this.activeFinish.price_delta) ? Number(this.activeFinish.price_delta) : 0;
-      const total = basePrice + delta;
-      this.priceValEl.textContent = `$ ${total.toLocaleString('es-MX')}`;
     }
 
     toggleExplodedView() {
-      this.isExploded = !this.isExploded;
-      const explodeBtn = this.wrapper.querySelector('#qx_btn_3d_explode');
-      if (explodeBtn) {
-        explodeBtn.classList.toggle('active', this.isExploded);
-      }
-
-      if (window.QuantixHapticAudio) {
-        if (this.isExploded) {
-          window.QuantixHapticAudio.playRatchet();
-        } else {
-          window.QuantixHapticAudio.playVaultSwitch(true);
-        }
-      }
+      this.setExploded(!this.isExploded);
     }
 
     setExploded(isExploded) {
-      if (this.isExploded !== Boolean(isExploded)) {
-        this.toggleExplodedView();
-      }
+      const allowed = this.config.enabled && this.config.allow_explode && Object.keys(this.parts || {}).length > 1;
+      this.isExploded = allowed && Boolean(isExploded);
+      const button = this.wrapper.querySelector('#qx_btn_3d_explode');
+      if (button) button.classList.toggle('active', this.isExploded);
     }
 
     updateExplodedAnimation() {
@@ -811,47 +830,18 @@
     }
 
     triggerAddToCart() {
-      if (window.QuantixHapticAudio) {
-        window.QuantixHapticAudio.playCrystalChime();
-      }
-
-      let product = null;
-      if (window.quantixStore && Array.isArray(window.quantixStore.products) && window.quantixStore.products.length > 0) {
-        product = window.quantixStore.products[0];
-      }
-
-      if (!product) {
-        product = {
-          id: this.config.archetype_model === 'industrial_solenoid_valve' ? 'solenoid_valve_pro' : 'flacon_imperial_haute',
-          code: 'QX-3D-STAR',
-          sku: this.config.archetype_model === 'industrial_solenoid_valve' ? 'GERSOL-SOL-IP67' : 'MISTIQ-FLACON-EXT',
-          name: this.config.archetype_model === 'industrial_solenoid_valve' ? 'Electroválvula Solenoide IP67 Alta Presión' : 'Flacon Imperial Extrait de Parfum',
-          cover: 'https://media.evinux.net/cfdadmin/img/perfume_sample.png',
-          priceWithTax: this.config.archetype_model === 'industrial_solenoid_valve' ? 1850 : 4250,
-          vatRate: 16
-        };
-      }
-
-      const finishMeta = this.activeFinish ? {
-        id: this.activeFinish.id,
-        name: this.activeFinish.name,
-        priceDelta: this.activeFinish.price_delta || 0,
-        color: this.activeFinish.color
-      } : null;
-
-      if (window.quantixStore && typeof window.quantixStore.addToCart === 'function') {
-        window.quantixStore.addToCart(product, 1, $(this.addBtn), 'full', {
-          customFinish: finishMeta
-        });
-      } else {
-        console.log('QuantixSpatialStudio: Added to order with custom finish', finishMeta);
-      }
+      const product = this.getBoundProduct();
+      const store = window.quantixStore;
+      if (!this.config.enabled || !product || !store || typeof store.openProductModal !== 'function') return;
+      // Saved product details own its price and transaction/contact flow.
+      store.openProductModal(product);
     }
 
     bindEvents() {
       const dom = this.renderer.domElement;
 
       dom.addEventListener('pointerdown', (e) => {
+        if (!this.config.enabled) return;
         this.isPointerDown = true;
         this.pointerPrev = { x: e.clientX, y: e.clientY };
         this.pointerVelocity = { x: 0, y: 0 };
@@ -879,7 +869,7 @@
       });
 
       dom.addEventListener('wheel', (e) => {
-        if (!this.config.allow_zoom) return;
+        if (!this.config.enabled || !this.config.allow_zoom) return;
         e.preventDefault();
         const delta = e.deltaY * 0.002;
         this.targetSpherical.radius = Math.max(1.3, Math.min(4.8, this.targetSpherical.radius + delta));
@@ -888,6 +878,7 @@
       const orbitBtn = this.wrapper.querySelector('#qx_btn_3d_orbit');
       if (orbitBtn) {
         orbitBtn.addEventListener('click', () => {
+          if (!this.config.enabled || !this.config.auto_orbit) return;
           this.isAutoOrbiting = !this.isAutoOrbiting;
           orbitBtn.classList.toggle('active', this.isAutoOrbiting);
           if (window.QuantixHapticAudio) window.QuantixHapticAudio.playDialTick();
@@ -904,6 +895,7 @@
       const zoomInBtn = this.wrapper.querySelector('#qx_btn_3d_zoom_in');
       if (zoomInBtn) {
         zoomInBtn.addEventListener('click', () => {
+          if (!this.config.enabled || !this.config.allow_zoom) return;
           this.targetSpherical.radius = Math.max(1.3, this.targetSpherical.radius - 0.4);
           if (window.QuantixHapticAudio) window.QuantixHapticAudio.playDialTick();
         });
@@ -912,6 +904,7 @@
       const zoomOutBtn = this.wrapper.querySelector('#qx_btn_3d_zoom_out');
       if (zoomOutBtn) {
         zoomOutBtn.addEventListener('click', () => {
+          if (!this.config.enabled || !this.config.allow_zoom) return;
           this.targetSpherical.radius = Math.min(4.8, this.targetSpherical.radius + 0.4);
           if (window.QuantixHapticAudio) window.QuantixHapticAudio.playDialTick();
         });
@@ -937,15 +930,14 @@
       dom.addEventListener('webglcontextlost', (e) => {
         e.preventDefault();
         console.warn('QuantixSpatialStudio: WebGL context lost. Pausing render.');
-        cancelAnimationFrame(this.animFrameId);
+        this.contextLost = true;
+        this.updateRenderState();
       }, false);
 
       dom.addEventListener('webglcontextrestored', () => {
-        console.log('QuantixSpatialStudio: WebGL context restored. Rebuilding scene.');
-        this.initThree();
-        this.buildLighting();
-        this.buildModel();
-        this.animFrameId = requestAnimationFrame(this.animate);
+        // Three restores resources on its existing renderer; retain the single canvas.
+        this.contextLost = false;
+        this.updateRenderState();
       }, false);
     }
 
@@ -953,9 +945,9 @@
       this.closeHotspots();
       this.targetSpherical = { radius: 2.6, phi: Math.PI / 2 - 0.15, theta: 0.2 };
       this.targetCameraLook.set(0, 0.2, 0);
-      this.isAutoOrbiting = true;
+      this.isAutoOrbiting = this.config.enabled && this.config.auto_orbit;
       const orbitBtn = this.wrapper.querySelector('#qx_btn_3d_orbit');
-      if (orbitBtn) orbitBtn.classList.add('active');
+      if (orbitBtn) orbitBtn.classList.toggle('active', this.isAutoOrbiting);
       if (window.QuantixHapticAudio) window.QuantixHapticAudio.playDialTick();
     }
 
@@ -970,15 +962,28 @@
 
     initVisibilityObserver() {
       if ('IntersectionObserver' in window) {
-        this.observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            this.isIdle = !entry.isIntersecting;
-            if (!this.isIdle && !this.animFrameId) {
-              this.animFrameId = requestAnimationFrame(this.animate);
-            }
-          });
+        this.observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => { this.isInView = entry.isIntersecting; });
+          this.updateRenderState();
         }, { threshold: 0.05 });
         this.observer.observe(this.wrapper);
+      }
+      this.visibilityHandler = () => this.updateRenderState();
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+      if ('ResizeObserver' in window) {
+        this.resizeObserver = new ResizeObserver(() => this.onResize());
+        this.resizeObserver.observe(this.container);
+      }
+    }
+
+    updateRenderState() {
+      this.isIdle = !this.config.enabled || this.isInView === false || document.hidden || Boolean(this.contextLost) || Boolean(this.destroyed);
+      if (this.isIdle) {
+        if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+        this.animFrameId = null;
+        this.lastFrameTime = null;
+      } else if (this.renderer && this.animate && !this.animFrameId) {
+        this.animFrameId = requestAnimationFrame(this.animate);
       }
     }
 
@@ -997,21 +1002,17 @@
       this.camera.lookAt(this.cameraLook);
     }
 
-    animate() {
-      if (this.isIdle) {
-        this.animFrameId = null;
-        return;
+    animate(time) {
+      this.animFrameId = null;
+      if (this.isIdle || !this.config.enabled || document.hidden || this.destroyed) return;
+      const elapsed = this.lastFrameTime == null ? 1 : Math.min(3, Math.max(0, (time - this.lastFrameTime) / (1000 / 60)));
+      this.lastFrameTime = time;
+      if (this.isAutoOrbiting && this.config.auto_orbit && !this.isPointerDown) {
+        this.targetSpherical.theta += this.config.auto_orbit_speed * 0.005 * elapsed;
       }
-
-      if (this.isAutoOrbiting && !this.isPointerDown) {
-        const speed = (this.config.auto_orbit_speed || 1.2) * 0.005;
-        this.targetSpherical.theta += speed;
-      }
-
       this.updateCameraPosition();
       this.updateExplodedAnimation();
       this.updateHotspotsProjection();
-
       this.renderer.render(this.scene, this.camera);
       this.animFrameId = requestAnimationFrame(this.animate);
     }
@@ -1063,29 +1064,113 @@
       });
     }
 
+    assetUrl(value, extension) {
+      if (!value) return '';
+      try {
+        const url = new URL(value, window.location.href);
+        return /^(https?:)$/.test(url.protocol) && !url.username && !url.password && extension.test(url.pathname) ? url.href : '';
+      } catch (error) { return ''; }
+    }
+
+    sceneUrl(value) {
+      const asset = this.assetUrl(value, /\.(glb|gltf)$/i);
+      if (asset) return asset;
+      // A local upload is preview-only. Its blob must belong to the trusted parent.
+      if (new URLSearchParams(window.location.search).get('preview_mode') !== '1' || window.parent === window) return '';
+      try {
+        const blob = new URL(value);
+        const parent = new URL(document.referrer);
+        const own = new URL(window.location.href);
+        const trustedParent = parent.origin === own.origin || (parent.protocol === 'https:' && /(^|\.)evinux\.net$/.test(parent.hostname));
+        return trustedParent && blob.protocol === 'blob:' && blob.origin === parent.origin ? blob.href : '';
+      } catch (error) { return ''; }
+    }
+
+    getARAvailability() {
+      const result = { available: false, path: '', reason: '', androidUrl: '', iosUrl: '' };
+      if (!this.config.enabled || this.arCalibration.enabled === false) { result.reason = 'Realidad aumentada desactivada.'; return result; }
+      if (/^blob:/i.test(this.customModelUrl || this.config.custom_model_url || '')) { result.reason = 'La vista previa local debe guardarse antes de usar realidad aumentada.'; return result; }
+      if (window.isSecureContext === false || window.location.protocol !== 'https:') { result.reason = 'Realidad aumentada requiere una conexión HTTPS.'; return result; }
+      result.androidUrl = this.assetUrl(this.customModelUrl, /\.(glb|gltf)$/i);
+      result.iosUrl = this.assetUrl(this.config.custom_usdz_url || this.config.ios_model_url, /\.usdz$/i);
+      if (result.androidUrl && new URL(result.androidUrl).protocol !== 'https:') result.androidUrl = '';
+      if (result.iosUrl && new URL(result.iosUrl).protocol !== 'https:') result.iosUrl = '';
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      if (isIOS) {
+        const link = document.getElementById('qx_ios_ar_native_link');
+        const supportsAR = Boolean(link && link.relList && link.relList.supports && link.relList.supports('ar'));
+        result.path = 'quick-look';
+        result.available = Boolean(result.iosUrl && supportsAR);
+        result.reason = !result.iosUrl ? 'Este modelo necesita un archivo USDZ para iPhone o iPad.' : (!supportsAR ? 'Abre esta tienda en Safari con Quick Look compatible.' : 'Quick Look · La escala física depende del archivo USDZ.');
+      } else if (/Android/i.test(navigator.userAgent)) {
+        result.path = 'scene-viewer';
+        result.available = Boolean(result.androidUrl);
+        result.reason = result.available ? 'Scene Viewer · Requiere un dispositivo Android compatible con AR.' : 'Carga un archivo GLB o GLTF para usar realidad aumentada en Android.';
+      } else {
+        result.path = 'qr';
+        result.available = Boolean(result.androidUrl || result.iosUrl);
+        result.reason = result.available ? 'Continúa en un teléfono compatible. La escala física depende del archivo 3D.' : 'Este modelo de referencia no tiene un archivo compatible con realidad aumentada.';
+      }
+      return result;
+    }
+
+    syncControls() {
+      if (!this.wrapper) return;
+      const enabled = Boolean(this.config.enabled);
+      const renderReady = Boolean(this.renderer && this.modelGroup && !this.destroyed);
+      this.wrapper.hidden = !enabled || !renderReady;
+      if (enabled && renderReady) this.wrapper.style.display = '';
+      const explode = enabled && this.config.allow_explode && Object.keys(this.parts || {}).length > 1;
+      if (!explode) this.setExploded(false);
+      if (!enabled || !this.config.auto_orbit) this.isAutoOrbiting = false;
+      const state = {
+        qx_btn_3d_zoom_in: enabled && this.config.allow_zoom,
+        qx_btn_3d_zoom_out: enabled && this.config.allow_zoom,
+        qx_btn_3d_explode: explode,
+        qx_btn_3d_orbit: enabled && this.config.auto_orbit,
+        qx_btn_3d_reset: enabled
+      };
+      Object.keys(state).forEach(id => {
+        const button = this.wrapper.querySelector('#' + id);
+        if (button) { button.disabled = !state[id]; button.setAttribute('aria-disabled', String(!state[id])); }
+      });
+      const orbit = this.wrapper.querySelector('#qx_btn_3d_orbit');
+      if (orbit) orbit.classList.toggle('active', this.isAutoOrbiting);
+      const availability = this.getARAvailability();
+      ['qx_btn_3d_ar', 'qx_btn_ar_pill'].forEach(id => {
+        const button = this.wrapper.querySelector('#' + id);
+        if (button) {
+          button.hidden = !enabled || this.arCalibration.enabled === false;
+          button.disabled = !availability.available;
+          button.setAttribute('aria-disabled', String(!availability.available));
+          button.title = availability.reason;
+        }
+      });
+      let note = this.wrapper.querySelector('#qx_studio_capability_note');
+      if (!note) {
+        note = document.createElement('p'); note.id = 'qx_studio_capability_note';
+        note.className = 'qx-studio-capability-note'; note.setAttribute('role', 'status');
+        const shelf = this.wrapper.querySelector('#qx_studio_shelf_bar');
+        (shelf || this.wrapper).appendChild(note);
+      }
+      const reference = this.customModelUrl ? '' : 'Representación 3D de referencia. ';
+      note.textContent = this.modelLoadError || reference + (this.arCalibration.enabled === false ? 'Realidad aumentada desactivada.' : availability.reason);
+      this.updatePriceDisplay();
+      if (!availability.available) this.closeARBridge();
+      this.tryAutoARLaunch();
+    }
+
     openARBridge() {
+      const availability = this.getARAvailability();
+      if (!availability.available) { this.syncControls(); return; }
       const modal = document.getElementById('qx_modal_ar_bridge');
       if (!modal) return;
-
-      modal.style.display = 'flex';
-      modal.setAttribute('aria-hidden', 'false');
-
-      if (window.QuantixHapticAudio) {
-        window.QuantixHapticAudio.playCrystalChime();
-      }
-
-      const isMobile = window.innerWidth < 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      modal.style.display = 'flex'; modal.setAttribute('aria-hidden', 'false');
       const mobileBox = document.getElementById('qx_ar_mobile_direct_box');
-      if (mobileBox) {
-        mobileBox.style.display = isMobile ? 'block' : 'none';
-      }
-
-      const activeFinish = this.activeFinish || (this.config.finishes && this.config.finishes[0]);
-      if (activeFinish) {
-        this.updateARVariant(activeFinish);
-      } else {
-        this.generateARQRCode();
-      }
+      if (mobileBox) mobileBox.style.display = availability.path === 'qr' ? 'none' : 'block';
+      const launch = document.getElementById('qx_btn_launch_mobile_ar');
+      if (launch) { launch.disabled = availability.path === 'qr'; launch.textContent = availability.path === 'quick-look' ? 'Abrir Quick Look' : 'Abrir en Android compatible'; }
+      this.updateARVariant(this.activeFinish);
     }
 
     closeARBridge() {
@@ -1094,146 +1179,112 @@
         modal.style.display = 'none';
         modal.setAttribute('aria-hidden', 'true');
       }
-      if (window.QuantixHapticAudio) {
-        window.QuantixHapticAudio.playDialTick();
-      }
+    }
+
+    buildARPageUrl() {
+      const target = new URL(window.location.href);
+      // Preserve routing/tenant context while excluding the Director-only inspector.
+      ['preview_mode', 'ar_launch', 'finish', 'model_src', 'model_url', 'scale_mm', 'anchor', 'lock_scale'].forEach(key => target.searchParams.delete(key));
+      target.searchParams.set('ar_launch', '1');
+      target.hash = '';
+      return target.href;
     }
 
     generateARQRCode() {
+      if (!this.getARAvailability().available) return;
       const img = document.getElementById('qx_ar_qr_img');
       const spinner = document.getElementById('qx_ar_qr_spinner');
-
+      const fullTargetUrl = this.buildARPageUrl();
+      const request = (this.qrRequest || 0) + 1; this.qrRequest = request;
       if (spinner) spinner.style.display = 'flex';
-      if (img) img.style.opacity = '0.3';
-
-      const origin = window.location.origin;
-      const pathname = window.location.pathname;
-      const finish = this.activeFinish ? this.activeFinish.id : (this.config.finishes && this.config.finishes[0] ? this.config.finishes[0].id : 'default');
-      const modelSrc = this.customModelUrl ? 'custom' : 'procedural';
-      const modelUrl = this.customModelUrl || '';
-      const heightMm = this.arCalibration.height_mm || 150;
-      const anchor = this.arCalibration.anchor || 'surface';
-      const lockScale = this.arCalibration.lock_scale ? 1 : 0;
-
-      const query = `ar_launch=1&finish=${encodeURIComponent(finish)}&model_src=${encodeURIComponent(modelSrc)}&scale_mm=${heightMm}&anchor=${anchor}&lock_scale=${lockScale}${modelUrl ? `&model_url=${encodeURIComponent(modelUrl)}` : ''}`;
-      const fullTargetUrl = `${origin}${pathname}?${query}`;
-
-      const isDirectorHost = window.location.pathname.startsWith('/cfdadmin') || window.location.hostname === 'evinux.net';
-      const qrEndpoint = isDirectorHost
-        ? `/cfdadmin/ajax/store_ar_qr.php?url=${encodeURIComponent(fullTargetUrl)}`
-        : `/api/store_ar_qr.php?url=${encodeURIComponent(fullTargetUrl)}`;
-
-      fetch(qrEndpoint)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.success && data.data_url) {
-            if (img) {
-              img.src = data.data_url;
-              img.setAttribute('data-payload', fullTargetUrl);
-              img.style.opacity = '1';
-            }
-            if (spinner) spinner.style.display = 'none';
-          } else {
-            console.warn('QuantixSpatialStudio: Failed to generate AR QR code', data);
-            if (spinner) spinner.style.display = 'none';
-            if (img) img.style.opacity = '1';
-          }
-        })
-        .catch(err => {
-          console.error('QuantixSpatialStudio: Error fetching AR QR code', err);
-          if (spinner) spinner.style.display = 'none';
-          if (img) img.style.opacity = '1';
-        });
+      if (img) { img.hidden = true; img.removeAttribute('data-payload'); }
+      const endpoint = window.location.pathname.startsWith('/cfdadmin') || window.location.hostname === 'evinux.net' ? '/cfdadmin/ajax/store_ar_qr.php' : '/api/store_ar_qr.php';
+      fetch(endpoint + '?url=' + encodeURIComponent(fullTargetUrl)).then(response => {
+        if (!response.ok) throw new Error('QR unavailable');
+        return response.json();
+      }).then(data => {
+        if (request !== this.qrRequest) return;
+        if (!data || !data.success || !/^data:image\//.test(data.data_url || '')) throw new Error('QR unavailable');
+        if (img) { img.src = data.data_url; img.hidden = false; img.setAttribute('data-payload', fullTargetUrl); img.style.opacity = '1'; }
+        if (spinner) spinner.style.display = 'none';
+      }).catch(() => {
+        if (request !== this.qrRequest) return;
+        if (spinner) spinner.style.display = 'none';
+        if (img) { img.hidden = true; img.removeAttribute('src'); }
+        const label = document.getElementById('qx_ar_active_variant_label');
+        if (label) label.textContent = 'No se pudo generar el QR. Abre esta misma tienda desde tu teléfono.';
+      });
     }
 
-    updateARVariant(finish) {
+    updateARVariant() {
       const label = document.getElementById('qx_ar_active_variant_label');
-      if (label && finish) {
-        const heightMm = this.arCalibration.height_mm || 150;
-        label.textContent = `Acabado Activo: ${finish.name || finish.id} • ${heightMm} mm`;
+      if (label) {
+        const size = this.arCalibration;
+        label.textContent = 'Medidas de referencia: ' + size.width_mm + ' × ' + size.height_mm + ' × ' + size.depth_mm + ' mm. La escala y los materiales nativos corresponden al archivo original; estas medidas no lo redimensionan.';
       }
-
       const modal = document.getElementById('qx_modal_ar_bridge');
-      if (modal && modal.style.display !== 'none') {
-        this.generateARQRCode();
-      }
+      if (modal && modal.style.display !== 'none') this.generateARQRCode();
     }
 
     launchMobileAR() {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isAndroid = /Android/i.test(navigator.userAgent);
-
-      if (window.QuantixHapticAudio) {
-        window.QuantixHapticAudio.playCrystalChime();
-      }
-
-      if (isIOS) {
-        const usdzUrl = this.customModelUrl
-          ? this.customModelUrl.replace(/\.glb$/i, '.usdz')
-          : new URL('tests/fixtures/sample_horlogerie_chrono.usdz', window.location.origin).href;
-        
+      const availability = this.getARAvailability();
+      if (!availability.available) return;
+      if (availability.path === 'quick-look') {
         const link = document.getElementById('qx_ios_ar_native_link');
-        if (link) {
-          link.href = usdzUrl;
-          link.click();
-        }
-      } else {
-        // Android Google Scene Viewer Intent
-        const glbUrl = this.customModelUrl
-          ? new URL(this.customModelUrl, window.location.href).href
-          : new URL('tests/fixtures/sample_horlogerie_chrono.glb', window.location.origin).href;
-        
-        const title = encodeURIComponent(document.title || 'Quantix 3D Model');
-        const resizable = this.arCalibration.lock_scale ? 'false' : 'true';
-        const intentUrl = `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbUrl)}&mode=ar_only&title=${title}&resizable=${resizable}#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(window.location.href)};end;`;
-
-        window.location.href = intentUrl;
+        if (!link) return;
+        const asset = new URL(availability.iosUrl);
+        asset.hash = this.arCalibration.lock_scale ? 'allowsContentScaling=0' : 'allowsContentScaling=1';
+        link.href = asset.href; link.click();
+      } else if (availability.path === 'scene-viewer') {
+        const fallback = new URL(this.buildARPageUrl()); fallback.searchParams.delete('ar_launch');
+        const query = new URLSearchParams({ file: availability.androidUrl, mode: 'ar_only', title: this.config.custom_model_name || 'Modelo 3D', resizable: this.arCalibration.lock_scale ? 'false' : 'true', enable_vertical_placement: 'false' });
+        window.location.href = 'intent://arvr.google.com/scene-viewer/1.2?' + query.toString() + '#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;S.browser_fallback_url=' + encodeURIComponent(fallback.href) + ';end;';
       }
     }
 
     applyARCalibration(settings) {
-      this.arCalibration = Object.assign(this.arCalibration, settings);
-      
-      const arBtn = this.wrapper.querySelector('#qx_btn_3d_ar');
-      const arPill = this.wrapper.querySelector('#qx_btn_ar_pill');
+      const next = Object.assign({}, this.arCalibration, settings || {});
+      ['enabled', 'lock_scale'].forEach(key => { next[key] = next[key] === true || next[key] === 1 || next[key] === '1'; });
+      ['width_mm', 'height_mm', 'depth_mm'].forEach(key => {
+        const value = Number(next[key]); next[key] = Number.isFinite(value) && value > 0 ? Math.min(10000, value) : 150;
+      });
+      next.anchor = next.anchor === 'floor' ? 'floor' : 'surface';
+      this.arCalibration = next;
+      this.config.ar_calibration = Object.assign({}, next);
+      this.syncControls();
+      this.updateARVariant();
+    }
 
-      if (this.arCalibration.enabled === false) {
-        if (arBtn) arBtn.style.display = 'none';
-        if (arPill) arPill.style.display = 'none';
-      } else {
-        if (arBtn) arBtn.style.display = '';
-        if (arPill) arPill.style.display = '';
-      }
+    requestAutoARLaunch(params) {
+      if (params && typeof params.get === 'function' && params.get('ar_launch') !== '1') return;
+      // Only the intent comes from the URL. Assets and placement stay tenant-owned.
+      this.autoARLaunchPending = true;
+      this.tryAutoARLaunch();
+    }
 
-      const activeFinish = this.activeFinish || (this.config.finishes && this.config.finishes[0]);
-      if (activeFinish) {
-        this.updateARVariant(activeFinish);
-      }
+    tryAutoARLaunch() {
+      if (!this.autoARLaunchPending || this.destroyed || this.isModelLoading) return;
+      // Success or a definitive failure consumes the request once, after loading settles.
+      this.autoARLaunchPending = false;
+      if (this.getARAvailability().available) this.openARBridge();
     }
 
     handleAutoARLaunch(params) {
-      if (params.get('finish')) {
-        this.applyFinish(params.get('finish'));
-      }
-      if (params.get('scale_mm')) {
-        this.arCalibration.height_mm = parseInt(params.get('scale_mm'), 10) || 150;
-      }
-      if (params.get('anchor')) {
-        this.arCalibration.anchor = params.get('anchor');
-      }
-      if (params.get('lock_scale')) {
-        this.arCalibration.lock_scale = params.get('lock_scale') === '1';
-      }
-
-      this.openARBridge();
+      this.requestAutoARLaunch(params);
     }
 
     destroy() {
+      this.destroyed = true;
+      this.autoARLaunchPending = false;
+      this.modelGeneration += 1;
+      this.qrRequest = (this.qrRequest || 0) + 1;
       if (this.observer) this.observer.disconnect();
-      cancelAnimationFrame(this.animFrameId);
-      if (this.renderer && this.renderer.domElement) {
-        this.renderer.domElement.remove();
-      }
+      if (this.resizeObserver) this.resizeObserver.disconnect();
+      if (this.visibilityHandler) document.removeEventListener('visibilitychange', this.visibilityHandler);
+      if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
+      this.animFrameId = null;
+      this.clearModel();
+      if (this.renderer) { this.renderer.dispose(); if (this.renderer.domElement) this.renderer.domElement.remove(); }
     }
 
     escapeHtml(str) {

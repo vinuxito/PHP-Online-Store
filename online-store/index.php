@@ -6,12 +6,27 @@
 
 require_once __DIR__ . '/includes/tenant_resolver.php';
 $tenant = StorefrontTenant::resolve();
+require_once __DIR__ . '/includes/control_contract.php';
+$qxHeroBase = array_replace([
+    'headline'=>$tenant->headline, 'subheadline'=>$tenant->heroSubheadline,
+    'kicker'=>$tenant->heroKicker, 'kicker_enabled'=>$tenant->heroKickerEnabled,
+    'kicker_icon'=>$tenant->heroKickerIcon, 'shader'=>$tenant->heroShader,
+    'typography'=>$tenant->heroTypography, 'letter_spacing'=>$tenant->heroLetterSpacing,
+    'shimmer'=>$tenant->heroShimmer
+], $tenant->apexConfig['hero_curation'] ?? []);
+foreach (['headline','subheadline','kicker'] as $textField) $qxHeroBase[$textField] = html_entity_decode((string)($qxHeroBase[$textField] ?? ''), ENT_QUOTES, 'UTF-8');
+// The ceremonial reveal is public presentation, never an authorization boundary.
+unset($qxHeroBase['wax_seal']['vip_passcode']);
+$qxHeroResolved = QuantixControlContract::resolveHero($qxHeroBase);
 $featMatrix = $tenant->apexConfig['feature_matrix'] ?? [];
 $isPerfumsTenant = $tenant->isPerfumery();
-$textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
-$resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
+$resolvedIndustry = $tenant->getIndustry();
 $isRealEstate = ($resolvedIndustry === 'real_estate');
 $isIndustrial = ($resolvedIndustry === 'industrial');
+foreach (['headline'=>'headline','subheadline'=>'heroSubheadline','kicker'=>'heroKicker','kicker_enabled'=>'heroKickerEnabled','kicker_icon'=>'heroKickerIcon','shader'=>'heroShader','typography'=>'heroTypography','letter_spacing'=>'heroLetterSpacing','shimmer'=>'heroShimmer'] as $key=>$property) {
+    if (array_key_exists($key,$qxHeroResolved)) $tenant->$property=$qxHeroResolved[$key];
+}
+
 $designKey = in_array(strtolower($tenant->archetype ?? ''), ['nordic', 'maison', 'titan', 'social'], true) ? strtolower($tenant->archetype) : 'maison';
 
 $isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']);
@@ -156,7 +171,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     </div>
 
     <!-- Vernissage Wax Seal VIP Gate (Only Perfumery) -->
-    <div class="qx-vernissage-curtain" id="qx_vernissage_curtain" style="<?php echo ($isPerfumsTenant && !empty($tenant->heroWaxSeal['enabled']) && empty($_SESSION['qx_vip_unlocked'])) ? '' : 'display:none;'; ?>">
+    <div class="qx-vernissage-curtain" id="qx_vernissage_curtain" style="<?php echo (!empty($tenant->heroWaxSeal['enabled'])) ? '' : 'display:none;'; ?>">
       <div class="qx-vernissage-seal-container">
         <div class="qx-wax-seal" id="qx_btn_wax_seal" role="button" tabindex="0" title="Romper sello de gala">
           <svg class="qx-wax-svg" viewBox="0 0 100 100">
@@ -168,18 +183,14 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           </svg>
         </div>
         <div class="qx-vernissage-heading"><?php echo htmlspecialchars($tenant->heroWaxSeal['secret_headline'] ?? 'COLECCIÓN EN RESERVA PRIVADA'); ?></div>
-        <div class="qx-vernissage-sub">Acceso restringido para miembros del Salón Sommelier</div>
-        <div class="qx-vernissage-input-row" id="qx_vernissage_input_row" style="display:none; margin-bottom: 12px;">
-          <input type="text" id="qx_inp_store_vip_key" class="qx-vip-input" placeholder="Ingresa Llave VIP...">
-          <button type="button" class="qx-btn-unlock-vip" id="qx_btn_submit_vip_key">Entrar</button>
-        </div>
-        <button type="button" class="qx-btn-enter-key" id="qx_btn_enter_vip_key">Presentar Llave de Oro</button>
+        <div class="qx-vernissage-sub">Presentación de bienvenida · el catálogo es público</div>
+        <button type="button" class="qx-btn-enter-key" id="qx_btn_enter_vip_key">Descubrir la colección</button>
       </div>
     </div>
 
     <!-- Mechanical Allocation Vault (Only Perfumery) -->
     <?php
-      $vaultEnabled = $isPerfumsTenant && !empty($tenant->heroAllocationVault['enabled']);
+      $vaultEnabled = !empty($tenant->heroAllocationVault['enabled']);
       $currFlacon = max(1, min(999, intval($tenant->heroAllocationVault['current_flacon'] ?? 7)));
       $totalFlacons = max(1, min(9999, intval($tenant->heroAllocationVault['total_flacons'] ?? 50)));
       $strFlacon = str_pad(strval($currFlacon), 2, '0', STR_PAD_LEFT);
@@ -191,7 +202,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <div class="qx-vault-capsule">
         <span class="qx-vault-batch-tag" id="qx_vault_batch_tag"><?php echo htmlspecialchars($batchCode); ?></span>
         <span class="qx-vault-sep">•</span>
-        <span class="qx-vault-label">FLACON</span>
+        <span class="qx-vault-label" title="Numeración configurada por la tienda; no representa inventario">SELECCIÓN</span>
         <div class="qx-tumbler-drum" id="qx_tumbler_drum">
           <?php foreach ($digits as $idx => $d): ?>
             <div class="qx-drum-slot" id="qx_drum_slot_<?php echo $idx; ?>"><?php echo htmlspecialchars($d); ?></div>
@@ -207,8 +218,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     <!-- Kicker Ribbon / Micro-Badge -->
     <?php
       $heroKickerDefault = $isRealEstate ? 'PORTAFOLIO EXCLUSIVO' : ($isPerfumsTenant ? 'HAUTE COSECHA 2026' : 'CATÁLOGO OFICIAL 2026');
-      $heroKickerVal = (!empty($tenant->heroKicker) && $tenant->heroKicker !== 'HAUTE COSECHA 2026') ? $tenant->heroKicker : $heroKickerDefault;
-      $heroKickerIconVal = $isRealEstate ? '✦' : getHeroKickerIconGlyph($tenant->heroKickerIcon ?? 'sparkle');
+      $heroKickerVal = $tenant->heroKicker;
+      $heroKickerIconVal = getHeroKickerIconGlyph($tenant->heroKickerIcon ?? 'sparkle');
     ?>
     <div class="qx-hero-kicker-wrap" id="qx_hero_kicker_wrap" style="<?php echo !empty($tenant->heroKickerEnabled) ? '' : 'display:none;'; ?>">
       <span class="qx-hero-kicker" id="qx_hero_kicker">
@@ -222,10 +233,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       $heroTypoClass = 'qx-typo-' . (!empty($tenant->heroTypography) ? $tenant->heroTypography : 'imperial_serif');
       $heroTrackClass = 'qx-track-' . (!empty($tenant->heroLetterSpacing) ? $tenant->heroLetterSpacing : 'wide');
       $heroShimmerClass = !empty($tenant->heroShimmer) ? ' qx-shimmer-active' : '';
-      $heroHeadlineRaw = !empty($tenant->headline) ? $tenant->headline : $tenant->brandName;
+      $heroHeadlineRaw = $tenant->headline;
     ?>
     <h1 class="qx-hero-title <?php echo "{$heroShaderClass} {$heroTypoClass} {$heroTrackClass}{$heroShimmerClass}"; ?>" id="qx_hero_title"><?php echo renderHeroHeadlineFormatted($heroHeadlineRaw); ?></h1>
-    <p class="qx-hero-subtitle" id="qx_hero_subtitle"><?php echo htmlspecialchars(!empty($tenant->heroSubheadline) ? $tenant->heroSubheadline : $tenant->description); ?></p>
+    <p class="qx-hero-subtitle" id="qx_hero_subtitle"><?php echo htmlspecialchars($tenant->heroSubheadline); ?></p>
     
     <div class="qx-design-hero-actions">
       <a class="qx-design-primary" href="#qx_catalog_start"><?php echo $isRealEstate ? 'Explorar propiedades' : 'Explorar catálogo'; ?> <span aria-hidden="true">↗</span></a>
@@ -257,11 +268,11 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_in" title="Acercar">🔍+</button>
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_zoom_out" title="Alejar">🔍-</button>
         <button type="button" class="qx-tool-btn" id="qx_btn_3d_reset" title="Restaurar Ángulo">↩</button>
-        <button type="button" class="qx-tool-btn qx-ar-glow-tool" id="qx_btn_3d_ar" title="Ver en mi Espacio (Realidad Aumentada)">📱 AR</button>
+        <button type="button" class="qx-tool-btn qx-ar-glow-tool" id="qx_btn_3d_ar" hidden title="Ver en mi Espacio (Realidad Aumentada)">📱 AR</button>
       </div>
 
       <!-- Top-Right AR Trigger Pill -->
-      <button type="button" id="qx_btn_ar_pill" class="qx-ar-pill-trigger" title="Ver en Realidad Aumentada">
+      <button type="button" id="qx_btn_ar_pill" hidden class="qx-ar-pill-trigger" title="Ver en Realidad Aumentada">
         <span class="qx-ar-pill-icon">✦</span>
         <span class="qx-ar-pill-text">Ver en mi Espacio (AR)</span>
       </button>
@@ -278,23 +289,15 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           </div>
         </div>
         <div class="qx-shelf-specs-group" id="qx_shelf_specs">
-          <?php if ($tenant->isPerfumery()): ?>
-            <span class="qx-spec-pill">✦ 35% Extrait</span>
-            <span class="qx-spec-pill">🧪 Maceración 6M</span>
-            <span class="qx-spec-pill">🏛️ CFDI 4.0 SAT</span>
-          <?php else: ?>
-            <span class="qx-spec-pill">🛡️ IP67 Hermético</span>
-            <span class="qx-spec-pill">⚡ Bobina 180°C</span>
-            <span class="qx-spec-pill">🏛️ CFDI 4.0 SAT</span>
-          <?php endif; ?>
+          <span class="qx-spec-pill">Modelo de presentación · consulta la ficha para los datos del artículo</span>
         </div>
         <div class="qx-shelf-cta-group">
           <div class="qx-shelf-price-box">
-            <span class="qx-shelf-currency">MXN</span>
-            <span class="qx-shelf-price-val" id="qx_studio_price_val">$ <?php echo $tenant->isPerfumery() ? '4,250' : '1,850'; ?></span>
+            <span class="qx-shelf-currency"></span>
+            <span class="qx-shelf-price-val" id="qx_studio_price_val"></span>
           </div>
           <button type="button" class="qx-btn-studio-add" id="qx_btn_studio_add">
-            🛍️ Agregar a la Orden
+            Ver ficha del artículo
           </button>
         </div>
       </div>
@@ -312,9 +315,9 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <button type="button" class="qx-ar-modal-close" id="qx_ar_modal_close" aria-label="Cerrar modal">✕</button>
         
         <div class="qx-ar-modal-header">
-          <div class="qx-ar-badge-pill">✦ REALIDAD AUMENTADA 1:1</div>
+          <div class="qx-ar-badge-pill">✦ REALIDAD AUMENTADA</div>
           <h3 class="qx-ar-modal-title" id="qx_ar_modal_title">Proyecta en tu Espacio Físico</h3>
-          <p class="qx-ar-modal-desc">Escanea este holograma con la cámara de tu smartphone para ver el modelo a escala real en tu mesa o piso.</p>
+          <p class="qx-ar-modal-desc">Escanea el código con un dispositivo compatible. El tamaño y los materiales dependen del archivo 3D publicado; las medidas indicadas son referencias.</p>
         </div>
 
         <div class="qx-ar-qr-frame">
@@ -329,7 +332,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
 
         <div class="qx-ar-variant-badge" id="qx_ar_variant_badge">
           <span class="qx-ar-dot"></span>
-          <span id="qx_ar_active_variant_label">Acabado Activo: Liquid Gold 24k</span>
+          <span id="qx_ar_active_variant_label">Modelo publicado</span>
         </div>
 
         <div class="qx-ar-steps-guide">
@@ -348,7 +351,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         </div>
 
         <div class="qx-ar-compat-row">
-          <span class="qx-compat-tag">🍏 Apple AR Quick Look (LiDAR)</span>
+          <span class="qx-compat-tag">🍏 Apple AR Quick Look</span>
           <span class="qx-compat-tag">🤖 Google Scene Viewer (ARCore)</span>
         </div>
 
@@ -525,48 +528,43 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <label class="qx-form-label">Método de Pago</label>
         <div style="display:flex; gap:10px; margin-top:6px;">
           <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
-            <input type="radio" name="qx_payment_method" value="SPEI" checked> Transferencia SPEI
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
-            <input type="radio" name="qx_payment_method" value="CARD"> Tarjeta (Stripe)
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
-            <input type="radio" name="qx_payment_method" value="PAYPAL"> PayPal
+            <input type="radio" name="qx_payment_method" value="SPEI" <?php echo !empty($tenant->paymentSettings['spei_ready']) ? 'checked' : 'disabled'; ?>> Transferencia SPEI
           </label>
         </div>
       </div>
 
-      <!-- SPEI Voucher with 1-Click Copy (Module 3) -->
-      <div class="qx-spei-voucher" id="qx_spei_voucher">
+      <p id="qx_payment_unavailable" role="status" <?php echo !empty($tenant->paymentSettings['spei_ready']) ? 'hidden' : ''; ?>>La tienda aún no tiene instrucciones de transferencia completas. Contacta a la tienda para comprar.</p>
+      <!-- SPEI instructions configured by the merchant -->
+      <div class="qx-spei-voucher" id="qx_spei_voucher" style="<?php echo !empty($tenant->paymentSettings['spei_ready']) ? '' : 'display:none;'; ?>">
         <div class="qx-spei-title">
           <span>🏦</span>
           <span>Instrucciones de Transferencia SPEI</span>
         </div>
         <div class="qx-spei-row">
           <span class="qx-spei-label">Banco Receptor:</span>
-          <span class="qx-spei-val" id="qx_spei_bank"><?php echo htmlspecialchars($tenant->bankName ?? 'BBVA Bancomer'); ?></span>
+          <span class="qx-spei-val" id="qx_spei_bank"><?php echo htmlspecialchars($tenant->bankName ?? ''); ?></span>
         </div>
         <div class="qx-spei-row">
           <span class="qx-spei-label">Beneficiario:</span>
-          <span class="qx-spei-val" id="qx_spei_beneficiary"><?php echo htmlspecialchars($tenant->brandName); ?></span>
+          <span class="qx-spei-val" id="qx_spei_beneficiary"><?php echo htmlspecialchars($tenant->bankBeneficiary ?? ''); ?></span>
         </div>
         <div class="qx-spei-row">
           <span class="qx-spei-label">CLABE Interbancaria:</span>
           <div class="qx-spei-clabe-box">
-            <input type="text" readonly id="qx_spei_clabe_val" value="<?php echo htmlspecialchars($tenant->bankClabe ?? '012180001234567890'); ?>" class="qx-clabe-text">
+            <input type="text" readonly id="qx_spei_clabe_val" value="<?php echo htmlspecialchars($tenant->bankClabe ?? ''); ?>" class="qx-clabe-text">
             <button type="button" class="qx-btn-copy-clabe" id="qx_btn_copy_clabe" title="Copiar CLABE">Copiar</button>
           </div>
         </div>
         <div style="font-size:11.5px; color:var(--qx-text-muted); margin-top:8px;">
-          ⚡ Tu pedido se procesará de inmediato al registrarse la transferencia interbancaria.
+          Tu solicitud queda pendiente de pago. La tienda confirmará la transferencia y la disponibilidad antes de preparar el pedido.
         </div>
       </div>
 
       <!-- CFDI 4.0 Native Invoicing Gate -->
-      <div class="qx-cfdi-card">
+      <div class="qx-cfdi-card" id="qx_cfdi_request_wrap" style="<?php echo !empty($tenant->paymentSettings['invoice_request_enabled']) ? '' : 'display:none;'; ?>">
         <label class="qx-cfdi-toggle">
           <input type="checkbox" id="qx_require_cfdi">
-          <span>🏛️ ¿Requieres Factura Fiscal Electrónica (CFDI 4.0)?</span>
+          <span>Solicitar factura a la tienda (emisión posterior a la confirmación)</span>
         </label>
 
         <div id="qx_cfdi_fields" style="display:none; margin-top:14px;">
@@ -609,8 +607,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         </div>
       </div>
 
-      <button type="submit" class="qx-btn-place-order" id="qx_btn_place_order">
-        <span>Confirmar y Pagar Orden</span>
+      <button type="submit" class="qx-btn-place-order" id="qx_btn_place_order" <?php echo empty($tenant->paymentSettings['spei_ready']) ? 'disabled' : ''; ?>>
+        <span>Enviar solicitud de pedido</span>
       </button>
     </form>
   </aside>
@@ -2039,11 +2037,11 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </footer>
 
   <!-- WhatsApp Concierge Float Button -->
-  <?php if ($tenant->showWhatsapp && !empty($tenant->whatsappPhone)): ?>
+  <?php if (true): ?>
     <?php
       $waUrl = "https://wa.me/" . urlencode(preg_replace('/[^0-9]/', '', $tenant->whatsappPhone)) . "?text=" . urlencode($tenant->whatsappGreeting);
     ?>
-    <a href="<?php echo htmlspecialchars($waUrl); ?>" target="_blank" class="qx-whatsapp-float" title="Atención VIP WhatsApp" style="position:fixed; bottom:24px; left:24px; background:#25D366; color:#fff; width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 8px 24px rgba(37,211,102,0.4); z-index:9999; text-decoration:none; transition:transform 0.2s ease;">
+    <a href="<?php echo htmlspecialchars($waUrl); ?>" target="_blank" rel="noopener noreferrer" id="qx_whatsapp_float" class="qx-whatsapp-float" title="Atención VIP WhatsApp" style="position:fixed; bottom:24px; left:24px; background:#25D366; color:#fff; width:52px; height:52px; border-radius:50%; display:<?php echo $tenant->showWhatsapp && !empty($tenant->whatsappPhone) ? 'flex' : 'none'; ?>; align-items:center; justify-content:center; font-size:26px; box-shadow:0 8px 24px rgba(37,211,102,0.4); z-index:9999; text-decoration:none; transition:transform 0.2s ease;">
       💬
     </a>
   <?php endif; ?>
@@ -2096,6 +2094,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <script src="js/storefront_designs.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_designs.js'); ?>"></script>
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
+    window.QX_CONTROL_STATE = <?php echo json_encode(['hero'=>$qxHeroBase,'contact'=>['show_whatsapp'=>(bool)$tenant->showWhatsapp,'whatsapp_phone'=>$tenant->whatsappPhone,'whatsapp_message'=>$tenant->whatsappGreeting], 'payments'=>$tenant->paymentSettings ?? []], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
+  </script>
+  <script src="js/quantix_control_runtime.js?v=<?php echo filemtime(__DIR__ . '/js/quantix_control_runtime.js'); ?>"></script>
+  <script>
     // Quantix Glass Twin Live Simulator Synchronization Listener
     let persistentAtmosphere = null;
 
@@ -2103,6 +2105,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       if (window.QuantixStoreDesigns && window.QuantixStoreDesigns.isTrustedPreviewMessage(e) && e.data && e.data.source === 'QUANTIX_APEX_COMMAND_TOWER') {
         const type = e.data.type;
         const payload = e.data.payload;
+        if (window.QuantixControlRuntime && window.QuantixControlRuntime.handle(type, payload)) return;
         if (type === 'FOCUS_INSPECTOR_SECTION') {
           window.QuantixStoreDesigns.focusSection(payload && payload.section);
           return;
@@ -2347,7 +2350,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
 
         if (type === 'SYNC_WAX_SEAL_STATE') {
           if (payload) {
-            $('#qx_vernissage_curtain').toggle(Boolean(payload.enabled));
+            $('#qx_vernissage_curtain').removeClass('unlocked').toggle(Boolean(payload.enabled));
             if (payload.secret_headline) {
               $('.qx-vernissage-heading').text(payload.secret_headline);
             }
@@ -2370,36 +2373,11 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           }
         }
 
-        if (type === 'SYNC_3D_STUDIO_STATE') {
-          if (payload) {
-            const isEnabled = Boolean(payload.enabled);
-            $('#qx_studio_3d_wrapper').toggle(isEnabled);
-            $('#qx_hero_carousel_wrapper').toggle(!isEnabled);
-            if (isEnabled) {
-              if (!window.spatialStudio) {
-                if (typeof QuantixSpatialStudio !== 'undefined') {
-                  window.spatialStudio = new QuantixSpatialStudio('qx_studio_3d_wrapper', payload);
-                }
-              } else {
-                window.spatialStudio.config = Object.assign(window.spatialStudio.config, payload);
-                if (payload.archetype_model) {
-                  window.spatialStudio.config.archetype_model = payload.archetype_model;
-                  window.spatialStudio.buildModel();
-                }
-                if (payload.lighting_preset) {
-                  window.spatialStudio.setLightingPreset(payload.lighting_preset);
-                }
-                if (payload.finishes) {
-                  window.spatialStudio.config.finishes = payload.finishes;
-                  window.spatialStudio.initShelfAndFinishes();
-                }
-                if (payload.hotspots) {
-                  window.spatialStudio.config.hotspots = payload.hotspots;
-                  window.spatialStudio.initHotspots();
-                }
-              }
-            }
-          }
+        if (type === 'SYNC_3D_STUDIO_STATE' && payload) {
+          if (!window.spatialStudio && payload.enabled && typeof QuantixSpatialStudio !== 'undefined') window.spatialStudio = new QuantixSpatialStudio('qx_studio_3d_wrapper', payload);
+          if (window.spatialStudio) window.spatialStudio.applyConfig(payload);
+          else $('#qx_studio_3d_wrapper').hide();
+          if (window.QuantixStoreDesigns && window.quantixStore) window.QuantixStoreDesigns.modules(window.quantixStore);
         }
 
         if (type === 'SYNC_3D_FINISH') {
@@ -2442,11 +2420,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           if (window.spatialStudio && payload) {
             window.spatialStudio.applyARCalibration(payload);
           }
-          if (payload && payload.enabled === false) {
-            $('#qx_btn_3d_ar, #qx_btn_ar_pill').hide();
-          } else {
-            $('#qx_btn_3d_ar, #qx_btn_ar_pill').show();
-          }
+          if (window.spatialStudio) window.spatialStudio.syncControls();
         }
 
         if (type === 'REQ_3D_CAMERA_POSE') {
@@ -2470,11 +2444,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           // Check for mobile AR autolaunch query parameters
           const urlParams = new URLSearchParams(window.location.search);
           if (urlParams.get('ar_launch') === '1') {
-            setTimeout(function() {
-              if (window.spatialStudio && typeof window.spatialStudio.handleAutoARLaunch === 'function') {
-                window.spatialStudio.handleAutoARLaunch(urlParams);
-              }
-            }, 600);
+            window.spatialStudio.requestAutoARLaunch(urlParams);
           }
         }
       }
@@ -2585,20 +2555,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         setTimeout(() => { curtain.style.display = 'none'; }, 800);
       };
 
-      $('#qx_btn_wax_seal, #qx_btn_enter_vip_key').on('click', function() {
-        $('#qx_vernissage_input_row').slideDown(200);
-        $('#qx_inp_store_vip_key').focus();
-      });
-
-      $('#qx_btn_submit_vip_key').on('click', function() {
-        const key = ($('#qx_inp_store_vip_key').val() || '').trim().toUpperCase();
-        if (key.length > 0) {
-          window.qxUnlockWaxSeal();
-        } else {
-          $('#qx_inp_store_vip_key').css('border-color', '#f43f5e');
-          setTimeout(() => $('#qx_inp_store_vip_key').css('border-color', 'rgba(212, 175, 55, 0.5)'), 1000);
-        }
-      });
+      $('#qx_btn_wax_seal, #qx_btn_enter_vip_key').on('click', function() { window.qxUnlockWaxSeal(); });
+      $('#qx_btn_wax_seal').on('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.qxUnlockWaxSeal(); } });
     })();
   </script>
 
@@ -2789,8 +2747,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </aside>
   <script>
     window.QX_TENANT = <?php 
-      $textCorp = mb_strtolower($tenant->brandName . ' ' . $tenant->description . ' ' . $tenant->headline . ' ' . $tenant->slug, 'UTF-8');
-      $resolvedIndustry = $tenant->isPerfumery() ? 'perfumery' : (($tenant->slug === 'bracsa' || strpos($textCorp, 'bienes') !== false || strpos($textCorp, 'inmobiliari') !== false || strpos($textCorp, 'residencia') !== false || strpos($textCorp, 'espacios corporativos') !== false) ? 'real_estate' : (($tenant->slug === 'gersol' || strpos($textCorp, 'industrial') !== false || strpos($textCorp, 'valvula') !== false) ? 'industrial' : 'retail'));
+      // Use the same business classification as the server-rendered page. Campaign copy is presentation only.
       echo json_encode([
         'emisorId' => (string)$tenant->emisorId,
         'brandName' => (string)$tenant->brandName,
@@ -2803,7 +2760,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         'showWhatsapp' => (bool)$tenant->showWhatsapp,
         'whatsappPhone' => (string)$tenant->whatsappPhone,
         'isStorefront' => true
-      ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); 
+      ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     ?>;
   </script>
   <script src="js/filemon_cockpit.js?v=<?php echo filemtime(__DIR__ . '/js/filemon_cockpit.js'); ?>"></script>

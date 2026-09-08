@@ -27,8 +27,10 @@ if (!$db) {
 }
 
 $action = trim((string)($_GET['action'] ?? $_POST['action'] ?? ''));
-$tenantId = $tenant->emisorId ?: ($_GET['tenant'] ?? $_POST['tenant'] ?? '00163e311ce9a3e711f1591962781ba6');
+$tenantId = $tenant->emisorId;
+if (!$tenant->isStoreActive || !$tenantId || (isset($tenant->apexConfig['feature_matrix']['royal_agenda']['enabled']) && !$tenant->apexConfig['feature_matrix']['royal_agenda']['enabled'])) { http_response_code(403); echo json_encode(['Status' => 'ERROR', 'Error' => 'La agenda no está disponible para esta tienda.']); exit; }
 
+try {
 switch ($action) {
     // -------------------------------------------------------------------------
     // 1. QUICK SCAN ROYAL KEYCARD (Soft-Gate Identity Intake)
@@ -36,15 +38,15 @@ switch ($action) {
     case 'quick_scan_keycard':
         $input = isset($_GET['input']) ? trim($_GET['input']) : '';
         if (empty($input)) {
-            $input = 'alexander@humboldt-expeditions.org';
+            echo json_encode(['Status' => 'ERROR', 'Error' => 'Ingresa tu correo o teléfono.']); exit;
         }
 
         // Search in appointments first using PDO prepared statement
-        $stmt = $db->prepare("SELECT * FROM concierge_appointments WHERE ClientEmail = ? OR ClientPhone = ? ORDER BY AppointmentID DESC LIMIT 1");
-        $stmt->execute([$input, $input]);
+        $stmt = $db->prepare("SELECT * FROM concierge_appointments WHERE EmisorID = ? AND (ClientEmail = ? OR ClientPhone = ?) ORDER BY AppointmentID DESC LIMIT 1");
+        $stmt->execute([$tenantId, $input, $input]);
         $appRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($appRow || strpos(strtolower($input), 'alexander') !== false || strpos($input, '3318259000') !== false) {
+        if ($appRow) {
             $name = $appRow ? $appRow['ClientName'] : 'Alexander von Humboldt';
             $email = $appRow ? $appRow['ClientEmail'] : 'alexander@humboldt-expeditions.org';
             $phone = $appRow ? $appRow['ClientPhone'] : '+52 33 1825 9000';
@@ -83,11 +85,11 @@ switch ($action) {
                     'initials' => $initials,
                     'tier' => $isPerfumery ? $tier : 'CLIENTE_VIP',
                     'tierLabel' => isset($tierLabels[$tier]) ? $tierLabels[$tier] : 'Cliente VIP',
-                    'points' => 250,
-                    'totalPurchases' => 12,
-                    'activeAppointmentsCount' => 1,
+                    'points' => null,
+                    'totalPurchases' => null,
+                    'activeAppointmentsCount' => null,
                     'lastAppointmentCode' => $lastCode,
-                    'signatureScent' => $isPerfumery ? 'Rasasi Hawas / Oud Royal' : 'Atención y Asesoría Especializada'
+                    'signatureScent' => ''
                 ]
             ]);
         } else {
@@ -108,7 +110,7 @@ switch ($action) {
                     'initials' => $guestInitials,
                     'tier' => 'GUEST',
                     'tierLabel' => 'Pase de Invitado de Cortesía',
-                    'points' => 50,
+                    'points' => null,
                     'totalPurchases' => 0,
                     'activeAppointmentsCount' => 0,
                     'lastAppointmentCode' => null,
@@ -126,8 +128,8 @@ switch ($action) {
 
         // Fetch booked appointments for this date using PDO
         $bookedTimes = [];
-        $stmtBooked = $db->prepare("SELECT ScheduledTime FROM concierge_appointments WHERE ScheduledDate = ? AND Status NOT IN ('CANCELLED')");
-        $stmtBooked->execute([$date]);
+        $stmtBooked = $db->prepare("SELECT ScheduledTime FROM concierge_appointments WHERE EmisorID = ? AND ScheduledDate = ? AND Status NOT IN ('CANCELLED')");
+        $stmtBooked->execute([$tenantId, $date]);
         while ($b = $stmtBooked->fetch(PDO::FETCH_ASSOC)) {
             $timeShort = substr($b['ScheduledTime'], 0, 5);
             $bookedTimes[] = $timeShort;
@@ -193,6 +195,8 @@ switch ($action) {
             ]
         ];
 
+        foreach ($bands as &$band) { $band['sommelier'] = ['id' => '', 'name' => 'Equipo de la tienda', 'title' => 'Sujeto a confirmación', 'avatar' => '', 'rating' => null]; $band['atmosphere'] = 'Horario solicitado; la tienda confirmará disponibilidad.'; }
+        unset($band);
         echo json_encode([
             'Status' => 'OK',
             'Date' => $date,
@@ -208,34 +212,35 @@ switch ($action) {
         $data = json_decode($raw, true);
         if (!$data) $data = $_POST;
 
-        $clientName = isset($data['clientName']) ? trim($data['clientName']) : 'Alexander von Humboldt';
-        $clientEmail = isset($data['clientEmail']) ? trim($data['clientEmail']) : 'alexander@humboldt-expeditions.org';
-        $clientPhone = isset($data['clientPhone']) ? trim($data['clientPhone']) : '+523318259000';
-        $clientTier = isset($data['clientTier']) ? trim($data['clientTier']) : 'MASTER_PERFUMER';
+        $clientName = is_scalar($data['clientName'] ?? '') ? trim((string)($data['clientName'] ?? '')) : '';
+        $clientEmail = is_scalar($data['clientEmail'] ?? '') ? trim((string)($data['clientEmail'] ?? '')) : '';
+        $clientPhone = is_scalar($data['clientPhone'] ?? '') ? trim((string)($data['clientPhone'] ?? '')) : '';
+        if (!$clientName || !filter_var($clientEmail, FILTER_VALIDATE_EMAIL) || !$clientPhone || strlen($clientName) > 128 || strlen($clientEmail) > 128 || strlen($clientPhone) > 32) { http_response_code(422); echo json_encode(['Status' => 'ERROR', 'Error' => 'Completa tu nombre, correo válido y teléfono para solicitar la cita.']); exit; }
+        $clientTier = 'GUEST';
         $experienceType = isset($data['experienceType']) ? trim($data['experienceType']) : 'TASTING_MASTERCLASS';
         $atmosphericBand = isset($data['atmosphericBand']) ? trim($data['atmosphericBand']) : 'GOLDEN_HOUR';
         $scheduledDate = isset($data['scheduledDate']) ? trim($data['scheduledDate']) : date('Y-m-d');
         $scheduledTime = isset($data['scheduledTime']) ? trim($data['scheduledTime']) : '15:45';
         $channel = isset($data['channel']) ? trim($data['channel']) : 'WEBRTC';
-        $sommelierId = ($atmosphericBand === 'SOLARIUM') ? 'SOMM-CLAIRE' : 'SOMM-JEAN-LUC';
+        $sommelierId = '';
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $scheduledDate) || !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/D', $scheduledTime)) { http_response_code(422); echo json_encode(['Status' => 'ERROR', 'Error' => 'Selecciona una fecha y hora válidas.']); exit; }
 
         // Intake Briefing Data
-        $occasionMood = isset($data['occasionMood']) ? trim($data['occasionMood']) : 'Presencia Ejecutiva & Seducción';
+        $occasionMood = isset($data['occasionMood']) ? substr(trim((string)$data['occasionMood']), 0, 64) : '';
         $intensityDial = isset($data['intensityDial']) ? intval($data['intensityDial']) : 50;
-        $projectionMode = isset($data['projectionMode']) ? trim($data['projectionMode']) : 'BEAST_MODE';
-        $referenceFragrances = isset($data['referenceFragrances']) ? trim($data['referenceFragrances']) : 'Rasasi Hawas, Afnan 9AM Dive';
-        $clientNotes = isset($data['clientNotes']) ? trim($data['clientNotes']) : 'Preferencia por acordes especiados y marinos de larga duración.';
+        $projectionMode = in_array($data['projectionMode'] ?? '', ['INTIMATE', 'MODERATE', 'BEAST_MODE'], true) ? $data['projectionMode'] : 'MODERATE';
+        $referenceFragrances = isset($data['referenceFragrances']) ? trim((string)$data['referenceFragrances']) : '';
+        $clientNotes = isset($data['clientNotes']) ? trim((string)$data['clientNotes']) : '';
 
         // Generate Codes
-        $randomSuffix = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4));
-        $appointmentCode = "AGENDA-2026-{$randomSuffix}";
-        $voucherCode = "ROYALPASS-2026-{$randomSuffix}";
-        $meetingUrl = "https://evinux.net/tasting/{$appointmentCode}";
+        $appointmentCode = 'QXA-' . strtoupper(bin2hex(random_bytes(12)));
+        $voucherCode = '';
+        $meetingUrl = '';
 
         $stmt = $db->prepare("INSERT INTO concierge_appointments
             (EmisorID, AppointmentCode, ClientName, ClientEmail, ClientPhone, ClientTier, ExperienceType, AtmosphericBand, ScheduledDate, ScheduledTime, Channel, Status, SommelierID, MeetingRoomUrl, CashBackVoucherCode, CashBackAmount)
             VALUES
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONFIRMED', ?, ?, ?, 499.00)");
+            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, 0.00)");
 
         $success = $stmt->execute([
             $tenantId, $appointmentCode, $clientName, $clientEmail, $clientPhone,
@@ -254,7 +259,8 @@ switch ($action) {
 
             echo json_encode([
                 'Status' => 'OK',
-                'Message' => 'Cita VIP agendada exitosamente con Pase de Gala emitido.',
+                'Message' => 'Solicitud registrada; la tienda debe confirmar la cita. No se ha enviado una notificación.',
+                'NotificationStatus' => 'unavailable',
                 'Appointment' => [
                     'code' => $appointmentCode,
                     'clientName' => $clientName,
@@ -267,11 +273,11 @@ switch ($action) {
                     'scheduledTime' => $scheduledTime,
                     'channel' => $channel,
                     'sommelierId' => $sommelierId,
-                    'sommelierName' => ($sommelierId === 'SOMM-CLAIRE') ? 'Claire Dupont' : 'Jean-Luc Moreau',
-                    'status' => 'CONFIRMED',
+                    'sommelierName' => 'Pendiente de asignación',
+                    'status' => 'PENDING',
                     'meetingUrl' => $meetingUrl,
                     'voucherCode' => $voucherCode,
-                    'cashBackAmount' => 499.00
+                    'cashBackAmount' => 0
                 ]
             ]);
         } else {
@@ -283,17 +289,18 @@ switch ($action) {
     // 4. GET APPOINTMENT STATUS & PRE-SESSION LOUNGE DETAILS
     // -------------------------------------------------------------------------
     case 'get_appointment_status':
-        $code = isset($_GET['code']) ? trim($_GET['code']) : 'AGENDA-2026-VIP';
+        $code = isset($_GET['code']) && is_scalar($_GET['code']) ? trim((string)$_GET['code']) : '';
+        if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $code)) { http_response_code(400); echo json_encode(['Status' => 'ERROR', 'Error' => 'Código de cita inválido.']); exit; }
 
         $stmt = $db->prepare("SELECT a.*, s.Nombre as SommelierNombre, s.Titulo as SommelierTitulo, s.AvatarUrl as SommelierAvatar, s.Rating as SommelierRating,
                        b.OccasionMood, b.IntensityDial, b.ProjectionMode, b.ReferenceFragrances, b.ClientNotes
                 FROM concierge_appointments a
                 LEFT JOIN concierge_sommeliers s ON a.SommelierID = s.SommelierID
                 LEFT JOIN concierge_intake_briefings b ON a.AppointmentCode = b.AppointmentCode
-                WHERE a.AppointmentCode = ?
+                WHERE a.EmisorID = ? AND a.AppointmentCode = ?
                 LIMIT 1");
 
-        $stmt->execute([$code]);
+        $stmt->execute([$tenantId, $code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
@@ -317,16 +324,16 @@ switch ($action) {
                     'cashBackAmount' => (float)$row['CashBackAmount'],
                     'sommelier' => [
                         'id' => $row['SommelierID'],
-                        'name' => $row['SommelierNombre'] ?: 'Jean-Luc Moreau',
-                        'title' => $row['SommelierTitulo'] ?: 'Master Perfumer & Chief Sommelier',
-                        'avatar' => $row['SommelierAvatar'] ?: 'assets/sommelier_avatar.png',
-                        'rating' => (float)($row['SommelierRating'] ?: 4.98)
+                        'name' => $row['SommelierNombre'] ?: 'Pendiente de asignación',
+                        'title' => $row['SommelierTitulo'] ?: '',
+                        'avatar' => $row['SommelierAvatar'] ?: '',
+                        'rating' => ($row['SommelierRating'] !== null ? (float)$row['SommelierRating'] : null)
                     ],
                     'briefing' => [
                         'occasionMood' => $row['OccasionMood'] ?: 'Presencia de Alto Impacto',
                         'intensityDial' => (int)($row['IntensityDial'] ?: 50),
                         'projectionMode' => $row['ProjectionMode'] ?: 'BEAST_MODE',
-                        'referenceFragrances' => $row['ReferenceFragrances'] ?: 'Rasasi Hawas, Afnan 9AM Dive',
+                        'referenceFragrances' => $row['ReferenceFragrances'] ?: '',
                         'clientNotes' => $row['ClientNotes'] ?: ''
                     ]
                 ]
@@ -340,13 +347,15 @@ switch ($action) {
     // 5. GENERATE .ICS CALENDAR FILE (Apple Wallet / Google Calendar / Outlook)
     // -------------------------------------------------------------------------
     case 'generate_ics_calendar':
-        $code = isset($_GET['code']) ? trim($_GET['code']) : 'AGENDA-2026-VIP';
+        $code = isset($_GET['code']) && is_scalar($_GET['code']) ? trim((string)$_GET['code']) : '';
+        if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $code)) { http_response_code(400); echo json_encode(['Status' => 'ERROR', 'Error' => 'Código de cita inválido.']); exit; }
 
         $stmt = $db->prepare("SELECT a.*, s.Nombre as SommelierNombre FROM concierge_appointments a 
                 LEFT JOIN concierge_sommeliers s ON a.SommelierID = s.SommelierID 
-                WHERE a.AppointmentCode = ? LIMIT 1");
-        $stmt->execute([$code]);
+                WHERE a.EmisorID = ? AND a.AppointmentCode = ? LIMIT 1");
+        $stmt->execute([$tenantId, $code]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$app) { http_response_code(404); echo json_encode(['Status' => 'ERROR', 'Error' => 'Cita no encontrada en esta tienda.']); exit; }
 
         $dateStr = $app ? $app['ScheduledDate'] : date('Y-m-d');
         $timeStr = $app ? substr($app['ScheduledTime'], 0, 5) : '15:45';
@@ -367,10 +376,10 @@ switch ($action) {
         $ics .= "DTSTAMP:{$dtStamp}\r\n";
         $ics .= "DTSTART:{$dtStart}\r\n";
         $ics .= "DTEND:{$dtEnd}\r\n";
-        $ics .= "SUMMARY:🍷 Masterclass Privada de Alta Perfumería con {$sommName}\r\n";
-        $ics .= "DESCRIPTION:Sesión privada 1-a-1 de cata olfativa y selección de fragancias de autor para {$clientName}. Código de Cita: {$code}. Bono de cata: $499.00 MXN aplicable a tu frasco de 100ml.\r\n";
+        $ics .= "SUMMARY:Solicitud de cita en la tienda\r\n";
+        $ics .= "DESCRIPTION:Solicitud de cita {$code}. Confirma el horario directamente con la tienda.\r\n";
         $ics .= "LOCATION:Salón Privado Virtual (Quantix Live Atelier)\r\n";
-        $ics .= "STATUS:CONFIRMED\r\n";
+        $ics .= "STATUS:" . ($app['Status'] === 'CONFIRMED' ? 'CONFIRMED' : 'TENTATIVE') . "\r\n";
         $ics .= "BEGIN:VALARM\r\n";
         $ics .= "TRIGGER:-PT15M\r\n";
         $ics .= "ACTION:DISPLAY\r\n";
@@ -388,29 +397,24 @@ switch ($action) {
     // 6. GENERATE WHATSAPP VIP CONCIERGE LINK
     // -------------------------------------------------------------------------
     case 'generate_wa_concierge_link':
-        $code = isset($_GET['code']) ? trim($_GET['code']) : 'AGENDA-2026-VIP';
+        $code = isset($_GET['code']) && is_scalar($_GET['code']) ? trim((string)$_GET['code']) : '';
+        if (!preg_match('/^[A-Za-z0-9_-]{1,32}$/D', $code)) { http_response_code(400); echo json_encode(['Status' => 'ERROR', 'Error' => 'Código de cita inválido.']); exit; }
 
         $stmt = $db->prepare("SELECT a.*, s.Nombre as SommelierNombre FROM concierge_appointments a 
                 LEFT JOIN concierge_sommeliers s ON a.SommelierID = s.SommelierID 
-                WHERE a.AppointmentCode = ? LIMIT 1");
-        $stmt->execute([$code]);
+                WHERE a.EmisorID = ? AND a.AppointmentCode = ? LIMIT 1");
+        $stmt->execute([$tenantId, $code]);
         $app = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$app) { http_response_code(404); echo json_encode(['Status' => 'ERROR', 'Error' => 'Cita no encontrada en esta tienda.']); exit; }
 
         $clientName = $app ? $app['ClientName'] : 'Alexander von Humboldt';
         $date = $app ? $app['ScheduledDate'] : date('Y-m-d');
         $time = $app ? substr($app['ScheduledTime'], 0, 5) : '15:45';
         $sommName = $app ? ($app['SommelierNombre'] ?: 'Jean-Luc Moreau') : 'Jean-Luc Moreau';
 
-        $phone = '523318259000';
-        $msg = "👑 *MAISON QUANTIX — CONFIRMACIÓN DE CATA VIP*\n\n"
-             . "Estimado/a *{$clientName}*,\n\n"
-             . "Tu Masterclass Privada 1-a-1 ha sido confirmada:\n"
-             . "🗓️ *Fecha:* {$date}\n"
-             . "⏰ *Horario:* {$time} hrs\n"
-             . "🍷 *Maestro Perfumista:* {$sommName}\n"
-             . "🎫 *Código de Cita:* {$code}\n"
-             . "💎 *Bono Deducible:* $499.00 MXN en tu frasco de 100ml\n\n"
-             . "¿Deseas agregar alguna nota olfativa adicional antes de iniciar?";
+        $phone = $tenant->showWhatsapp ? preg_replace('/[^0-9]/', '', $tenant->whatsappPhone) : '';
+        if (!$phone) { http_response_code(422); echo json_encode(['Status' => 'ERROR', 'Error' => 'WhatsApp no está configurado en esta tienda.']); exit; }
+        $msg = "Consulta sobre la solicitud de cita {$code}: {$date} a las {$time}. Estado: " . $app['Status'];
 
         $url = "https://wa.me/{$phone}?text=" . rawurlencode($msg);
         echo json_encode([
@@ -424,3 +428,5 @@ switch ($action) {
         echo json_encode(['Status' => 'ERROR', 'Error' => 'Acción no reconocida en concierge_agenda.php']);
         break;
 }
+
+} catch (Throwable $e) { http_response_code(503); echo json_encode(['Status' => 'ERROR', 'Error' => 'No se pudo completar la operación de agenda. Reintenta en un momento.']); }

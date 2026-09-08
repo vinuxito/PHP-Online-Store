@@ -1,5 +1,26 @@
 # Quantix Storefront Luxury Showroom
 
+## Control integrity update — 2026-09-08
+
+This release reconnects Director choices to all four storefront compositions: title shaders, typography, spacing and shimmer; scheduled campaigns; exact featured selections; contact changes; model controls; and explicit payment capabilities. The permanent Director book and preview remain intact.
+
+**Delivery status:** applied after explicit owner approval. The pending-order migration created its table with zero requests, and the public BRACSA storefront, catalog identity and asset hashes were verified over HTTPS. Browser inspection confirmed the selected gold shader, italic title, wide tracking and hidden property-store cart. Reduced-motion preference was active, so animation was correctly suppressed. The authenticated Director acceptance pass remains pending login/browser reconnection; no full project suite or real transaction was run.
+
+- SPEI uses the tenant's configured bank data and a validated CLABE. Orders become durable **pending-payment requests**, with authoritative catalog prices, tenant isolation and retry protection.
+- The additive `cfdadmin/sql/2026-09-08-quantix-pending-orders.sql` has been applied and its 14 columns/four indexes verified. The authenticated Director provides a read-only request inbox. No automatic stock deduction, payment confirmation, invoice stamping or notification sending occurs.
+- Card/PayPal processing and outbound notifications remain unavailable until integrated. Invoice details and the requested series are recorded for manual handling.
+- 3D reference geometry has no invented price or unrelated purchase action. Native AR needs a configured compatible public asset and supported device; entered dimensions are references, not automatic native scale rewriting.
+- The welcome reveal is decorative; the catalog is public. Allocation is merchant-entered numbering, not a stock or scarcity guarantee.
+- Explicitly empty titles and featured selections remain empty. The authoritative `Industria` column wins over stale template metadata, keeping store identity independent of campaign copy and design. Ordinary Director saves preserve this identity.
+- This release requires adjacent CFDAdmin commit `32eb4a2a` (shared industry helper), plus the control contracts introduced in `71f4905f`. Seven named focused checks passed 1,006 assertions/checks against the applied files.
+
+Release evidence lives in the adjacent CFDAdmin repository: `docs/plans/2026-09-08-quantix-controls-integrity/INDEX.md`, `docs/reports/2026-09-08-quantix-controls-integrity.html`, and `docs/memories/session-2026-09-08-quantix-controls-integrity.md`.
+
+## Historical feature inventory
+
+The older inventory below preserves product history. Its performance, conversion, accessibility and service-integration claims are not current verification evidence; the capability states above take precedence.
+
+
 Quantix Storefront is a modern, high-performance multi-tenant e-commerce showroom engine built on PHP and vanilla JavaScript/CSS, integrated seamlessly with the CFDAdmin CFDI 4.0 Mexican electronic invoicing ecosystem and the Maître D' Studio backoffice.
 
 ## Key Features
