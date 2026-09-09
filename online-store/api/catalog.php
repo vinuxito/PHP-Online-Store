@@ -389,6 +389,8 @@ try {
             'industry'    => $resolvedIndustry,
             'quantixStorePerfums' => $tenant->quantixStorePerfums,
             'featureMatrix'=> $tenant->apexConfig['feature_matrix'] ?? [],
+            // Distinguish a deliberately empty selection from references to removed products.
+            'featuredSelectionState' => !$explicitFeatured ? 'automatic' : (empty($records) ? 'empty' : (empty($featuredProducts) ? 'stale' : 'curated')),
             'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13,
             'archetype'   => $tenant->archetype ?? 'maison',
             'density'     => $tenant->density ?? 0.5,

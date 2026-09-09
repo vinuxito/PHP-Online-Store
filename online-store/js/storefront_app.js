@@ -3908,7 +3908,7 @@ ${shareUrl}`;
       this.stop3DAutoPlay();
 
       // null means legacy fallback; [] means the owner explicitly selected nothing.
-      const items = Array.isArray(featured) ? featured : (Array.isArray(this.products) ? this.products.slice(0, 4) : []);
+      const items = window.QuantixStoreDesigns ? window.QuantixStoreDesigns.showcaseProducts(this, featured) : (Array.isArray(featured) ? featured : (Array.isArray(this.products) ? this.products.slice(0, 4) : []));
       this.heroFeatured = items;
       if ((this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) || items.length === 0) {
         stage.empty();
@@ -3925,22 +3925,20 @@ ${shareUrl}`;
       this.heroActiveIndex = 0;
 
       const isRealEstate = self.isRealEstateBusiness();
-      const isPerfumery = self.tenant && self.tenant.industry === 'perfumery';
-
       items.forEach((p, idx) => {
         const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
-        const badgeText = isRealEstate ? 'Propiedad' : (isPerfumery ? 'Alta Cosecha' : 'Pieza Destacada');
-        const btnText = isRealEstate ? 'Ver propiedad →' : (isPerfumery ? 'Adquirir' : 'Ver Detalles');
+        const badgeText = isRealEstate ? 'Propiedad' : (p.category || 'Colección');
+        const btnText = isRealEstate ? 'Ver propiedad →' : (p.hasDecant ? 'Elegir formato' : 'Ver producto →');
         const cardHtml = `
           <div class="qx-3d-card" data-index="${idx}" data-id="${self.esc(p.id)}">
-            <span class="qx-3d-badge">${badgeText}</span>
+            <span class="qx-3d-badge">${self.esc(badgeText)}</span>
             <div class="qx-3d-img-container">
-              <img src="${self.esc(coverImg)}" alt="${self.esc(p.name)}" class="qx-3d-img" loading="lazy">
+              <img src="${self.esc(coverImg)}" alt="${self.esc(p.name)}" class="qx-3d-img" loading="${idx === 0 ? 'eager' : 'lazy'}">
             </div>
             <div class="qx-3d-info">
               <div class="qx-3d-title" title="${self.esc(p.name)}">${self.esc(p.name)}</div>
               <div class="qx-3d-bottom-row">
-                <div class="qx-3d-price">$${self.formatMoney(p.priceWithTax)}</div>
+                <div class="qx-3d-price">${Number(p.priceWithTax) > 0 ? '$' + self.formatMoney(p.priceWithTax) + ' <small>MXN</small>' : 'Consultar precio'}</div>
                 <button type="button" class="qx-3d-btn-buy" data-id="${self.esc(p.id)}">
                   ${btnText}
                 </button>
@@ -3949,7 +3947,7 @@ ${shareUrl}`;
           </div>
         `;
         stage.append(cardHtml);
-        dotsContainer.append(`<div class="qx-3d-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></div>`);
+        dotsContainer.append(`<button type="button" class="qx-3d-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="Ver producto ${idx + 1}: ${self.esc(p.name)}"></button>`);
       });
 
       this.update3DCarousel();
@@ -3993,13 +3991,8 @@ ${shareUrl}`;
         e.stopPropagation();
         const prodId = $(this).data('id');
         const product = self.products.find(p => String(p.id) === String(prodId));
-        if (isRealEstate) {
-          if (product) {
-            self.openProductModal(product);
-          }
-        } else {
-          self.addToCart(prodId, 1);
-        }
+        // Details let the customer choose a format before anything enters the cart.
+        if (product) self.openProductModal(product);
       });
 
       // Touch / Mouse Swipe
@@ -4037,6 +4030,8 @@ ${shareUrl}`;
       stage.find('.qx-3d-card').each(function() {
         const idx = parseInt($(this).data('index'), 10);
         $(this).removeClass('active prev next hidden');
+        $(this).attr('aria-hidden', idx === current || idx === prevIdx || idx === nextIdx ? 'false' : 'true');
+        $(this).find('.qx-3d-btn-buy').attr('tabindex', idx === current ? '0' : '-1');
         if (idx === current) {
           $(this).addClass('active');
         } else if (idx === prevIdx) {
@@ -4048,8 +4043,8 @@ ${shareUrl}`;
         }
       });
 
-      dots.find('.qx-3d-dot').removeClass('active');
-      dots.find(`.qx-3d-dot[data-index="${current}"]`).addClass('active');
+      dots.find('.qx-3d-dot').removeClass('active').attr('aria-current', 'false');
+      dots.find(`.qx-3d-dot[data-index="${current}"]`).addClass('active').attr('aria-current', 'true');
     }
 
     next3DSlide() {

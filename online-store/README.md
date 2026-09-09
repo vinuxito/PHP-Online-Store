@@ -1,5 +1,15 @@
 # Quantix Storefront Luxury Showroom
 
+## Product storefront correction — 2026-09-09
+
+The rejected beige shopping presentation is replaced with dark luminous surfaces, a real-product 3D carousel in the opening hero, visible prices/format actions and dimensional product sheets. On phones, real products precede supporting campaign copy. The reference WebGL model is optional below the catalogue; disabled/unavailable models do not leave an empty disclosure.
+
+The public catalogue reports `featuredSelectionState`: `automatic`, `empty`, `stale`, or `curated`. Only **nonempty stale curation in a shopping journey** recovers with up to six same-tenant catalogue products. Explicit empty/disabled selections and valid slot order remain authoritative; no saved configuration is rewritten. The shared carousel retains manual navigation, accessible dots, pause/offscreen/focus/reduced-motion guards. Carousel actions open details for a deliberate format choice.
+
+The commerce CSS is scoped to `data-journey="shop"`. BRACSA's property presentation and the Director book/permanent preview are preserved. Live desktop/390px phone, sample cart price, table/visual comparison and authenticated book navigation were checked. **518 assertions in five named focused checks; whole suite deferred.** Normal-motion visual timing/120fps and physical AR were not measured. Chrome requested reduced motion and its WebGL model was unavailable.
+
+[Before/after report](../../cfdadmin/docs/reports/2026-09-09-quantix-commerce-restoration/verification.html) · [Evidence/limits](../../cfdadmin/docs/reports/2026-09-09-quantix-commerce-restoration/verification.md)
+
 ## Business-aware templates — 2026-09-09
 
 **Atelier, Editorial, Boutique and Cinema** now offer distinct compositions while sharing the existing catalogue, cart, layered detail, comparison and motion engines. Gallery stays compatible. Business profile and shop/inquire/book journey control actions independently from design. No store is automatically reclassified or switched to Atelier.
@@ -10,7 +20,7 @@ Restored: visible configured carousel, bounded pointer tilt, shadowed readable d
 
 **Verification:** 16 named focused checks /1,008 assertions and 35 syntax checks; both live stores across desktop/phone; unchanged saved configurations and matching served assets. No whole suite, real order/booking or outbound message. Physical AR/gyro/120fps, production Apply roundtrips and owner acceptance remain pending.
 
-MISTIQ keeps saved Editorial. Its old featured IDs 1/2/3 no longer match products: curate valid items in **Portada → Elegir destacados**, then preview Atelier. TEST-SKU's property copy also needs deliberate catalogue review. BRACSA retains its real-estate experience.
+MISTIQ keeps saved Editorial. Its old featured IDs 1/2/3 no longer match products; the correction above now recovers the shopping carousel automatically. **Portada → Elegir destacados** remains available to curate exact items. TEST-SKU's property copy needs deliberate catalogue review. BRACSA retains its real-estate experience.
 
 [Plan](../../cfdadmin/docs/plans/2026-09-09-quantix-business-aware-templates/INDEX.md) · [HTML evidence](../../cfdadmin/docs/reports/quantix-business-aware-templates/verification.html) · [Review and limits](../../cfdadmin/docs/reports/quantix-business-aware-templates/verification-matrix.md) · [Git release receipt](../../cfdadmin/docs/reports/quantix-business-aware-templates/release.json)
 

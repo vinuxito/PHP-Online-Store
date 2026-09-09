@@ -1,5 +1,15 @@
 # Quantix Stores — Showroom Storefront Engine
 
+## Product storefront correction — 2026-09-09
+
+The rejected beige shopping presentation is replaced with dark luminous surfaces, a real-product 3D carousel in the opening hero, visible prices/format actions and dimensional product sheets. On phones, real products precede supporting campaign copy. The reference WebGL model is optional below the catalogue; disabled/unavailable models do not leave an empty disclosure.
+
+The public catalogue reports `featuredSelectionState`: `automatic`, `empty`, `stale`, or `curated`. Only **nonempty stale curation in a shopping journey** recovers with up to six same-tenant catalogue products. Explicit empty/disabled selections and valid slot order remain authoritative; no saved configuration is rewritten. The shared carousel retains manual navigation, accessible dots, pause/offscreen/focus/reduced-motion guards. Carousel actions open details for a deliberate format choice.
+
+The commerce CSS is scoped to `data-journey="shop"`. BRACSA's property presentation and the Director book/permanent preview are preserved. Live desktop/390px phone, sample cart price, table/visual comparison and authenticated book navigation were checked. **518 assertions in five named focused checks; whole suite deferred.** Normal-motion visual timing/120fps and physical AR were not measured. Chrome requested reduced motion and its WebGL model was unavailable.
+
+[Before/after report](../cfdadmin/docs/reports/2026-09-09-quantix-commerce-restoration/verification.html) · [Evidence/limits](../cfdadmin/docs/reports/2026-09-09-quantix-commerce-restoration/verification.md)
+
 ## Current release — business-aware templates, 2026-09-09
 
 Four primary storefront designs, preserved Gallery, explicit business/action selection and shared shopping/detail/comparison. The Director book and permanent preview are preserved. Both saved store configurations remain unchanged. **1,008 focused checks passed; the whole suite waits for owner live acceptance.**

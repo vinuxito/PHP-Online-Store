@@ -74,7 +74,54 @@
       Surface.refresh(store, selection);
     },
     resolveFeatured: function(store) {
-      return (Surface.featuredSelection || []).map(function(record) { return (store.products || []).find(function(p) { return String(p.id) === String(record.product_id); }); }).filter(Boolean);
+      return Surface.showcaseProducts(store, []);
+    },
+    // Recover only broken nonempty curation. An explicit [] still means show nothing.
+    // The fallback is a view of this tenant's catalogue; it never changes saved slots.
+    showcaseProducts: function(store, featured) {
+      var products = store.products || [];
+      var state = store.tenant && store.tenant.featuredSelectionState;
+      if (Surface.featuredSelection !== null) {
+        var records = Surface.featuredSelection;
+        featured = records.map(function(record) { return products.find(function(p) { return String(p.id) === String(record.product_id); }); }).filter(Boolean);
+        state = !records.length ? 'empty' : (!featured.length ? 'stale' : 'curated');
+      }
+      store.showcaseSource = state === 'stale' ? 'catalogue' : 'curated';
+      if (state === 'stale') {
+        if (!window.QuantixDesignContract.capabilities(store.tenant || {}).shop) return [];
+        var photographed = products.filter(function(p) { return p.cover && !/no-image\.svg/.test(p.cover); });
+        return (photographed.length ? photographed : products).slice(0, 6);
+      }
+      if (state === 'empty') return [];
+      return Array.isArray(featured) ? featured : products.slice(0, 4);
+    },
+    commerceLayout: function(store) {
+      var hero = document.getElementById('qx_hero_section');
+      var showcase = document.getElementById('qx_design_showcase');
+      if (!hero || !showcase) return;
+      var shop = window.QuantixDesignContract.capabilities(store.tenant || {}).shop;
+      if (shop && showcase.parentNode !== hero) hero.appendChild(showcase);
+      if (!shop && showcase.parentNode === hero) hero.parentNode.insertBefore(showcase, hero.nextSibling);
+      var heading = showcase.querySelector('h2');
+      if (heading) heading.textContent = store.showcaseSource === 'catalogue' ? 'Explora la colección' : 'En primer plano';
+      showcase.setAttribute('data-selection-source', store.showcaseSource || 'curated');
+      var studio = document.getElementById('qx_studio_3d_wrapper');
+      var collection = document.querySelector('.qx-main-container');
+      if (!studio || !collection) return;
+      var experience = document.getElementById('qx_commerce_spatial');
+      if (shop) {
+        if (!Surface.studioHome) { Surface.studioHome = document.createComment('quantix-studio-home'); studio.parentNode.insertBefore(Surface.studioHome, studio); }
+        if (!experience) {
+          experience = document.createElement('details'); experience.id = 'qx_commerce_spatial';
+          var summary = document.createElement('summary'); summary.textContent = 'Explorar el modelo 3D'; experience.appendChild(summary);
+          collection.parentNode.insertBefore(experience, collection.nextSibling);
+        }
+        if (studio.parentNode !== experience) experience.appendChild(studio);
+        experience.hidden = false;
+      } else if (experience) {
+        if (Surface.studioHome && Surface.studioHome.parentNode) Surface.studioHome.parentNode.insertBefore(studio, Surface.studioHome.nextSibling);
+        experience.hidden = true; experience.open = false;
+      }
     },
     refresh: function(store, featured) {
       var key = Surface.normalize(store.currentArchetype || document.body.getAttribute('data-archetype'));
@@ -125,6 +172,7 @@
       if (concierge && !tenant.isPerfumery) concierge.hidden = !contactDetails && !hasAgenda;
       var extras=document.getElementById('qx_nav_extras');if(extras){extras.hidden=!Array.from(extras.querySelectorAll('button')).some(function(b){return !b.hidden&&b.style.display!=='none';});var dockExtras=document.getElementById('qx_dock_experiences');if(dockExtras)dockExtras.hidden=extras.hidden;}
       Surface.modules(store);
+      Surface.commerceLayout(store);
     },
     modules: function(store) {
       var carousel = document.getElementById('qx_hero_carousel_wrapper');

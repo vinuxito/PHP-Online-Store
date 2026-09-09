@@ -47,7 +47,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
   <link rel="stylesheet" href="css/storefront_booking.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_booking.css'); ?>">
   <link rel="stylesheet" href="css/storefront_designs.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_designs.css'); ?>">
-  <?php foreach (['shared','atelier','editorial','boutique','cinema'] as $sheet): ?>
+  <?php foreach (['shared','atelier','editorial','boutique','cinema','commerce'] as $sheet): ?>
   <link rel="stylesheet" href="css/templates/<?php echo $sheet; ?>.css?v=<?php echo filemtime(__DIR__.'/css/templates/'.$sheet.'.css'); ?>">
   <?php endforeach; ?>
   <style>
@@ -57,7 +57,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body data-design="<?php echo htmlspecialchars($designKey); ?>" data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
+<body data-journey="<?php echo htmlspecialchars($tenant->getBusinessProfile()['primary_journey']); ?>" data-design="<?php echo htmlspecialchars($designKey); ?>" data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
