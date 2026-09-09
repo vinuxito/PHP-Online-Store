@@ -122,6 +122,7 @@
       }
       var concierge = document.getElementById('qx_concierge_btn');
       if (concierge && !tenant.isPerfumery) concierge.hidden = !contactDetails && !hasAgenda;
+      var extras=document.getElementById('qx_nav_extras');if(extras){extras.hidden=!Array.from(extras.querySelectorAll('button')).some(function(b){return !b.hidden&&b.style.display!=='none';});var dockExtras=document.getElementById('qx_dock_experiences');if(dockExtras)dockExtras.hidden=extras.hidden;}
       Surface.modules(store);
     },
     modules: function(store) {
@@ -191,6 +192,8 @@
   window.QuantixStoreDesigns = Surface;
 
   document.addEventListener('DOMContentLoaded', function() {
+    var extras=document.getElementById('qx_nav_extras');if(extras){document.addEventListener('click',function(e){if(!extras.contains(e.target)&&!e.target.closest('#qx_dock_experiences'))extras.open=false;else if(e.target.closest('button'))extras.open=false;});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&extras.open){extras.open=false;extras.querySelector('summary').focus();}});}
+    var dockExtras=document.getElementById('qx_dock_experiences');if(dockExtras&&extras)dockExtras.onclick=function(){extras.open=!extras.open;dockExtras.setAttribute('aria-expanded',String(extras.open));};
     document.body.setAttribute('data-design', Surface.normalize(document.body.getAttribute('data-archetype')));
     var sections = [
       ['.qx-navbar', 'identity'], ['#qx_hero_section', 'hero'],

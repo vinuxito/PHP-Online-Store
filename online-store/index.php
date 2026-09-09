@@ -106,12 +106,14 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <input type="text" id="qx_search_input" class="qx-search-input" placeholder="<?php echo $isRealEstate ? 'Buscar residencias, terrenos o espacios corporativos... (⌘K)' : ($isIndustrial ? 'Buscar válvulas, actuadores o refacciones... (⌘K)' : 'Buscar por nombre, notas o acordes... (⌘K)'); ?>" autocomplete="off">
       </div>
 
+      <nav class="qx-nav-actions" aria-label="Acciones de la tienda">
         <button type="button" id="qx_design_mobile_search" class="qx-design-mobile-search" aria-label="Buscar en el catálogo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
         <button type="button" class="qx-agenda-nav-btn <?php echo $isRealEstate ? 'qx-realestate-nav-btn' : ''; ?>" id="qx_btn_nav_agenda" title="<?php echo $isRealEstate ? 'Agendar Cita Privada / Visita' : 'Agenda VIP & Concierge Privado'; ?>" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
           <span class="qx-agenda-sparkle"><?php echo $isRealEstate ? '✦' : '🗓️'; ?></span>
           <span><?php echo $isRealEstate ? 'Agendar Cita' : 'Agenda VIP'; ?></span>
           <span class="qx-agenda-live-dot" title="Concierge Disponible"></span>
         </button>
+        <details class="qx-nav-extras" id="qx_nav_extras"><summary>Experiencias <span aria-hidden="true">⌄</span></summary><div class="qx-nav-extras-panel">
         <button type="button" class="qx-tasting-nav-btn" id="qx_btn_nav_tasting" title="Masterclass VIP & Sala Privada de Cata 1-a-1" style="<?php echo $isTastingActive ? '' : 'display:none;'; ?>">
           <span class="qx-tasting-sparkle">🍷</span>
           <span>Cata Virtual</span>
@@ -135,12 +137,13 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <span class="qx-somm-sparkle">✨</span>
           <span>Aura Sommelier</span>
         </button>
-        <button type="button" class="qx-cart-btn" id="qx_cart_btn" style="<?php echo $isRealEstate ? 'display:none;' : ''; ?>">
+        </div></details>
+        <button type="button" class="qx-cart-btn" id="qx_cart_btn" aria-label="Carrito" style="<?php echo $isRealEstate ? 'display:none;' : ''; ?>">
           <span>🛍️</span>
           <span>Carrito</span>
           <span class="qx-cart-badge" id="qx_cart_badge">0</span>
         </button>
-      </div>
+      </nav>
     </div>
   </header>
 
@@ -643,7 +646,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           </div>
           <div class="qx-glass-sheen" id="qx_pmodal_glass_sheen"></div>
           <span class="qx-pmodal-badge" id="qx_pmodal_badge" style="display:none;">★ Edición Destacada</span>
-          <div class="qx-tilt-hint" id="qx_tilt_hint"><span>✨ Inclina o mueve para explorar en 3D</span></div>
+          <div class="qx-tilt-hint" id="qx_tilt_hint"><span>Mueve el cursor para explorar la imagen</span></div>
           <button type="button" class="qx-pmodal-nav-btn qx-pmodal-nav-prev" id="qx_pmodal_nav_prev" aria-label="Foto anterior" style="display:none;">‹</button>
           <button type="button" class="qx-pmodal-nav-btn qx-pmodal-nav-next" id="qx_pmodal_nav_next" aria-label="Foto siguiente" style="display:none;">›</button>
           <span class="qx-pmodal-counter-badge" id="qx_pmodal_counter_badge" style="display:none;">1 / 1</span>
@@ -1730,6 +1733,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <span class="qx-dock-icon">🗓️</span>
       <span class="qx-dock-label">Agenda</span>
     </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_experiences" aria-label="Experiencias"><span class="qx-dock-icon">✧</span><span class="qx-dock-label">Experiencias</span></button>
     <button type="button" class="qx-dock-item" id="qx_dock_tasting" aria-label="Cata Virtual" style="<?php echo $isTastingActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🍷</span>
       <span class="qx-dock-label">Cata VIP</span>
@@ -2273,7 +2277,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <button type="button" class="qx-crucible-share-btn" id="qx_crucible_btn_share" title="Compartir Comparativa en WhatsApp">
           <span>💬</span> WhatsApp
         </button>
-        <button type="button" class="qx-crucible-close-btn" id="qx_crucible_close">&times;</button>
+        <button type="button" class="qx-crucible-close-btn" id="qx_crucible_close" aria-label="Cerrar comparación">&times;</button>
       </div>
     </div>
 

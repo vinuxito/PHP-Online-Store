@@ -65,3 +65,70 @@ body[data-design] #qx_pmodal_swipe_track {animation:none!important;}
 /* Inactive legacy specialty dialogs must not expose off-screen controls to keyboard/AT. */
 body[data-design] :is(#qx_sommelier_modal,#qx_layering_modal,#qx_radar_compare_modal,#qx_arena_picker_modal,#qx_passport_modal):not(.active){visibility:hidden;pointer-events:none;}
 body[data-design] :is(#qx_sommelier_modal,#qx_layering_modal,#qx_radar_compare_modal,#qx_arena_picker_modal,#qx_passport_modal).active{visibility:visible;}
+
+/* One clear shopping header; existing specialty actions remain under Experiences. */
+body[data-design] .qx-nav-container{display:flex;flex-wrap:nowrap;gap:24px;}
+body[data-design] .qx-brand{flex:0 1 310px;min-width:180px;}
+body[data-design] .qx-brand-title{font-size:15px;letter-spacing:.015em;text-wrap:balance;}
+body[data-design] .qx-nav-search{flex:1 1 260px;min-width:160px;max-width:400px;margin-left:auto;}
+body[data-design] .qx-nav-actions{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
+body[data-design] .qx-nav-extras{position:relative;}
+body[data-design] .qx-nav-extras[hidden]{display:none;}
+body[data-design] .qx-nav-extras summary{list-style:none;cursor:pointer;font:500 13px var(--qd-sans);padding:12px 14px;border:1px solid var(--qd-line);border-radius:4px;min-height:44px;display:flex;gap:10px;align-items:center;box-sizing:border-box;color:var(--qd-ink);}
+body[data-design] .qx-nav-extras summary::-webkit-details-marker{display:none;}
+body[data-design] .qx-nav-extras-panel{position:absolute;right:0;top:calc(100% + 12px);width:240px;background:var(--qd-paper);padding:10px;border:1px solid var(--qd-line);border-radius:12px;box-shadow:0 18px 50px #0003;display:grid;gap:6px;z-index:3;}
+body[data-design] .qx-nav-extras-panel button{width:100%;min-height:44px;justify-content:flex-start;background:transparent!important;color:var(--qd-ink)!important;-webkit-text-fill-color:var(--qd-ink)!important;border:0!important;box-shadow:none!important;font:500 13px var(--qd-sans);padding:12px;border-radius:6px;}
+body[data-design] .qx-nav-extras-panel button:hover{background:var(--qd-soft)!important;}
+body[data-design] .qx-nav-extras-panel [class*="badge"],body[data-design] .qx-nav-extras-panel [class*="live-dot"]{display:none!important;}
+body[data-design] .qx-navbar .qx-cart-btn{background:var(--qd-ink)!important;color:var(--qd-paper)!important;border-radius:4px;min-height:44px;box-shadow:none!important;padding:10px 16px;}
+body[data-design] .qx-cart-badge{background:var(--qd-paper)!important;color:var(--qd-ink)!important;}
+body[data-design] :is(button,summary,a,input,select):focus-visible{outline:2px solid var(--qx-accent);outline-offset:3px;}
+body[data-design] .qx-hero-title{text-wrap:balance;}
+body[data-design] .qx-card .qx-card-title{line-height:1.28!important;text-wrap:pretty;}
+body[data-design] .qx-card-price,body[data-design] .qx-facts-scroll{font-variant-numeric:tabular-nums;}
+body[data-design] .qx-facts-thumb{width:76px;height:94px;object-fit:contain;display:block;margin:0 0 14px;border-radius:8px;background:var(--qd-soft);}
+body[data-design] #qx_crucible_close{min-width:44px;min-height:44px;}
+@media(max-width:1050px){body[data-design] .qx-nav-container{flex-wrap:wrap;}body[data-design] .qx-brand{flex:1;min-width:160px;}body[data-design] .qx-nav-search{max-width:none;}body[data-design] .qx-nav-actions{margin-left:auto;}}
+@media(max-width:700px){body[data-design] .qx-nav-container{gap:12px;padding:14px 20px;}body[data-design] .qx-brand{flex:1 1 100%;}body[data-design] .qx-brand-title{max-width:none;font-size:13px;}body[data-design] .qx-nav-actions{width:100%;justify-content:space-between;gap:8px;}body[data-design] #qx_btn_nav_agenda{font-size:11px;padding:10px;}body[data-design] .qx-nav-extras summary{font-size:11px;padding:10px;}body[data-design] .qx-navbar .qx-cart-btn{font-size:11px;padding:10px;}body[data-design] .qx-nav-extras-panel{right:-65px;max-width:calc(100vw - 40px);}body[data-design] .qx-hero-title{overflow-wrap:anywhere;}body[data-design] .qx-crucible-header{flex-wrap:wrap;gap:12px;}body[data-design] .qx-crucible-header-actions{margin-left:auto;}body[data-design] .qx-crucible-share-btn{display:none;}body[data-design] .qx-facts-scroll th,body[data-design] .qx-facts-scroll td{min-width:150px;}}
+@media(prefers-reduced-motion:reduce){body[data-design] #qx_tilt_hint{display:none!important;}}
+
+@media(max-width:700px){
+ body[data-design] .qx-navbar .qx-cart-btn>span:nth-child(2){display:none;}
+ body[data-design] .qx-nav-actions{flex-wrap:nowrap;}
+ body[data-design] #qx_dock_tasting,body[data-design] #qx_dock_vault,body[data-design] #qx_dock_passport,body[data-design] #qx_dock_concierge,body[data-design] #qx_dock_layering{display:none!important;}
+ body[data-design] #qx_mobile_dock{max-width:calc(100vw - 24px);justify-content:space-around;background:var(--qd-paper);border:1px solid var(--qd-line);border-radius:16px;color:var(--qd-ink);box-shadow:0 10px 35px #0003;}
+ body[data-design] #qx_mobile_dock .qx-dock-item{min-width:56px;min-height:48px;color:var(--qd-ink);}
+ body[data-design] .qx-concierge-float-pill{display:none!important;}
+ body[data-design] .qx-nav-extras-panel{position:fixed;left:20px;right:20px;top:auto;bottom:88px;width:auto;max-width:none;max-height:65dvh;overflow:auto;}
+ body[data-design]:has(#qx_nav_extras[open]) #filemon_trigger_badge{visibility:hidden;}
+ body[data-design]:has(.qx-product-modal.active) #filemon_trigger_badge,body[data-design]:has(.qx-crucible-modal.active) #filemon_trigger_badge{visibility:hidden;}
+}
+@media(max-width:360px){body[data-design] .qx-nav-container{padding-left:12px;padding-right:12px;}body[data-design] .qx-nav-actions{gap:5px;}body[data-design] #qx_btn_nav_agenda{padding:8px;font-size:10px;}body[data-design] .qx-nav-extras summary{padding:8px;font-size:10px;}}
+/* The active-state transform must override the historical desktop centering rule. */
+@media(max-width:700px){body[data-design] #qx_product_modal.qx-product-modal,body[data-design] #qx_product_modal.qx-product-modal.active{left:0!important;right:0!important;top:auto!important;bottom:0!important;width:100%!important;max-width:100%!important;transform:none!important;}}
+body[data-design] #qx_crucible_close{color:var(--qd-ink)!important;background:var(--qd-soft)!important;border:1px solid var(--qd-line)!important;}
+
+body[data-design] #qx_product_modal .qx-media-motion{align-self:center;max-width:calc(100% - 96px);font-size:11px;}
+/* Give editorial words a full measure inside tablet previews. */
+@media(min-width:701px) and (max-width:1050px){
+ body[data-design="maison"] .qx-hero,body[data-design="atelier"] .qx-hero,body[data-design="titan"] .qx-hero{grid-template-columns:1fr;gap:28px;}
+ body[data-design="nordic"] .qx-design-hero-copy{grid-template-columns:1fr;gap:24px;}
+ body[data-design="maison"] .qx-design-hero-open{min-height:320px;max-height:500px;}
+ body[data-design] .qx-nav-search{order:3;flex-basis:100%;}
+}
+@media(min-width:701px){body[data-design] #qx_mobile_dock{display:none!important;}}
+@media(max-width:700px){body[data-design][data-industry="real_estate"] .qx-hero-title{font-size:clamp(27px,7.4vw,36px)!important;}}
+/* Override legacy ID-based white text and keep the phone buy bar at the sheet edge. */
+body[data-design] #qx_product_modal #qx_pmodal_title,body[data-design] #qx_product_modal #qx_pmodal_price,body[data-design] #qx_product_modal #qx_pmodal_bar_qty{color:var(--qd-ink)!important;-webkit-text-fill-color:var(--qd-ink)!important;}
+body[data-design] #qx_product_modal .qx-step-btn{min-width:36px;min-height:44px;color:var(--qd-ink)!important;}
+@media(max-width:700px){
+ body[data-design] #qx_product_modal .qx-pmodal-bottom-bar{bottom:0!important;left:0!important;right:0!important;width:100%;box-sizing:border-box;z-index:12;}
+ body[data-design] #filemon_trigger_badge{bottom:88px!important;right:16px!important;}
+}
+@media(max-width:700px){
+ body[data-design] #qx_product_modal.qx-product-modal{padding-bottom:0!important;}
+ body[data-design] #qx_product_modal .qx-pmodal-bottom-bar{display:grid;grid-template-columns:1fr auto;gap:8px 14px;margin:16px -20px 0;width:calc(100% + 40px);}
+ body[data-design] #qx_product_modal .qx-pmodal-bar-actions{display:contents;}
+ body[data-design] #qx_product_modal .qx-btn-bar-buy{grid-column:1/-1;}
+ body[data-design] #qx_product_modal .qx-pmodal-bar-actions .compact{justify-self:end;}
+}
