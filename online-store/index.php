@@ -14,7 +14,7 @@ $qxHeroBase = array_replace([
     'typography'=>$tenant->heroTypography, 'letter_spacing'=>$tenant->heroLetterSpacing,
     'shimmer'=>$tenant->heroShimmer
 ], $tenant->apexConfig['hero_curation'] ?? []);
-foreach (['headline','subheadline','kicker'] as $textField) $qxHeroBase[$textField] = html_entity_decode((string)($qxHeroBase[$textField] ?? ''), ENT_QUOTES, 'UTF-8');
+foreach (['headline','subheadline','kicker'] as $textField) $qxHeroBase[$textField] = QuantixStoreText::plain($qxHeroBase[$textField] ?? '');
 // The ceremonial reveal is public presentation, never an authorization boundary.
 unset($qxHeroBase['wax_seal']['vip_passcode']);
 $qxHeroResolved = QuantixControlContract::resolveHero($qxHeroBase);
@@ -27,7 +27,7 @@ foreach (['headline'=>'headline','subheadline'=>'heroSubheadline','kicker'=>'her
     if (array_key_exists($key,$qxHeroResolved)) $tenant->$property=$qxHeroResolved[$key];
 }
 
-$designKey = in_array(strtolower($tenant->archetype ?? ''), ['nordic', 'maison', 'titan', 'social'], true) ? strtolower($tenant->archetype) : 'maison';
+$designKey = in_array(strtolower($tenant->archetype ?? ''), ['nordic', 'maison', 'titan', 'social', 'atelier'], true) ? strtolower($tenant->archetype) : 'maison';
 
 $isAgendaActive = !empty($featMatrix['royal_agenda']['enabled']);
 $isTastingActive = $isPerfumsTenant && !empty($featMatrix['tasting_room']['enabled']);
@@ -47,6 +47,9 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
   <link rel="stylesheet" href="css/storefront_booking.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_booking.css'); ?>">
   <link rel="stylesheet" href="css/storefront_designs.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_designs.css'); ?>">
+  <?php foreach (['shared','atelier','editorial','boutique','cinema'] as $sheet): ?>
+  <link rel="stylesheet" href="css/templates/<?php echo $sheet; ?>.css?v=<?php echo filemtime(__DIR__.'/css/templates/'.$sheet.'.css'); ?>">
+  <?php endforeach; ?>
   <style>
     :root {
       --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
@@ -1789,6 +1792,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         if (!persistentAtmosphere) {
           persistentAtmosphere = $('body').attr('data-atmosphere') || 'obsidian';
         }
+        if (type === 'SYNC_BUSINESS_PROFILE') {
+          if (window.quantixStore) window.QuantixStoreDesigns.business(window.quantixStore, payload);
+          return;
+        }
         if (type === 'SYNC_FEATURE_MATRIX') {
           if (!payload || typeof payload !== 'object') return;
           if (window.quantixStore) {
@@ -1817,17 +1824,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           }
         }
         function formatHeroHeadlineJs(raw) {
-          if (!raw) return '';
-          // 1. Escape HTML entities first to protect DOM from XSS
-          const div = document.createElement('div');
-          div.textContent = String(raw);
-          let safe = div.innerHTML;
-
-          // 2. Parse brackets {word} and ampersands
-          safe = safe.replace(/\{([^}]+)\}/g, '<span class="qx-title-accent">$1</span>');
-          safe = safe.replace(/(\s)&amp;(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
-          safe = safe.replace(/(\s)&(\s)/g, '$1<span class="qx-title-amp">&</span>$2');
-          return safe;
+          return window.QuantixDesignContract.headline(raw);
         }
 
         function getHeroKickerIconJs(iconKey) {
@@ -2430,6 +2427,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         'featureMatrix' => $featMatrix,
         'archetype' => (string)($tenant->archetype ?: 'maison'),
         'industry' => $resolvedIndustry,
+        'businessProfile' => $tenant->getBusinessProfile(),
         'showWhatsapp' => (bool)$tenant->showWhatsapp,
         'whatsappPhone' => (string)$tenant->whatsappPhone,
         'isStorefront' => true

@@ -1,0 +1,14 @@
+/* Boutique: compact product browsing and clear decisions; key titan stays compatible. */
+body[data-design="titan"] .qx-hero {padding-top:32px!important;padding-bottom:32px!important;gap:32px;}
+body[data-design="titan"] .qx-design-hero-open {min-height:250px;max-height:330px;border-radius:16px;}
+body[data-design="titan"] .qx-grid {grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;}
+body[data-design="titan"] .qx-card.qx-design-card {border-radius:12px!important;overflow:hidden;box-shadow:0 4px 14px #0001!important;}
+body[data-design="titan"] .qx-card .qx-card-media {aspect-ratio:1;}
+body[data-design="titan"] .qx-card .qx-card-body {padding:18px!important;}
+body[data-design="titan"] .qx-card .qx-card-footer {gap:12px;}
+body[data-design="titan"] .qx-card .qx-card-actions {width:100%;}
+body[data-design="titan"] .qx-card .qx-card-sku {display:none;}
+body[data-design="titan"] .qx-design-add {flex:1;}
+@media(max-width:1150px){body[data-design="titan"] .qx-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
+@media(max-width:900px){body[data-design="titan"] .qx-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+@media(max-width:550px){body[data-design="titan"] .qx-grid{grid-template-columns:1fr!important;}body[data-design="titan"] .qx-card .qx-card-media{aspect-ratio:1.35;}}

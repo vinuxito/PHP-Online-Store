@@ -1,0 +1,63 @@
+/* Shared capability surfaces. Styles may compose these, never remove their actions. */
+body[data-design] .qx-card .qx-card-actions {flex-wrap:wrap;gap:8px;}
+body[data-design] .qx-design-compare {width:auto;font-size:12px;}
+body[data-design] .qx-design-add {background:var(--qd-ink)!important;color:var(--qd-paper)!important;min-width:92px;}
+body[data-design] .qx-grid {align-items:stretch;}
+body[data-design] .qx-card .qx-card-body {display:flex;flex-direction:column;}
+body[data-design] .qx-card .qx-card-footer {margin-top:auto;}
+body[data-design]:not([data-industry="real_estate"]) .qx-card .qx-card-img {object-fit:contain!important;padding:20px!important;}
+body[data-design]:not([data-industry="real_estate"]) .qx-design-hero-open img {object-fit:contain;padding:24px;box-sizing:border-box;}
+body[data-design] .qx-hero:has(.qx-design-hero-media[hidden]) {grid-template-columns:1fr;}
+body[data-design] .qx-hero:has(.qx-design-hero-media[hidden]) .qx-design-hero-copy {max-width:900px;}
+body[data-design] .qx-design-showcase {padding:28px 0;position:relative;}
+body[data-design] .qx-design-showcase h2 {font:400 clamp(26px,3vw,40px)/1.15 var(--qd-serif);margin:0 0 20px;color:var(--qd-ink);}
+.qx-showcase-pause {position:absolute;right:0;top:28px;min-height:44px;background:var(--qd-paper);color:var(--qd-ink);border:1px solid var(--qd-line);border-radius:24px;padding:10px 16px;cursor:pointer;font:500 12px var(--qd-sans);}
+body[data-design] .qx-design-showcase .qx-hero-carousel-3d-wrapper {border-radius:24px;box-shadow:0 24px 60px #0002;}
+body[data-design] .qx-3d-card {box-shadow:0 24px 60px #0006;}
+body[data-design]:not([data-industry="real_estate"]) .qx-3d-img {object-fit:contain;}
+body[data-design] #qx_studio_3d_wrapper {width:100%;max-width:100%;min-width:0;max-height:none;overflow:hidden;}
+body[data-design] .qx-studio-3d-canvas-wrap {min-height:320px;max-height:560px;}
+body[data-design] #qx_product_modal.qx-product-modal {border:1px solid var(--qd-line)!important;border-radius:24px!important;box-shadow:0 40px 100px #0008,0 8px 24px #0004!important;}
+body[data-design] #qx_product_modal:not(.active),body[data-design] #qx_crucible_modal:not(.active) {visibility:hidden;pointer-events:none;}
+body[data-design] #qx_product_modal.active,body[data-design] #qx_crucible_modal.active {visibility:visible;}
+body[data-design] #qx_product_modal .qx-pmodal-stage {border-radius:16px!important;box-shadow:inset 0 0 60px #0001;}
+body[data-design] #qx_product_modal .qx-pmodal-close-circle {width:44px;height:44px;}
+body[data-design] #qx_comparison_dock {bottom:24px;max-width:calc(100vw - 32px);box-shadow:0 20px 60px #0006;background:var(--qd-paper);color:var(--qd-ink);border:1px solid var(--qd-line);border-radius:20px;}
+body[data-design] #qx_comparison_dock button {min-height:44px;}
+body[data-design] .qx-dock-remove-btn {min-width:28px;}
+body[data-design] .qx-crucible-modal {max-height:90dvh;overflow:auto;}
+body[data-design] .qx-card [aria-pressed="true"] {outline:2px solid var(--qx-accent);outline-offset:2px;}
+@media(max-width:900px) {body[data-design] .qx-nav-container {flex-wrap:wrap;gap:12px;}body[data-design] .qx-nav-actions {flex-wrap:wrap;}body[data-design] .qx-card .qx-card-title {overflow-wrap:anywhere;}}
+@media(max-width:700px) {
+ body[data-design] {--qd-gutter:20px;}
+ body[data-design] .qx-card .qx-card-actions {width:100%;}
+ body[data-design] .qx-card .qx-card-actions button {flex:1;}
+ body[data-design] .qx-main-container {padding-bottom:180px;}
+ body[data-design] .qx-design-showcase {padding-top:76px;}
+ body[data-design] .qx-design-showcase h2 {font-size:28px;}
+ .qx-showcase-pause {top:16px;left:0;right:auto;}
+ body[data-design] #qx_product_modal.qx-product-modal {border-radius:20px 20px 0 0!important;padding:58px 20px 100px!important;width:100vw!important;max-height:94dvh!important;top:auto!important;bottom:0!important;transform:translateX(-50%)!important;}
+ body[data-design] #qx_product_modal .qx-pmodal-stage {height:330px!important;}
+ body[data-design] #qx_comparison_dock {bottom:calc(80px + env(safe-area-inset-bottom));width:calc(100vw - 24px);flex-wrap:wrap;gap:8px;padding:12px;}
+ body[data-design] .qx-dock-item-avatar {width:42px;height:42px;}
+ body[data-design]:has(#qx_comparison_dock[style*="block"]) .qx-concierge-float-pill,body[data-design]:has(#qx_comparison_dock[style*="flex"]) .qx-concierge-float-pill {visibility:hidden;}
+}
+@media(prefers-reduced-motion:reduce) {body[data-design] .qx-card,body[data-design] .qx-card-img,body[data-design] .qx-3d-card {animation:none!important;transition:none!important;}body[data-design] .qx-design-hero-open:hover img {transform:none;} }
+/* Same comparison engine; a readable table exposes all selected real records. */
+#qx_comparison_facts {padding:24px;color:var(--qd-ink);background:var(--qd-paper);}
+.qx-facts-scroll {overflow:auto;max-width:100%;margin-top:18px;}
+.qx-facts-scroll table {border-collapse:collapse;width:100%;font:400 13px/1.6 var(--qd-sans);}
+.qx-facts-scroll caption {text-align:left;color:var(--qd-muted);padding-bottom:12px;}
+.qx-facts-scroll th,.qx-facts-scroll td {min-width:180px;max-width:320px;padding:16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--qd-line);overflow-wrap:anywhere;}
+.qx-facts-scroll th:first-child {min-width:120px;}
+.qx-facts-differences {display:flex;align-items:center;gap:10px;min-height:44px;}
+#qx_crucible_modal.qx-facts-mode > :not(.qx-crucible-header):not(#qx_comparison_facts) {display:none!important;}
+#qx_crucible_modal.qx-facts-mode .qx-crucible-view-modes,#qx_crucible_modal.qx-facts-mode .qx-crucible-badge {display:none!important;}
+#qx_crucible_modal.qx-facts-mode {background:var(--qd-paper);border-color:var(--qd-line);border-radius:22px;box-shadow:0 30px 100px #0008;}
+#qx_crucible_modal.qx-facts-mode .qx-crucible-header {background:var(--qd-paper);color:var(--qd-ink);}
+#qx_crucible_modal.qx-facts-mode .qx-crucible-title {color:var(--qd-ink);font:500 24px var(--qd-serif);}
+.qx-media-motion {align-self:flex-end;min-height:44px;padding:10px 16px;border:1px solid var(--qd-line);border-radius:24px;background:var(--qd-paper);color:var(--qd-ink);cursor:pointer;margin-bottom:12px;}
+body[data-design] #qx_pmodal_swipe_track {animation:none!important;}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){body[data-design]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img {transform:perspective(900px) rotateX(var(--qx-media-rx,0deg)) rotateY(var(--qx-media-ry,0deg));transition:transform .12s ease-out;}}
+#qx_crucible_verdict_banner,#qx_crucible_modal .qx-crucible-analysis-grid,#qx_tab_fusion,#qx_fusion_overlay {display:none!important;}
+#qx_crucible_modal .qx-crucible-header-actions {flex-wrap:wrap;gap:8px;}

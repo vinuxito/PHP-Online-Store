@@ -31,8 +31,7 @@
   var state = {hero:{},sceneId:null,solar:null,contact:{},payments:{},timer:null,lastRender:''};
   var $ = root.jQuery;
   function textHtml(text) {
-    var element=document.createElement('div'); element.textContent=String(text == null ? '' : text);
-    return element.innerHTML.replace(/\{([^}]+)\}/g,'<span class="qx-title-accent">$1</span>').replace(/(\s)&amp;(\s)/g,'$1<span class="qx-title-amp">&amp;</span>$2');
+    return root.QuantixDesignContract.headline(text);
   }
   function renderHero(force) {
     var hero=resolveHero(state.hero,Date.now(),state.sceneId), circadian=hero.circadian || {};
@@ -50,8 +49,8 @@
     ['aube','zenith','crepuscule','nuit'].forEach(function(key) { document.body.classList.toggle('qx-circadian-'+key,active && key===phase); });
     document.body.setAttribute('data-campaign',hero._scene_id || 'baseline');
     if (hero.headline !== undefined) $('#qx_hero_title').html(textHtml(hero.headline));
-    if (hero.subheadline !== undefined) $('.qx-hero-subtitle').text(hero.subheadline);
-    if (hero.kicker !== undefined) $('#qx_hero_kicker_text').text(hero.kicker);
+    if (hero.subheadline !== undefined) $('.qx-hero-subtitle').text(root.QuantixDesignContract.plain(hero.subheadline));
+    if (hero.kicker !== undefined) $('#qx_hero_kicker_text').text(root.QuantixDesignContract.plain(hero.kicker));
     if (hero.kicker_enabled !== undefined) $('#qx_hero_kicker_wrap').toggle(Boolean(hero.kicker_enabled));
     var icons={sparkle:'✦',crown:'👑',gem:'💎',lightning:'⚡',feather:'🪶',none:''};
     if (hero.kicker_icon !== undefined) $('#qx_hero_kicker_icon').text(icons[hero.kicker_icon] || '');

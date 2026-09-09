@@ -1,0 +1,12 @@
+/* Cinema: immersive image scenes. Product photography keeps the whole object visible. */
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-hero {height:auto;min-height:600px!important;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;background:linear-gradient(120deg,#101a18,#34443b)!important;}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-copy {padding:0;}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-media {position:relative;inset:auto;}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-open {height:480px;border-radius:24px;background:radial-gradient(ellipse,#a5b0a3,#26382e);}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-open::after {display:none;}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-media figcaption {position:relative;inset:auto;color:#e3e8df;}
+body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-image-action {right:20px;bottom:20px;}
+body[data-design="social"] .qx-card.qx-design-card {padding:28px!important;border:1px solid var(--qd-line)!important;border-radius:24px!important;box-shadow:0 14px 44px #0002!important;}
+body[data-design="social"] .qx-card .qx-card-media {border-radius:14px!important;}
+body[data-design="social"] #qx_product_modal .qx-pmodal-stage {height:540px!important;}
+@media(max-width:700px){body[data-design="social"]:not([data-industry="real_estate"]) .qx-hero{display:flex;min-height:0!important;gap:28px;}body[data-design="social"]:not([data-industry="real_estate"]) .qx-design-hero-open{height:350px;}body[data-design="social"] .qx-card.qx-design-card{padding:18px!important;gap:20px;}body[data-design="social"] #qx_product_modal .qx-pmodal-stage{height:330px!important;}}

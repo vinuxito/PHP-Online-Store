@@ -1,0 +1,16 @@
+/* Atelier: dimensional display, rounded plinths and a continuous shopping collection. */
+body[data-design="atelier"] .qx-hero {grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);align-items:center;gap:48px;padding-top:48px!important;}
+body[data-design="atelier"] .qx-hero-title {font-size:clamp(38px,4.7vw,76px)!important;line-height:1.06!important;letter-spacing:-.035em!important;}
+body[data-design="atelier"] .qx-design-hero-open {aspect-ratio:1;max-height:540px;min-height:320px;border-radius:48% 48% 20px 20px;background:radial-gradient(ellipse at 50% 32%,#e7e4d7,#a6ada2);box-shadow:0 32px 70px #0003;}
+body[data-design="atelier"] .qx-design-hero-open img {filter:drop-shadow(18px 24px 18px #0003);}
+body[data-design="atelier"] .qx-design-image-action {border-radius:28px;}
+body[data-design="atelier"] .qx-grid {grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:30px!important;}
+body[data-design="atelier"] .qx-card.qx-design-card {border-radius:22px!important;border:1px solid var(--qd-line)!important;overflow:hidden;background:var(--qd-paper)!important;box-shadow:0 12px 30px #0001!important;}
+body[data-design="atelier"] .qx-card .qx-card-media {aspect-ratio:1;background:radial-gradient(ellipse at 50% 20%,#f1f1e9,#d2d7ce)!important;}
+body[data-design="atelier"] .qx-card .qx-card-body {padding:24px!important;}
+body[data-design="atelier"] .qx-card .qx-card-title {font-size:22px!important;}
+body[data-design="atelier"] .qx-design-card-action,body[data-design="atelier"] .qx-design-add,body[data-design="atelier"] .qx-design-compare {border-radius:22px!important;}
+body[data-design="atelier"] #qx_product_modal .qx-pmodal-stage {background:radial-gradient(ellipse at 50% 30%,#faf8ef,#c9cfc4)!important;}
+@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){body[data-design="atelier"] .qx-card.qx-design-card:hover {box-shadow:0 24px 55px #0003!important;transform:translateY(-5px)!important;transition:transform .2s,box-shadow .2s;}}
+@media(max-width:1000px){body[data-design="atelier"] .qx-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}
+@media(max-width:700px){body[data-design="atelier"] .qx-hero{grid-template-columns:1fr;gap:24px;padding-top:32px!important;}body[data-design="atelier"] .qx-grid{grid-template-columns:1fr!important;gap:24px!important;}body[data-design="atelier"] .qx-design-hero-open{min-height:300px;max-height:400px;}body[data-design="atelier"] .qx-hero-title{font-size:40px!important;}}

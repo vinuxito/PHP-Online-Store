@@ -1368,7 +1368,7 @@
         this.storefront.showToast(`⚖️ Quitado de comparativa: ${p.name}`);
       } else {
         if (this.selected.length >= 4) {
-          this.selected.shift();
+          this.storefront.showToast('Puedes comparar hasta 4 artículos. Quita uno para agregar otro.'); return;
         }
         this.selected.push(p);
         this.playAudioTick(1400);
@@ -1380,6 +1380,7 @@
     }
 
     renderDock() {
+      this.persistSelection();
       const $dock = $('#qx_comparison_dock');
       const $wrap = $('#qx_dock_items_wrap');
       const self = this;
@@ -1408,7 +1409,8 @@
         $wrap.append($avatar);
       });
 
-      $('#qx_dock_count_badge').text(`⚖️ ${this.selected.length} / 4 Seleccionados`);
+      $('#qx_dock_count_badge').text(`${this.selected.length} de 4 seleccionados`);
+      $('#qx_btn_launch_crucible').prop('disabled',this.selected.length<2).text(this.selected.length<2?'Elige otro artículo':'Comparar selección');
       $dock.fadeIn(150);
     }
 
@@ -1417,9 +1419,9 @@
       $('.qx-btn-compare-toggle').each(function() {
         const pid = $(this).data('id');
         if (self.isSelected(pid)) {
-          $(this).addClass('active').attr('title', 'Quitar de comparativa');
+          $(this).addClass('active').attr({'title':'Quitar de comparativa','aria-pressed':'true'});
         } else {
-          $(this).removeClass('active').attr('title', 'Comparar en Quantum Studio');
+          $(this).removeClass('active').attr({'title':'Comparar','aria-pressed':'false'});
         }
       });
     }
@@ -1429,6 +1431,35 @@
       this.renderDock();
       this.updateCardToggleButtons();
       this.storefront.showToast('⚖️ Comparativa vaciada');
+    }
+
+    selectionKey() { return 'qx_compare:' + String(this.storefront.tenant && this.storefront.tenant.emisorId || 'unknown'); }
+    persistSelection() { try { sessionStorage.setItem(this.selectionKey(),JSON.stringify(this.selected.map(p=>String(p.id)).slice(0,4))); } catch(e) {} }
+    restoreSelection() {
+      let ids=[];try { const raw=sessionStorage.getItem(this.selectionKey());if(raw&&raw.length<2048)ids=JSON.parse(raw); } catch(e) {}
+      if(!Array.isArray(ids))ids=[];
+      this.selected=Array.from(new Set(ids.filter(id=>typeof id==='string'&&id.length<=64))).slice(0,4).map(id=>this.storefront.products.find(p=>String(p.id)===id)).filter(Boolean);
+      this.renderDock();this.updateCardToggleButtons();
+    }
+    renderFacts() {
+      const self=this,store=this.storefront;
+      const products=this.selected.length>1?this.selected:[this.prodA,this.prodB].filter(Boolean);
+      let box=$('#qx_comparison_facts');
+      if(!box.length)box=$('<section id="qx_comparison_facts" aria-label="Comparación de artículos"></section>').insertAfter('#qx_crucible_modal .qx-crucible-header');
+      box.empty();
+      const toggle=$('<label class="qx-facts-differences"><input type="checkbox"> Mostrar solo diferencias</label>').appendTo(box);
+      const scroll=$('<div class="qx-facts-scroll" tabindex="0" role="region" aria-label="Tabla comparativa; desplaza horizontalmente para ver todos los artículos"></div>').appendTo(box);
+      const table=$('<table><caption>Datos publicados por esta tienda</caption><thead><tr><th scope="col">Detalle</th></tr></thead><tbody></tbody></table>').appendTo(scroll);
+      products.forEach(p=>table.find('thead tr').append($('<th scope="col"></th>').text(p.name)));
+      const rows=[['Precio',p=>Number(p.priceWithTax)>0?'$ '+store.formatMoney(p.priceWithTax)+' MXN':'Consultar precio'],['Categoría',p=>p.category],['Referencia',p=>p.sku||p.code],['Descripción',p=>p.storeDesc||p.notes],['Disponibilidad',p=>store.tenant.showStock!==false&&p.inInventory?String(p.stock)+' unidades':'Consultar disponibilidad']];
+      if(store.tenant.industry==='perfumery')rows.push(['Familia olfativa',p=>p.family],['Acordes',p=>(p.accords||[]).join(', ')],['Decant',p=>p.hasDecant?'Disponible: $ '+store.formatMoney(p.decantPrice)+' MXN':'No disponible']);
+      rows.forEach(([label,get])=>{const values=products.map(p=>window.QuantixDesignContract.plain(get(p)||'No especificado'));const row=$('<tr></tr>').toggleClass('qx-facts-equal',new Set(values).size===1).append($('<th scope="row"></th>').text(label));values.forEach(v=>row.append($('<td></td>').text(v)));table.find('tbody').append(row);});
+      const actions=$('<tr><th scope="row">Ver artículo</th></tr>');products.forEach(p=>actions.append($('<td></td>').append($('<button type="button" class="qx-design-card-action">Ver detalle</button>').on('click',()=>{self.closeCrucible();store.openProductModal(p);})))) ;table.find('tbody').append(actions);
+      toggle.find('input').on('change',function(){table.find('.qx-facts-equal').prop('hidden',this.checked);});
+      if(!$('#qx_comparison_visual').length) $('<button type="button" id="qx_comparison_visual" class="qx-design-card-action">Vista visual (2 artículos)</button>').insertBefore('#qx_crucible_close').on('click',function(){const modal=$('#qx_crucible_modal');const facts=modal.hasClass('qx-facts-mode');modal.toggleClass('qx-facts-mode',!facts);$('#qx_comparison_facts').toggle(!facts);$(this).text(facts?'Ver tabla completa':'Vista visual (2 artículos)');self.setMode('split');});
+      $('#qx_comparison_facts').show();$('#qx_comparison_visual').text('Vista visual (2 artículos)');
+      $('#qx_crucible_title').text('Comparar artículos');$('#qx_crucible_modal').addClass('qx-facts-mode');
+      $('#qx_tab_fusion,#qx_view_fusion,#qx_crucible_ai_verdict,#qx_ai_verdict').hide();
     }
 
     initAutocomplete() {
@@ -1746,7 +1777,9 @@
       this.setMode(this.currentMode);
 
       $('#qx_crucible_backdrop').addClass('active');
+      this.renderFacts();
       $('#qx_crucible_modal').addClass('active');
+      this.returnFocus=document.activeElement;$('#qx_crucible_close').trigger('focus');
       $('body').css('overflow', 'hidden');
 
       this.playAudioResonance();
@@ -1761,6 +1794,7 @@
       this.closeDropdown('b');
       $('#qx_crucible_backdrop').removeClass('active');
       $('#qx_crucible_modal').removeClass('active');
+      if(this.returnFocus&&this.returnFocus.isConnected)this.returnFocus.focus();
       $('body').css('overflow', '');
 
       const url = new URL(window.location);
@@ -2780,10 +2814,11 @@ ${shareUrl}`;
             self.tenant = Object.assign({}, sameTenant ? serverTenant : {}, resp.Tenant);
             if (window.QuantixControlRuntime) window.QuantixControlRuntime.refreshContact();
             self.products = resp.Products || [];
+            self.comparisonStudio.restoreSelection();
             if (window.spatialStudio) { window.spatialStudio.syncControls(); window.spatialStudio.updatePriceDisplay(); }
             if (self.tenant) {
               const urlArch = urlParams.get('archetype');
-              if (urlArch && ['maison', 'titan', 'nordic', 'social'].includes(urlArch.toLowerCase())) {
+              if (urlArch && ['maison', 'titan', 'nordic', 'social', 'atelier'].includes(urlArch.toLowerCase())) {
                 self.setArchetype(urlArch.toLowerCase(), self.tenant.modules);
               } else if (self.tenant.archetype) {
                 self.setArchetype(self.tenant.archetype, self.tenant.modules);
@@ -2803,7 +2838,7 @@ ${shareUrl}`;
             self.renderCategories(resp.Categories || []);
             self.applyFilters();
             self.initStories();
-            if (window.QuantixStoreDesigns) { window.QuantixStoreDesigns.refresh(self, resp.Featured || []); window.QuantixStoreDesigns.ready(); }
+            if (window.QuantixStoreDesigns) { if(self.tenant.businessProfile)window.QuantixStoreDesigns.business(self,self.tenant.businessProfile);else window.QuantixStoreDesigns.refresh(self, resp.Featured || []); window.QuantixStoreDesigns.ready(); }
           } else {
             $('#qx_product_grid').html(`<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error: ${resp.Error || 'No se pudo cargar el catálogo'}</div>`);
           }
@@ -2829,7 +2864,7 @@ ${shareUrl}`;
     }
 
     setArchetype(archetype = 'maison', modules = null) {
-      archetype = window.QuantixStoreDesigns ? window.QuantixStoreDesigns.normalize(archetype) : (['maison', 'titan', 'nordic', 'social'].includes(archetype) ? archetype : 'maison');
+      archetype = window.QuantixStoreDesigns ? window.QuantixStoreDesigns.normalize(archetype) : (['maison', 'titan', 'nordic', 'social', 'atelier'].includes(archetype) ? archetype : 'maison');
       this.currentArchetype = archetype;
       $('body').attr('data-archetype', archetype);
       $('#qx_product_modal').attr('data-modal-archetype', archetype);
@@ -3106,7 +3141,7 @@ ${shareUrl}`;
       const price = Number.isFinite(amount) && amount > 0 ? '$ ' + self.formatMoney(amount) : 'Consultar precio';
       const category = p.category || (isProperty ? 'Propiedad' : 'Catálogo');
       const card = $('<article class="qx-card qx-design-card"></article>').attr('data-product-id', p.id);
-      if (key === 'maison' && globalIdx % 5 === 0) card.addClass('qx-card-editorial-featured');
+      if (isProperty && key === 'maison' && globalIdx % 5 === 0) card.addClass('qx-card-editorial-featured');
       card.append($('<span class="qx-design-card-index" aria-hidden="true"></span>').text(String(globalIdx + 1).padStart(2, '0')));
       const media = $('<button type="button" class="qx-card-media qx-design-card-media"></button>').attr('aria-label', (isProperty ? 'Ver propiedad: ' : 'Ver detalle: ') + p.name);
       if (photo) {
@@ -3131,10 +3166,10 @@ ${shareUrl}`;
       const actions = $('<div class="qx-card-actions"></div>');
       if (self.comparisonStudio) {
         const selected = self.comparisonStudio.isSelected(p.id);
-        actions.append($('<button type="button" class="qx-btn-compare-toggle qx-design-compare"></button>').attr({ 'data-id': p.id, 'aria-label': 'Comparar ' + p.name, 'aria-pressed': selected ? 'true' : 'false', title: 'Comparar' }).toggleClass('active', selected).text('⇄').on('click', function() { self.comparisonStudio.toggleProduct(p); $(this).attr('aria-pressed', self.comparisonStudio.isSelected(p.id) ? 'true' : 'false'); }));
+        actions.append($('<button type="button" class="qx-btn-compare-toggle qx-design-compare"></button>').attr({ 'data-id': p.id, 'aria-label': 'Comparar ' + p.name, 'aria-pressed': selected ? 'true' : 'false', title: 'Comparar' }).toggleClass('active', selected).text('Comparar').on('click', function() { self.comparisonStudio.toggleProduct(p); $(this).attr('aria-pressed', self.comparisonStudio.isSelected(p.id) ? 'true' : 'false'); }));
       }
       actions.append($('<button type="button" class="qx-design-card-action"></button>').text(isProperty ? 'Ver propiedad ↗' : 'Ver detalle ↗').on('click', function() { self.openProductModal(p); }));
-      if (!isProperty && key === 'titan') actions.append($('<button type="button" class="qx-design-add"></button>').attr('aria-label', 'Agregar al carrito: ' + p.name).text('+').on('click', function() { self.addToCart(p, 1, media.find('img')); }));
+      if (window.QuantixDesignContract.capabilities(self.tenant).shop && amount > 0) actions.append($('<button type="button" class="qx-design-add"></button>').attr('aria-label', 'Agregar al carrito: ' + p.name).text('Agregar').on('click', function() { if (p.hasDecant) self.openProductModal(p); else self.addToCart(p, 1, media.find('img')); }));
       footer.append(actions); body.append(footer); card.append(media, body);
       return card;
     }
@@ -3145,7 +3180,7 @@ ${shareUrl}`;
         product = this.products.find(p => p.id == productOrId);
       }
       if (!product) return;
-      if (this.isRealEstateBusiness()) { this.openProductModal(product); return; }
+      if (!window.QuantixDesignContract.capabilities(this.tenant).shop || !(Number(product.priceWithTax)>0)) { this.openProductModal(product); return; }
 
       const isDecant = format === 'decant';
       const isSubscription = options.isSubscription || false;
@@ -3670,7 +3705,7 @@ ${shareUrl}`;
         $('#qx_pmodal_stock').text('Consulta disponibilidad').show();
       }
 
-      const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
+      const isPerfums = self.tenant && self.tenant.industry === 'perfumery';
 
       // Specs / Description (Commercial Dossier)
       if (!isRealEstate) {
@@ -3707,10 +3742,10 @@ ${shareUrl}`;
         $('#qx_format_decant').removeClass('active');
         $('#qx_format_price_full').text(`$ ${self.formatMoney(product.priceWithTax)}`);
         
-        const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+        const decPrice = Number(product.decantPrice) || 0;
         $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
 
-        if (isPerfums && product.hasDecant !== false && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
+        if (isPerfums && product.hasDecant === true && Number(product.decantPrice)>0 && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
           $('#qx_format_selector').show();
           $('#qx_shield_guarantee_card').show();
         } else {
@@ -3811,7 +3846,8 @@ ${shareUrl}`;
       if (!this.activeProductModal) return;
       this.activeProductFormat = format;
       const product = this.activeProductModal;
-      const decPrice = product.decantPrice || Math.round(product.priceWithTax * 0.18);
+      const decPrice = Number(product.decantPrice) || 0;
+      if(format==='decant' && (!product.hasDecant || !(decPrice>0))) return;
 
       if (format === 'decant') {
         $('#qx_format_decant').addClass('active');
@@ -4062,11 +4098,8 @@ ${shareUrl}`;
       this.heroFeatured = items;
       this.heroActiveIndex = 0;
 
-      const isRealEstate = (this.tenant && (this.tenant.industry === 'real_estate' || this.tenant.slug === 'bracsa')) ||
-        $('body').attr('data-industry') === 'real_estate' ||
-        (this.tenant && this.tenant.brandName && this.tenant.brandName.toLowerCase().includes('bracsa'));
-      const isPerfumery = (this.tenant && (this.tenant.isPerfumery || this.tenant.quantixStorePerfums === 'SI')) ||
-        $('body').attr('data-perfumery') === '1';
+      const isRealEstate = self.isRealEstateBusiness();
+      const isPerfumery = self.tenant && self.tenant.industry === 'perfumery';
 
       items.forEach((p, idx) => {
         const coverImg = p.cover || 'https://media.evinux.net/no-image.svg';
@@ -4120,7 +4153,7 @@ ${shareUrl}`;
         const clickedIdx = parseInt($(this).data('index'), 10);
         if (clickedIdx === self.heroActiveIndex) {
           const prodId = $(this).data('id');
-          const product = self.products.find(p => p.id === prodId);
+          const product = self.products.find(p => String(p.id) === String(prodId));
           if (product) {
             self.openProductModal(product);
           }
@@ -4214,7 +4247,7 @@ ${shareUrl}`;
     start3DAutoPlay() {
       this.stop3DAutoPlay();
       const disclosure = document.getElementById('qx_design_showcase');
-      if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && !disclosure.open)) return;
+      if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && (disclosure.hidden || (disclosure.tagName==='DETAILS' && !disclosure.open))) || this.heroPaused || this.heroOffscreen) return;
       if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) return;
       if (!this.heroFeatured || this.heroFeatured.length < 2) return;
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -4399,7 +4432,7 @@ ${shareUrl}`;
 
     renderAdaptiveSpecs(product) {
       const self = this;
-      const isPerfums = (self.tenant?.quantixStorePerfums === 'SI');
+      const isPerfums = self.tenant && self.tenant.industry === 'perfumery';
       const container = $('#qx_pmodal_adaptive_specs').empty();
       const rawNotes = product.notes || '';
 
@@ -5763,147 +5796,33 @@ ${shareUrl}`;
     }
 
     initSensoryAtelier() {
-      const self = this;
-      const stage = $('#qx_pmodal_stage');
-      const target = $('#qx_pmodal_swipe_track');
-      const sheen = $('#qx_pmodal_glass_sheen');
-      let idleTimer = null;
-
-      const isRETenant = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate');
-      if (isRETenant) {
-        sheen.hide();
-        target.removeClass('qx-living-float qx-tilt-target').css({
-          'transform': 'none',
-          '--tilt-rx': '0deg',
-          '--tilt-ry': '0deg'
+      if(this.mediaMotion)return;
+      const self=this,stage=document.getElementById('qx_pmodal_stage');if(!stage)return;
+      const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+      let frame=0,last=null;
+      const reset=()=>{if(frame)cancelAnimationFrame(frame);frame=0;last=null;stage.style.setProperty('--qx-media-rx','0deg');stage.style.setProperty('--qx-media-ry','0deg');};
+      const allowed=()=>!self.motionDisabled&&!reduced.matches&&!document.hidden&&!self.isRealEstateBusiness()&&document.getElementById('qx_product_modal').classList.contains('active');
+      stage.addEventListener('pointermove',e=>{
+        if(e.pointerType!=='mouse'||!allowed()){reset();return;}
+        last={x:e.clientX,y:e.clientY};if(frame)return;
+        frame=requestAnimationFrame(()=>{frame=0;if(!last||!allowed())return;
+          const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;
+          const x=Math.max(-1,Math.min(1,(last.x-r.left)/r.width*2-1));
+          const y=Math.max(-1,Math.min(1,(last.y-r.top)/r.height*2-1));
+          stage.style.setProperty('--qx-media-rx',(-y*6).toFixed(2)+'deg');stage.style.setProperty('--qx-media-ry',(x*8).toFixed(2)+'deg');
         });
-        return;
-      }
-
-      function resumeIdle() {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-          if (!self.activeProductModal) return;
-          const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
-          const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
-          if (isRE) {
-            target.removeClass('qx-living-float');
-            target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
-            sheen.css('--sheen-x', '-140%').hide();
-            return;
-          }
-          target.addClass('qx-living-float');
-          target.css({
-            '--tilt-rx': '0deg',
-            '--tilt-ry': '0deg'
-          });
-          sheen.css('--sheen-x', '-140%');
-        }, 1200);
-      }
-
-      // Mousemove parallax for desktop with high-responsiveness
-      stage.on('mouseenter touchstart', function() {
-        clearTimeout(idleTimer);
-        target.removeClass('qx-living-float');
-      });
-
-      stage.on('mousemove', function(e) {
-        if (!self.activeProductModal) return;
-        const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
-        const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
-        if (isRE) {
-          target.removeClass('qx-living-float');
-          target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
-          sheen.css('--sheen-x', '-140%').hide();
-          return;
-        }
-
-        clearTimeout(idleTimer);
-        target.removeClass('qx-living-float');
-        const rect = this.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-
-        const rx = ((y - cy) / cy) * -18;
-        const ry = ((x - cx) / cx) * 22;
-        const sheenX = ((x / rect.width) * 220) - 60;
-
-        target.css({
-          '--tilt-rx': `${rx.toFixed(2)}deg`,
-          '--tilt-ry': `${ry.toFixed(2)}deg`
-        });
-        sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
-      });
-
-      stage.on('mouseleave', function() {
-        resumeIdle();
-      });
-
-      // Touchmove for mobile 3D tilt
-      stage.on('touchmove', function(e) {
-        if (!e.touches || !e.touches[0] || !self.activeProductModal) return;
-        const rawPrice = parseFloat(self.activeProductModal.priceWithTax || self.activeProductModal.price || 0);
-        const isRE = (self.tenant?.industry === 'real_estate' || $('body').attr('data-industry') === 'real_estate' || (rawPrice > 50000) || /inmueble|terreno|edificio|residencia|casa|departamento|propiedad/i.test((self.activeProductModal.name || '') + ' ' + (self.activeProductModal.category || '')));
-        if (isRE) {
-          target.removeClass('qx-living-float');
-          target.css({ 'transform': 'none', '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
-          sheen.css('--sheen-x', '-140%').hide();
-          return;
-        }
-
-        clearTimeout(idleTimer);
-        target.removeClass('qx-living-float');
-        const rect = this.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-
-        const rx = ((y - cy) / cy) * -16;
-        const ry = ((x - cx) / cx) * 20;
-        const sheenX = ((x / rect.width) * 220) - 60;
-
-        target.css({
-          '--tilt-rx': `${rx.toFixed(2)}deg`,
-          '--tilt-ry': `${ry.toFixed(2)}deg`
-        });
-        sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
-      });
-
-      stage.on('touchend', function() {
-        resumeIdle();
-      });
-
-      // Interactive Click/Tap Scent Spark Burst
-      stage.on('click', function(e) {
-        self.triggerScentBurst(e);
-      });
-
-      // Mobile DeviceOrientation Gyroscope with enhanced damping
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', function(e) {
-          if (!self.activeProductModal) return;
-          const gamma = e.gamma || 0; // Left-Right [-90,90]
-          const beta = e.beta || 0;   // Front-Back [-180,180]
-
-          const clampedRy = Math.max(-22, Math.min(22, gamma * 0.5));
-          const clampedRx = Math.max(-18, Math.min(18, (beta - 45) * 0.4));
-          const sheenX = ((gamma + 45) / 90) * 180 - 40;
-
-          target.removeClass('qx-living-float');
-          target.css({
-            '--tilt-rx': `${clampedRx.toFixed(2)}deg`,
-            '--tilt-ry': `${clampedRy.toFixed(2)}deg`
-          });
-          sheen.css('--sheen-x', `${sheenX.toFixed(1)}%`);
-        }, true);
-      }
+      },{passive:true});
+      stage.addEventListener('pointerleave',reset);stage.addEventListener('focusin',reset);
+      document.addEventListener('visibilitychange',()=>{reset();if(document.hidden)self.stopScentAura();});
+      const button=document.createElement('button');button.type='button';button.id='qx_media_motion';button.className='qx-media-motion';
+      const label=()=>{button.textContent=reduced.matches?'Movimiento reducido':self.motionDisabled?'Activar movimiento':'Pausar movimiento';button.disabled=reduced.matches;button.setAttribute('aria-pressed',String(!self.motionDisabled&&!reduced.matches));};
+      button.onclick=()=>{self.motionDisabled=!self.motionDisabled;reset();self.stopScentAura();label();};stage.parentNode.insertBefore(button,stage);
+      if(reduced.addEventListener)reduced.addEventListener('change',()=>{reset();self.stopScentAura();label();});
+      this.mediaMotion={reset:reset,label:label};label();
     }
 
     startScentAura(colorName = 'cyan', particleType = 'breeze') {
+      if(this.motionDisabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.hidden) { this.stopScentAura(); return; }
       const canvas = document.getElementById('qx_pmodal_aura_canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -5945,6 +5864,7 @@ ${shareUrl}`;
 
       const self = this;
       function animate() {
+        if(document.hidden || self.motionDisabled || !document.getElementById('qx_product_modal').classList.contains('active') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { self.stopScentAura(); return; }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';

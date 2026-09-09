@@ -1,7 +1,7 @@
 /** Quantix visual projections. Merchant content and business capabilities stay independent. */
 (function(window, document) {
   'use strict';
-  var keys = ['nordic', 'maison', 'titan', 'social'];
+  var keys = ['nordic', 'maison', 'titan', 'social', 'atelier'];
   var preview = new URLSearchParams(window.location.search).get('preview_mode') === '1';
   var inspectorEnabled = false;
   var parentOrigin = '';
@@ -127,24 +127,52 @@
     modules: function(store) {
       var carousel = document.getElementById('qx_hero_carousel_wrapper');
       if (carousel && !document.getElementById('qx_design_showcase')) {
-        var more = document.createElement('details'); more.id = 'qx_design_showcase'; more.className = 'qx-design-showcase';
-        var summary = document.createElement('summary'); summary.textContent = 'Explorar la selección destacada'; more.appendChild(summary);
+        var more = document.createElement('section'); more.id = 'qx_design_showcase'; more.className = 'qx-design-showcase'; more.setAttribute('aria-label','Selección destacada');
+        var heading = document.createElement('h2'); heading.textContent = 'En primer plano'; more.appendChild(heading);
+        var pause = document.createElement('button'); pause.type='button'; pause.className='qx-showcase-pause'; pause.textContent='Pausar movimiento'; pause.setAttribute('aria-pressed','false'); more.appendChild(pause);
+        pause.onclick=function(){store.heroPaused=!store.heroPaused;pause.textContent=store.heroPaused?'Reanudar movimiento':'Pausar movimiento';pause.setAttribute('aria-pressed',String(store.heroPaused));if(store.heroPaused)store.stop3DAutoPlay();else store.start3DAutoPlay();};
         var hero = document.getElementById('qx_hero_section');
         hero.parentNode.insertBefore(more, hero.nextSibling); more.appendChild(carousel);
-        more.addEventListener('toggle', function() { if (more.open) store.start3DAutoPlay(); else store.stop3DAutoPlay(); });
+        more.addEventListener('focusin',function(){store.stop3DAutoPlay();});
+        more.addEventListener('focusout',function(e){if(!more.contains(e.relatedTarget))store.start3DAutoPlay();});
+        if(window.IntersectionObserver){Surface.carouselObserver=new IntersectionObserver(function(entries){store.heroOffscreen=!entries[0].isIntersecting;if(store.heroOffscreen)store.stop3DAutoPlay();else store.start3DAutoPlay();});Surface.carouselObserver.observe(more);}
         document.addEventListener('visibilitychange', function() { if (document.hidden) store.stop3DAutoPlay(); else store.start3DAutoPlay(); });
       }
       var details = document.getElementById('qx_design_showcase');
       if (details) {
         var noFeatured = Surface.featuredSelection !== null ? !Surface.resolveFeatured(store).length : (Array.isArray(store.heroFeatured) && !store.heroFeatured.length);
         details.hidden = noFeatured || Boolean(store.tenant && store.tenant.modules && store.tenant.modules.hero_vitrina === false);
-        if (details.hidden || !details.open) store.stop3DAutoPlay();
+        if (details.hidden) store.stop3DAutoPlay(); else store.start3DAutoPlay();
       }
+    },
+    business: function(store, profile) {
+      if (!profile || ['perfumery','real_estate','industrial','retail','services'].indexOf(profile.industry)<0 || ['shop','book','inquire'].indexOf(profile.primary_journey)<0) return;
+      store.tenant=store.tenant || {}; store.tenant.businessProfile=Object.assign({},profile);store.tenant.industry=profile.industry;store.tenant.isPerfumery=profile.industry==='perfumery';
+      document.body.setAttribute('data-industry',profile.industry);document.body.setAttribute('data-perfumery',profile.industry==='perfumery'?'1':'0');
+      var caps=window.QuantixDesignContract.capabilities(store.tenant);
+      document.body.setAttribute('data-journey',caps.journey);
+      ['qx_cart_btn','qx_dock_cart'].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!caps.shop;el.style.display=caps.shop?'':'none';}});
+      var features={tasting_room:['qx_btn_nav_tasting','qx_dock_tasting'],layering_crucible:['qx_btn_nav_layering','qx_dock_layering'],aura_ai_sommelier:['qx_btn_sommelier_trigger','qx_dock_concierge'],decant_passport:['qx_btn_nav_passport','qx_dock_passport'],loyalty_refill_vault:['qx_btn_nav_vault','qx_dock_vault']};
+      Object.keys(features).forEach(function(key){var flag=store.tenant.featureMatrix&&store.tenant.featureMatrix[key];var enabled=profile.industry==='perfumery'&&flag&&(flag.enabled===true||flag.enabled===1);features[key].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!enabled;el.style.display=enabled?'':'none';}});});
+      var cta=document.querySelector('.qx-design-hero-actions .qx-design-primary');if(cta)cta.firstChild.textContent=profile.industry==='real_estate'?'Explorar propiedades ':profile.industry==='services'?'Explorar servicios ':'Explorar catálogo ';
+      var h=document.querySelector('.qx-design-collection-heading h2');if(h)h.textContent=profile.industry==='real_estate'?'Encuentra tu próximo espacio.':profile.industry==='services'?'Encuentra el servicio que necesitas.':'Encuentra algo para ti.';
+      if(store.products && store.products.length)store.renderGrid(false);
+      if(store.heroFeatured)store.renderHero3DCarousel(store.heroFeatured);
+      Surface.refresh(store);
     },
     detail: function(store, product) {
       var modal = document.getElementById('qx_product_modal');
       modal.setAttribute('data-design', Surface.normalize(store.currentArchetype));
       lastDetailFocus = document.activeElement;
+      if(store.mediaMotion){store.mediaMotion.reset();store.mediaMotion.label();}
+      var motion=document.getElementById('qx_media_motion');if(motion)motion.hidden=store.isRealEstateBusiness();
+      var canShop=window.QuantixDesignContract.capabilities(store.tenant).shop;
+      document.querySelectorAll('#qx_pmodal_stepper,.pmodal-stepper,#qx_pmodal_btn_add,#qx_pmodal_btn_buy').forEach(function(el){el.hidden=!canShop;});
+      var compare=document.getElementById('qx_pmodal_btn_compare');if(compare)compare.hidden=false;
+      var inquiry=document.getElementById('qx_detail_inquiry');
+      if(!inquiry){inquiry=document.createElement('button');inquiry.type='button';inquiry.id='qx_detail_inquiry';inquiry.className='qx-design-card-action';document.querySelector('#qx_product_modal .qx-pmodal-info').appendChild(inquiry);}
+      inquiry.hidden=canShop;inquiry.textContent='Consultar disponibilidad';inquiry.onclick=function(){store.requestPropertyContact(product,window.QuantixDesignContract.capabilities(store.tenant).book);};
+
       var price = Number(product.priceWithTax);
       if (!(price > 0)) {
         document.getElementById('qx_pmodal_price').textContent = 'Consultar precio';
@@ -197,6 +225,8 @@
       if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
+    var buy=document.getElementById('qx_pmodal_bar_buy');
+    if(buy)buy.addEventListener('click',function(e){var store=window.quantixStore;if(store&&!window.QuantixDesignContract.capabilities(store.tenant).shop){e.preventDefault();e.stopImmediatePropagation();var p=store.activeProductModal;if(p)store.requestPropertyContact(p,window.QuantixDesignContract.capabilities(store.tenant).book);}},true);
     var close = document.getElementById('qx_pmodal_close');
     if (close) close.addEventListener('click', function() { if (lastDetailFocus && lastDetailFocus.isConnected) lastDetailFocus.focus({ preventScroll: true }); });
   });

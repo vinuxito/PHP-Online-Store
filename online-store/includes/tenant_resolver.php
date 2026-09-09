@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__.'/../../../cfdadmin/lib/QuantixBusinessProfile.php';
+require_once __DIR__.'/../../../cfdadmin/lib/QuantixStoreText.php';
 /**
  * includes/tenant_resolver.php — Dynamic Multi-Tenant Subdomain & Emisor Context Resolver
  */
@@ -43,8 +45,13 @@ class StorefrontTenant {
     public $whatsappGreeting = '';
 
     public function getIndustry() {
-        $hint = $this->quantixStorePerfums === 'SI' || $this->slug === 'mistiq' || stripos($this->brandName, 'MISTIQ') !== false;
+        $hint = $this->quantixStorePerfums === 'SI';
         return QuantixIndustryContract::resolve($this->apexConfig ?: [], $this->brandName . ' ' . $this->description . ' ' . $this->slug, $hint);
+    }
+
+    public function getBusinessProfile() {
+        $config=$this->apexConfig ?: []; $config['_industria']=$this->getIndustry();
+        return QuantixBusinessProfile::resolve($config);
     }
 
     public function isPerfumery() {
@@ -320,7 +327,7 @@ class StorefrontTenant {
 
         if (!empty($_GET['archetype'])) {
             $reqArch = strtolower(trim($_GET['archetype']));
-            if (in_array($reqArch, ['maison', 'titan', 'nordic', 'social'])) {
+            if (in_array($reqArch, ['maison', 'titan', 'nordic', 'social', 'atelier'])) {
                 $tenant->archetype = $reqArch;
             }
         }
@@ -341,19 +348,7 @@ class StorefrontTenant {
 
 if (!function_exists('renderHeroHeadlineFormatted')) {
     function renderHeroHeadlineFormatted($rawText) {
-        if (empty($rawText)) return '';
-        // Un-double encode if database already held multiply-escaped entities
-        $decoded = html_entity_decode($rawText, ENT_QUOTES, 'UTF-8');
-        while (strpos($decoded, '&amp;') !== false || strpos($decoded, '&quot;') !== false || strpos($decoded, '&#039;') !== false) {
-            $decoded = html_entity_decode($decoded, ENT_QUOTES, 'UTF-8');
-        }
-        // 1. Escape entire text first so any HTML tags or malicious entities are neutralized
-        $safeText = htmlspecialchars($decoded, ENT_QUOTES, 'UTF-8');
-        // 2. Safely transform escaped brackets {word} into accent spans
-        $formatted = preg_replace('/\{([^}]+)\}/', '<span class="qx-title-accent">$1</span>', $safeText);
-        // 3. Format ampersands (&amp;) into italic script spans
-        $formatted = preg_replace('/(\s)&amp;(\s)/', '$1<span class="qx-title-amp">&</span>$2', $formatted);
-        return $formatted;
+        return QuantixStoreText::headline($rawText);
     }
 }
 

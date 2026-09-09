@@ -394,6 +394,7 @@ try {
             'phone'       => $tenant->phone,
             'address'     => $tenant->address,
             'isPerfumery' => $tenant->isPerfumery(),
+            'businessProfile' => $tenant->getBusinessProfile(),
             'industry'    => $resolvedIndustry,
             'quantixStorePerfums' => $tenant->quantixStorePerfums,
             'featureMatrix'=> $tenant->apexConfig['feature_matrix'] ?? [],
