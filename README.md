@@ -1,5 +1,17 @@
 # Quantix Stores — Showroom Storefront Engine
 
+## Commerce templates and authenticated motion — 2026-09-09
+
+The Director now previews each design with actual catalogue photos. **Atelier, Editorial, Boutique, Cinema and Gallery** have distinct dark commerce arrangements while keeping real products, prices, format selection and comparison. The Evinux six-section book and permanent preview remain intact.
+
+Use **Más → Probar movimiento** above the preview to rehearse carousel, saved title shimmer and mouse tilt temporarily. Ending rehearsal restores reduced-motion preferences. Authenticated checks confirmed all 40 thumbnail images, all five unsaved template drafts, all six book sections, real motion/tilt and unchanged iframe geometry. The preview menu no longer overlaps its actions; mouse tilt also works on hybrid pointer devices.
+
+**595 assertions across eight named focused checks passed; the full suite remains deferred.** All five layouts were checked live on desktop and a 390px phone viewport; comparison, sample-format price and BRACSA property preservation passed. Twelve served assets match the checkout. The public catalogue/settings response remained identical after verification. No frame-rate/120fps claim is made.
+
+TEST-SKU description/category/reference corrections and six featured products are documented as an **unsaved proposal requiring owner review**. The repeated RASASI Atlantis API row is recorded for query diagnosis, not deletion.
+
+[Four-step plan](../cfdadmin/docs/plans/2026-09-09-quantix-commerce-four-followups/INDEX.md) · [HTML verification report](../cfdadmin/docs/reports/2026-09-09-quantix-commerce-four-followups/verification.html) · [Catalogue proposal](../cfdadmin/docs/reports/2026-09-09-quantix-commerce-four-followups/catalogue-proposal.md) · [Memory](../cfdadmin/docs/memories/session-2026-09-09-quantix-commerce-four-followups.md) · [Release receipt](../cfdadmin/docs/reports/2026-09-09-quantix-commerce-four-followups/release.json)
+
 ## Product storefront correction — 2026-09-09
 
 The rejected beige shopping presentation is replaced with dark luminous surfaces, a real-product 3D carousel in the opening hero, visible prices/format actions and dimensional product sheets. On phones, real products precede supporting campaign copy. The reference WebGL model is optional below the catalogue; disabled/unavailable models do not leave an empty disclosure.
