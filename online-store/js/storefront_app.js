@@ -3869,6 +3869,7 @@ ${shareUrl}`;
     }
 
     closeProductModal(syncHistory = true) {
+      if(this.mediaMotion)this.mediaMotion.reset();
       this.stopScentAura();
       $('#qx_pmodal_swipe_track').removeClass('qx-living-float').css({ '--tilt-rx': '0deg', '--tilt-ry': '0deg' });
       $('#qx_pmodal_glass_sheen').css('--sheen-x', '-140%');
@@ -4247,7 +4248,7 @@ ${shareUrl}`;
     start3DAutoPlay() {
       this.stop3DAutoPlay();
       const disclosure = document.getElementById('qx_design_showcase');
-      if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && (disclosure.hidden || (disclosure.tagName==='DETAILS' && !disclosure.open))) || this.heroPaused || this.heroOffscreen) return;
+      if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && (disclosure.hidden || (disclosure.tagName==='DETAILS' && !disclosure.open))) || this.heroPaused || this.heroOffscreen || this.heroFocused) return;
       if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) return;
       if (!this.heroFeatured || this.heroFeatured.length < 2) return;
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;

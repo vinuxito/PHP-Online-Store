@@ -109,7 +109,7 @@
       if (count) count.textContent = products.length ? String(products.length).padStart(2, '0') + ' ' + (store.isRealEstateBusiness() ? (products.length === 1 ? 'propiedad' : 'propiedades') : (products.length === 1 ? 'artículo' : 'artículos')) : '';
       var contact = document.getElementById('qx_design_contact');
       var tenant = store.tenant || {};
-      var hasAgenda = Boolean(tenant.featureMatrix && tenant.featureMatrix.royal_agenda && tenant.featureMatrix.royal_agenda.enabled);
+      var hasAgenda = window.QuantixDesignContract.capabilities(tenant).book;
       var contactDetails = store.getStoreContact('Hola, solicito información sobre ' + (tenant.brandName || 'su catálogo') + '.');
       if (contact) {
         contact.hidden = !contactDetails && !hasAgenda;
@@ -133,8 +133,8 @@
         pause.onclick=function(){store.heroPaused=!store.heroPaused;pause.textContent=store.heroPaused?'Reanudar movimiento':'Pausar movimiento';pause.setAttribute('aria-pressed',String(store.heroPaused));if(store.heroPaused)store.stop3DAutoPlay();else store.start3DAutoPlay();};
         var hero = document.getElementById('qx_hero_section');
         hero.parentNode.insertBefore(more, hero.nextSibling); more.appendChild(carousel);
-        more.addEventListener('focusin',function(){store.stop3DAutoPlay();});
-        more.addEventListener('focusout',function(e){if(!more.contains(e.relatedTarget))store.start3DAutoPlay();});
+        more.addEventListener('focusin',function(){store.heroFocused=true;store.stop3DAutoPlay();});
+        more.addEventListener('focusout',function(e){if(!more.contains(e.relatedTarget)){store.heroFocused=false;store.start3DAutoPlay();}});
         if(window.IntersectionObserver){Surface.carouselObserver=new IntersectionObserver(function(entries){store.heroOffscreen=!entries[0].isIntersecting;if(store.heroOffscreen)store.stop3DAutoPlay();else store.start3DAutoPlay();});Surface.carouselObserver.observe(more);}
         document.addEventListener('visibilitychange', function() { if (document.hidden) store.stop3DAutoPlay(); else store.start3DAutoPlay(); });
       }
@@ -142,6 +142,7 @@
       if (details) {
         var noFeatured = Surface.featuredSelection !== null ? !Surface.resolveFeatured(store).length : (Array.isArray(store.heroFeatured) && !store.heroFeatured.length);
         details.hidden = noFeatured || Boolean(store.tenant && store.tenant.modules && store.tenant.modules.hero_vitrina === false);
+        var pause=details.querySelector('.qx-showcase-pause');if(pause)pause.hidden=!store.heroFeatured||store.heroFeatured.length<2||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (details.hidden) store.stop3DAutoPlay(); else store.start3DAutoPlay();
       }
     },
@@ -153,7 +154,7 @@
       document.body.setAttribute('data-journey',caps.journey);
       ['qx_cart_btn','qx_dock_cart'].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!caps.shop;el.style.display=caps.shop?'':'none';}});
       var features={tasting_room:['qx_btn_nav_tasting','qx_dock_tasting'],layering_crucible:['qx_btn_nav_layering','qx_dock_layering'],aura_ai_sommelier:['qx_btn_sommelier_trigger','qx_dock_concierge'],decant_passport:['qx_btn_nav_passport','qx_dock_passport'],loyalty_refill_vault:['qx_btn_nav_vault','qx_dock_vault']};
-      Object.keys(features).forEach(function(key){var flag=store.tenant.featureMatrix&&store.tenant.featureMatrix[key];var enabled=profile.industry==='perfumery'&&flag&&(flag.enabled===true||flag.enabled===1);features[key].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!enabled;el.style.display=enabled?'':'none';}});});
+      Object.keys(features).forEach(function(key){var flag=store.tenant.featureMatrix&&store.tenant.featureMatrix[key];var enabled=profile.industry==='perfumery'&&flag&&window.QuantixDesignContract.enabled(flag.enabled);features[key].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!enabled;el.style.display=enabled?'':'none';}});});
       var cta=document.querySelector('.qx-design-hero-actions .qx-design-primary');if(cta)cta.firstChild.textContent=profile.industry==='real_estate'?'Explorar propiedades ':profile.industry==='services'?'Explorar servicios ':'Explorar catálogo ';
       var h=document.querySelector('.qx-design-collection-heading h2');if(h)h.textContent=profile.industry==='real_estate'?'Encuentra tu próximo espacio.':profile.industry==='services'?'Encuentra el servicio que necesitas.':'Encuentra algo para ti.';
       if(store.products && store.products.length)store.renderGrid(false);
@@ -180,7 +181,7 @@
       }
       var barSub = document.getElementById('qx_pmodal_bar_sub');
       if (barSub) barSub.textContent = store.isRealEstateBusiness() ? 'MXN · Consulta condiciones' : (Number(product.vatRate) > 0 ? 'IVA ' + Number(product.vatRate) + '% incluido' : 'MXN');
-      if (store.isRealEstateBusiness()) document.querySelector('#qx_pmodal_bar_buy span').textContent = 'Consultar';
+      document.querySelector('#qx_pmodal_bar_buy span').textContent = canShop ? 'Agregar al carrito' : 'Consultar';
       document.querySelectorAll('.qx-pmodal-currency').forEach(function(el) { el.hidden = !(price > 0); });
       if (!product.satKey) document.getElementById('qx_pmodal_sat').hidden = true;
       else document.getElementById('qx_pmodal_sat').hidden = false;

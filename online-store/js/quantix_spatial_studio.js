@@ -89,7 +89,7 @@
       this.hotspotPins = [];
 
       if (!this.initThree()) {
-        console.warn('QuantixSpatialStudio: WebGL initialization failed or unsupported. Falling back to 2D.');
+        this.wrapper.setAttribute('data-spatial-state','static-fallback');
         if (this.wrapper) this.wrapper.style.display = 'none';
         const fallbackCarousel = document.getElementById('qx_hero_carousel_wrapper');
         if (fallbackCarousel && window.quantixStore && window.QuantixStoreDesigns) window.QuantixStoreDesigns.modules(window.quantixStore);
@@ -122,7 +122,13 @@
       this.updateCameraPosition();
 
       try {
+        // Probe the same canvas before constructing Three: unavailable GPU is a normal fallback.
+        const canvas=document.createElement('canvas');
+        const context=canvas.getContext('webgl2',{alpha:true,antialias:true}) || canvas.getContext('webgl',{alpha:true,antialias:true});
+        if(!context)return false;
         this.renderer = new THREE.WebGLRenderer({
+          canvas:canvas,
+          context:context,
           antialias: true,
           alpha: true,
           powerPreference: 'high-performance'
