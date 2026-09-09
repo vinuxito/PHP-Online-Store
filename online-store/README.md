@@ -1,5 +1,15 @@
 # Quantix Storefront Luxury Showroom
 
+## Storefront appointments — 2026-09-08
+
+The agenda now uses two input steps: choose a date/time and provide **name, email and phone with country code**. It saves the selected date, retains catalog property context and returns the stored PENDING/CONFIRMED state. A private fragment link supports status, rescheduling, cancellation and UTC calendar download. No account or email lookup is used as proof of identity.
+
+**Setup:** Chronos → Horarios de reserva. No active hours means manual date/time requests pending confirmation. Configured hours enforce duration, rest, advance notice, horizon, closed dates and one appointment capacity per store. Automatic confirmation is explicit. Messages and external calendar sync are not automatically delivered.
+
+**Deployment dependency:** apply adjacent `cfdadmin/sql/2026-09-08-storefront-booking.php` and deploy its shared `lib/quantix_booking.php` before these assets/API. The migration is additive and seeds no appointments. CFDAdmin code `e6477aaf` and storefront code `46d0969` are pushed. The corresponding eight-step plan, memory and standalone HTML report are under adjacent CFDAdmin `docs/`.
+
+**Evidence:** 84 focused assertions, six live API checks, six matching served assets, public desktop/mobile, authenticated Chronos and all four Director template drafts. Successful writes used temporary tables; original live appointments stayed unchanged. The full suite and owner real-booking acceptance remain deferred.
+
 ## Live correction — title motion and tasting requests, 2026-09-08
 
 Tasting initialization now binds controls without requesting slots. Only an enabled perfumery can load slots, book, open a session or poll; slots load when the room is opened. The public bootstrap includes the existing feature matrix, and server access checks are unchanged. Fresh BRACSA public and Director loads made zero tasting requests and showed no captured storefront HTTP errors.
