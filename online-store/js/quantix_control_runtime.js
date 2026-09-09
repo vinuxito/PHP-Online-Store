@@ -97,6 +97,21 @@
       clearInterval(state.timer); state.timer=setInterval(function(){renderHero(false);},1000);
     },
     handle:function(type,payload) {
+      if (type==='SYNC_MOTION_REHEARSAL') {
+        // Called only by the origin/source-validated preview listener in index.php.
+        if (root.parent !== root) {
+          if (payload && payload.enabled === true) document.body.setAttribute('data-motion-rehearsal','true');
+          else document.body.removeAttribute('data-motion-rehearsal');
+          var store=root.quantixStore;
+          if(store){
+            if(store.mediaMotion){store.mediaMotion.reset();store.mediaMotion.label();}
+            store.start3DAutoPlay();
+            var pause=document.querySelector('.qx-showcase-pause');
+            if(pause)pause.hidden=!store.heroFeatured||store.heroFeatured.length<2||store.prefersReducedMotion();
+          }
+        }
+        return true;
+      }
       if (type==='SYNC_TITLE_MOTION_PREVIEW') {
         // The outer listener validates the Director origin, source and preview mode.
         // Rehearsal is local to this embedded document; never saved or applied publicly.

@@ -4065,13 +4065,17 @@ ${shareUrl}`;
       this.update3DCarousel();
     }
 
+    prefersReducedMotion() {
+      return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches && document.body.getAttribute('data-motion-rehearsal') !== 'true');
+    }
+
     start3DAutoPlay() {
       this.stop3DAutoPlay();
       const disclosure = document.getElementById('qx_design_showcase');
       if (document.hidden || document.body.classList.contains('qx-inspector-enabled') || (disclosure && (disclosure.hidden || (disclosure.tagName==='DETAILS' && !disclosure.open))) || this.heroPaused || this.heroOffscreen || this.heroFocused) return;
       if (this.tenant && this.tenant.modules && this.tenant.modules.hero_vitrina === false) return;
       if (!this.heroFeatured || this.heroFeatured.length < 2) return;
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (this.prefersReducedMotion()) return;
       this.heroAutoPlayTimer = setInterval(() => {
         this.next3DSlide();
       }, 5500);
@@ -5590,7 +5594,7 @@ ${shareUrl}`;
       const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
       let frame=0,last=null;
       const reset=()=>{if(frame)cancelAnimationFrame(frame);frame=0;last=null;stage.style.setProperty('--qx-media-rx','0deg');stage.style.setProperty('--qx-media-ry','0deg');};
-      const allowed=()=>!self.motionDisabled&&!reduced.matches&&!document.hidden&&!self.isRealEstateBusiness()&&document.getElementById('qx_product_modal').classList.contains('active');
+      const allowed=()=>!self.motionDisabled&&!self.prefersReducedMotion()&&!document.hidden&&!self.isRealEstateBusiness()&&document.getElementById('qx_product_modal').classList.contains('active');
       stage.addEventListener('pointermove',e=>{
         if(e.pointerType!=='mouse'||!allowed()){reset();return;}
         last={x:e.clientX,y:e.clientY};if(frame)return;
@@ -5604,7 +5608,7 @@ ${shareUrl}`;
       stage.addEventListener('pointerleave',reset);stage.addEventListener('focusin',reset);
       document.addEventListener('visibilitychange',()=>{reset();if(document.hidden)self.stopScentAura();});
       const button=document.createElement('button');button.type='button';button.id='qx_media_motion';button.className='qx-media-motion';
-      const label=()=>{button.textContent=reduced.matches?'Movimiento reducido':self.motionDisabled?'Activar movimiento':'Pausar movimiento';button.disabled=reduced.matches;button.setAttribute('aria-pressed',String(!self.motionDisabled&&!reduced.matches));};
+      const label=()=>{const reduce=self.prefersReducedMotion();button.textContent=reduce?'Movimiento reducido':self.motionDisabled?'Activar movimiento':'Pausar movimiento';button.disabled=reduce;button.setAttribute('aria-pressed',String(!self.motionDisabled&&!reduce));};
       button.onclick=()=>{self.motionDisabled=!self.motionDisabled;reset();self.stopScentAura();label();};stage.parentNode.insertBefore(button,stage);
       if(reduced.addEventListener)reduced.addEventListener('change',()=>{reset();self.stopScentAura();label();});
       this.mediaMotion={reset:reset,label:label};label();

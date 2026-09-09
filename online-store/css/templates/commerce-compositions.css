@@ -1,0 +1,77 @@
+/* Five commerce compositions. Existing saved keys, content and interactions stay intact. */
+/* Atelier: centered title, a generous dimensional stage, three sculptural product columns. */
+body[data-design="atelier"][data-journey="shop"] #qx_hero_section{display:flex!important;flex-direction:column;gap:8px;padding-top:22px!important;text-align:center}
+body[data-design="atelier"][data-journey="shop"] .qx-design-hero-copy{display:contents!important}
+body[data-design="atelier"][data-journey="shop"] .qx-hero-kicker-wrap{order:1;margin:0!important}
+body[data-design="atelier"][data-journey="shop"] #qx_hero_title{order:2;max-width:1100px;font-size:clamp(30px,3.1vw,46px)!important;margin:0!important}
+body[data-design="atelier"][data-journey="shop"] #qx_design_showcase{order:3;max-width:1120px;padding-top:6px}
+body[data-design="atelier"][data-journey="shop"] #qx_design_showcase h2{text-align:left}
+body[data-design="atelier"][data-journey="shop"] .qx-hero-subtitle{order:4;max-width:700px;margin:0!important}
+body[data-design="atelier"][data-journey="shop"] .qx-design-hero-actions{order:5;justify-content:center;margin-top:8px}
+body[data-design="atelier"][data-journey="shop"] .qx-3d-stage{height:360px}
+body[data-design="atelier"][data-journey="shop"] .qx-3d-card{border-radius:42px 42px 22px 22px;height:320px;width:310px}
+body[data-design="atelier"][data-journey="shop"] .qx-3d-img-container{height:170px;border-radius:35px 35px 12px 12px}
+body[data-design="atelier"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:28px!important}
+body[data-design="atelier"][data-journey="shop"] .qx-card.qx-design-card{border-radius:32px 32px 18px 18px!important}
+body[data-design="atelier"][data-journey="shop"] .qx-card .qx-card-media{aspect-ratio:1.25!important;background:radial-gradient(ellipse at 50% 75%,#374e6f,#101b31)!important}
+/* Editorial/maison intentionally retains the restored split hero and four-column baseline. */
+/* Boutique: short campaign beside a compact carousel, dense but usable buying cards. */
+body[data-design="titan"][data-journey="shop"]{--qc-light:#81beff}
+body[data-design="titan"][data-journey="shop"] #qx_hero_section{grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr)!important;padding-top:12px!important;padding-bottom:16px!important;gap:24px}
+body[data-design="titan"][data-journey="shop"] #qx_hero_title{font-size:clamp(28px,2.7vw,40px)!important}
+body[data-design="titan"][data-journey="shop"] .qx-3d-stage{height:310px}
+body[data-design="titan"][data-journey="shop"] .qx-3d-card{width:250px;height:278px;border-radius:12px;padding:12px}
+body[data-design="titan"][data-journey="shop"] .qx-3d-img-container{height:132px;margin-bottom:8px;border-radius:8px}
+body[data-design="titan"][data-journey="shop"] .qx-3d-badge{margin-bottom:7px}
+body[data-design="titan"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:14px!important}
+body[data-design="titan"][data-journey="shop"] .qx-card.qx-design-card{border-radius:10px!important;background:#111f34!important}
+body[data-design="titan"][data-journey="shop"] .qx-card .qx-card-body{padding:14px!important}
+body[data-design="titan"][data-journey="shop"] .qx-card .qx-card-media{aspect-ratio:1.18!important}
+body[data-design="titan"][data-journey="shop"] .qx-card .qx-card-footer{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+/* Cinema: products open the page on a panoramic stage; copy follows, then wide cards. */
+body[data-design="social"][data-journey="shop"]{--qc-light:#f1a6ed;background:radial-gradient(ellipse at 45% 5%,#3a1844,transparent 45%),#0c0c19!important}
+body[data-design="social"][data-journey="shop"] #qx_hero_section{display:flex!important;flex-direction:column;gap:10px;background:transparent!important;padding-top:12px!important}
+body[data-design="social"][data-journey="shop"] #qx_design_showcase{order:1;max-width:1220px;border-bottom:1px solid #bc75dd35;padding-bottom:14px}
+body[data-design="social"][data-journey="shop"] #qx_hero_carousel_wrapper{background:radial-gradient(ellipse at 50% 65%,#8a3e8240,transparent 65%)}
+body[data-design="social"][data-journey="shop"] .qx-3d-stage{height:376px}
+body[data-design="social"][data-journey="shop"] .qx-3d-card{width:350px;height:338px;background:linear-gradient(145deg,#372444,#151a2c);border-radius:16px}
+body[data-design="social"][data-journey="shop"] .qx-3d-card.active{border-color:#eda1e3aa!important;box-shadow:0 25px 60px #000a,0 0 40px #b247aa35!important}
+body[data-design="social"][data-journey="shop"] .qx-design-hero-copy{order:2;width:100%;max-width:1220px!important;display:grid!important;grid-template-columns:minmax(0,1.6fr) minmax(230px,1fr);column-gap:40px;padding:8px 0!important}
+body[data-design="social"][data-journey="shop"] .qx-hero-kicker-wrap{grid-column:1;margin-bottom:10px!important}
+body[data-design="social"][data-journey="shop"] #qx_hero_title{grid-column:1;grid-row:2/4;font-size:clamp(27px,2.7vw,40px)!important;margin:0!important}
+body[data-design="social"][data-journey="shop"] .qx-hero-subtitle{grid-column:2;grid-row:2;margin-bottom:10px!important}
+body[data-design="social"][data-journey="shop"] .qx-design-hero-actions{grid-column:2;grid-row:3;align-self:start}
+body[data-design="social"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:28px!important}
+body[data-design="social"][data-journey="shop"] .qx-card.qx-design-card{padding:0!important;border-radius:16px!important}
+body[data-design="social"][data-journey="shop"] .qx-card .qx-card-media{aspect-ratio:1.6!important;background:radial-gradient(ellipse at 45% 55%,#513750,#141b2e)!important}
+body[data-design="social"][data-journey="shop"] .qx-card .qx-card-body{padding:24px!important}
+/* Gallery: product stage left, copy right; three precise graphite display panels. */
+body[data-design="nordic"][data-journey="shop"]{--qc-light:#b7dddc;--qd-width:1440px;background:radial-gradient(ellipse at 15% 20%,#243339,transparent 60%),#0b1117!important}
+body[data-design="nordic"][data-journey="shop"] #qx_hero_section{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr)!important;gap:44px}
+body[data-design="nordic"][data-journey="shop"] #qx_design_showcase{grid-column:1;grid-row:1}
+body[data-design="nordic"][data-journey="shop"] .qx-design-hero-copy{grid-column:2;grid-row:1}
+body[data-design="nordic"][data-journey="shop"] .qx-3d-card{border-radius:5px;background:linear-gradient(145deg,#26353c,#131e28)}
+body[data-design="nordic"][data-journey="shop"] .qx-3d-img-container{border-radius:2px;background:#23323c}
+body[data-design="nordic"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:24px!important}
+body[data-design="nordic"][data-journey="shop"] .qx-card.qx-design-card{border-radius:5px!important;background:#14212b!important;box-shadow:none!important}
+body[data-design="nordic"][data-journey="shop"] .qx-card .qx-card-media{aspect-ratio:1.05!important;background:#20303b!important}
+@media(max-width:1280px){body[data-design="titan"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:1000px){
+ body[data-design="titan"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ body[data-design="nordic"][data-journey="shop"] #qx_hero_section{gap:20px}
+ body[data-design="social"][data-journey="shop"] .qx-design-hero-copy{column-gap:20px}
+}
+@media(max-width:760px){
+ body[data-design="titan"][data-journey="shop"] #qx_hero_section,body[data-design="nordic"][data-journey="shop"] #qx_hero_section{grid-template-columns:1fr!important;gap:8px}
+ body[data-design="nordic"][data-journey="shop"] #qx_design_showcase{grid-column:auto;grid-row:auto}
+ body[data-design="atelier"][data-journey="shop"] .qx-3d-card,body[data-design="social"][data-journey="shop"] .qx-3d-card{width:242px;height:310px}
+ body[data-design="atelier"][data-journey="shop"] .qx-3d-img-container,body[data-design="social"][data-journey="shop"] .qx-3d-img-container{height:160px}
+ body[data-design="atelier"][data-journey="shop"] .qx-3d-stage,body[data-design="social"][data-journey="shop"] .qx-3d-stage{height:352px}
+ body[data-design="atelier"][data-journey="shop"] #qx_hero_title,body[data-design="titan"][data-journey="shop"] #qx_hero_title,body[data-design="social"][data-journey="shop"] #qx_hero_title{font-size:28px!important}
+ body[data-design="social"][data-journey="shop"] .qx-design-hero-copy{display:flex!important;flex-direction:column;gap:8px}
+ body[data-design="social"][data-journey="shop"] .qx-hero-kicker-wrap,body[data-design="social"][data-journey="shop"] #qx_hero_title,body[data-design="social"][data-journey="shop"] .qx-hero-subtitle,body[data-design="social"][data-journey="shop"] .qx-design-hero-actions{order:initial}
+ body[data-design="atelier"][data-journey="shop"] .qx-grid,body[data-design="titan"][data-journey="shop"] .qx-grid,body[data-design="nordic"][data-journey="shop"] .qx-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+ body[data-design="social"][data-journey="shop"] .qx-grid{grid-template-columns:1fr!important;gap:20px!important}
+ body[data-design="social"][data-journey="shop"] .qx-card .qx-card-body{padding:18px!important}
+ body[data-design="atelier"][data-journey="shop"] .qx-card .qx-card-media,body[data-design="nordic"][data-journey="shop"] .qx-card .qx-card-media{aspect-ratio:1!important}
+}

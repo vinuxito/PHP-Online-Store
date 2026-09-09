@@ -32,7 +32,7 @@ body[data-design][data-journey="shop"] .qx-design-secondary {display:inline-flex
 body[data-design][data-journey="shop"] #qx_design_hero_media {display:none!important;}
 body[data-design][data-journey="shop"] #qx_design_showcase {grid-column:auto;width:100%;max-width:none;min-width:0;margin:0;padding:16px 0 0;border:0;align-self:center;position:relative;}
 body[data-design][data-journey="shop"] #qx_design_showcase h2 {font:600 11px/1.4 var(--qd-sans);letter-spacing:.16em;text-transform:uppercase;color:var(--qc-light);margin:0 0 8px 16px;}
-body[data-design][data-journey="shop"] .qx-showcase-pause {top:8px;right:8px;background:#18253d;color:#c6d8ec;border:1px solid #3c506e;border-radius:20px;min-height:32px;font:500 10px var(--qd-sans);}
+body[data-design][data-journey="shop"] .qx-showcase-pause {top:8px;right:8px;left:auto;background:#18253d;color:#c6d8ec;border:1px solid #3c506e;border-radius:20px;min-height:32px;font:500 10px var(--qd-sans);}
 body[data-design][data-journey="shop"] #qx_hero_carousel_wrapper {max-width:none;margin:0;padding:12px 0 8px;background:radial-gradient(ellipse at 50% 64%,#21446855,transparent 69%);border-radius:0;overflow:hidden;}
 body[data-design][data-journey="shop"] .qx-3d-stage {height:390px;}
 body[data-design][data-journey="shop"] .qx-3d-card {width:290px;height:340px;padding:16px;border-radius:22px;background:linear-gradient(150deg,#20304aea,#0d172bef);border:1px solid #789ccd50;box-shadow:0 20px 45px #0009,inset 0 1px 0 #c3dcff22;}
@@ -133,3 +133,9 @@ body[data-design][data-journey="shop"] #qx_hero_section:has(#qx_design_showcase[
 /* A disabled or unavailable WebGL model must not leave an empty disclosure. */
 body[data-design][data-journey="shop"] #qx_commerce_spatial:has(#qx_studio_3d_wrapper[hidden]),
 body[data-design][data-journey="shop"] #qx_commerce_spatial:has(#qx_studio_3d_wrapper[data-spatial-state="static-fallback"]) {display:none!important;}
+
+/* Explicit embedded Director rehearsal; never set by a public store or a saved setting. */
+body[data-design][data-motion-rehearsal="true"] .qx-3d-card{transition:transform .65s cubic-bezier(.22,.61,.36,1),opacity .65s!important}
+@media(hover:hover) and (pointer:fine){
+body[data-design][data-motion-rehearsal="true"]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img{transform:perspective(900px) rotateX(var(--qx-media-rx,0deg)) rotateY(var(--qx-media-ry,0deg));transition:transform .12s ease-out!important}
+}

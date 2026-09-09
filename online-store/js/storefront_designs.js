@@ -192,7 +192,7 @@
       if (details) {
         var noFeatured = Surface.featuredSelection !== null ? !Surface.resolveFeatured(store).length : (Array.isArray(store.heroFeatured) && !store.heroFeatured.length);
         details.hidden = noFeatured || Boolean(store.tenant && store.tenant.modules && store.tenant.modules.hero_vitrina === false);
-        var pause=details.querySelector('.qx-showcase-pause');if(pause)pause.hidden=!store.heroFeatured||store.heroFeatured.length<2||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var pause=details.querySelector('.qx-showcase-pause');if(pause)pause.hidden=!store.heroFeatured||store.heroFeatured.length<2||(store.prefersReducedMotion ? store.prefersReducedMotion() : window.matchMedia('(prefers-reduced-motion: reduce)').matches);
         if (details.hidden) store.stop3DAutoPlay(); else store.start3DAutoPlay();
       }
     },

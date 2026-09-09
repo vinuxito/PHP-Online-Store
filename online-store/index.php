@@ -47,7 +47,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
   <link rel="stylesheet" href="css/storefront_booking.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_booking.css'); ?>">
   <link rel="stylesheet" href="css/storefront_designs.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_designs.css'); ?>">
-  <?php foreach (['shared','atelier','editorial','boutique','cinema','commerce'] as $sheet): ?>
+  <?php foreach (['shared','atelier','editorial','boutique','cinema','commerce','commerce-compositions'] as $sheet): ?>
   <link rel="stylesheet" href="css/templates/<?php echo $sheet; ?>.css?v=<?php echo filemtime(__DIR__.'/css/templates/'.$sheet.'.css'); ?>">
   <?php endforeach; ?>
   <style>
