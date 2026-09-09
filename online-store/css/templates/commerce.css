@@ -136,6 +136,4 @@ body[data-design][data-journey="shop"] #qx_commerce_spatial:has(#qx_studio_3d_wr
 
 /* Explicit embedded Director rehearsal; never set by a public store or a saved setting. */
 body[data-design][data-motion-rehearsal="true"] .qx-3d-card{transition:transform .65s cubic-bezier(.22,.61,.36,1),opacity .65s!important}
-@media(hover:hover) and (pointer:fine){
 body[data-design][data-motion-rehearsal="true"]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img{transform:perspective(900px) rotateX(var(--qx-media-rx,0deg)) rotateY(var(--qx-media-ry,0deg));transition:transform .12s ease-out!important}
-}

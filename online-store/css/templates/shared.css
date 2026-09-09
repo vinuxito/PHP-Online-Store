@@ -58,7 +58,10 @@ body[data-design] .qx-card [aria-pressed="true"] {outline:2px solid var(--qx-acc
 #qx_crucible_modal.qx-facts-mode .qx-crucible-title {color:var(--qd-ink);font:500 24px var(--qd-serif);}
 .qx-media-motion {align-self:flex-end;min-height:44px;padding:10px 16px;border:1px solid var(--qd-line);border-radius:24px;background:var(--qd-paper);color:var(--qd-ink);cursor:pointer;margin-bottom:12px;}
 body[data-design] #qx_pmodal_swipe_track {animation:none!important;}
-@media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){body[data-design]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img {transform:perspective(900px) rotateX(var(--qx-media-rx,0deg)) rotateY(var(--qx-media-ry,0deg));transition:transform .12s ease-out;}}
+/* JS accepts mouse events only and zeros the angles for reduced motion/touch.
+   Do not gate CSS on the primary pointer: hybrid devices can also use a mouse. */
+body[data-design]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img {transform:perspective(900px) rotateX(var(--qx-media-rx,0deg)) rotateY(var(--qx-media-ry,0deg));transition:transform .12s ease-out;}
+@media(prefers-reduced-motion:reduce){body[data-design]:not([data-industry="real_estate"]) #qx_pmodal_stage .qx-pmodal-swipe-slide img{transition:none!important;}}
 #qx_crucible_verdict_banner,#qx_crucible_modal .qx-crucible-analysis-grid,#qx_tab_fusion,#qx_fusion_overlay {display:none!important;}
 #qx_crucible_modal .qx-crucible-header-actions {flex-wrap:wrap;gap:8px;}
 
