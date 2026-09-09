@@ -2616,15 +2616,17 @@ ${shareUrl}`;
     }
 
     loadCatalog() {
-      const self = this;
+      const self = this, generation = this.catalogGeneration = (this.catalogGeneration || 0) + 1;
+      $('#qx_catalog_status').remove();
       const urlParams = new URLSearchParams(window.location.search);
       const apiUrl = 'api/catalog.php?' + urlParams.toString();
 
-      $('#qx_product_grid').html('<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-text-muted)">Cargando catálogo exclusivo...</div>');
+      if (!this.products || !this.products.length) $('#qx_product_grid').html('<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-text-muted)">Cargando catálogo exclusivo...</div>');
 
       $.getJSON(apiUrl)
         .done(function(resp) {
-          if (resp.Status === 'OK') {
+          if (generation !== self.catalogGeneration) return;
+          if (resp && resp.Status === 'OK' && Array.isArray(resp.Products) && resp.Tenant && typeof resp.Tenant.emisorId === 'string') {
             const serverTenant = window.QX_TENANT || {};
             const sameTenant = String(serverTenant.emisorId || '').toLowerCase() === String((resp.Tenant && resp.Tenant.emisorId) || '').toLowerCase();
             self.tenant = Object.assign({}, sameTenant ? serverTenant : {}, resp.Tenant);
@@ -2656,12 +2658,22 @@ ${shareUrl}`;
             self.initStories();
             if (window.QuantixStoreDesigns) { if(self.tenant.businessProfile)window.QuantixStoreDesigns.business(self,self.tenant.businessProfile);else window.QuantixStoreDesigns.refresh(self, resp.Featured || []); window.QuantixStoreDesigns.ready(); }
           } else {
-            $('#qx_product_grid').html(`<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error: ${resp.Error || 'No se pudo cargar el catálogo'}</div>`);
+            self.catalogFailure('No se pudo cargar el catálogo. Reintenta en un momento.');
           }
         })
         .fail(function(xhr) {
-          $('#qx_product_grid').html('<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-rose)">Error al conectar con la tienda.</div>');
+          if (generation === self.catalogGeneration) self.catalogFailure('No se pudo conectar con la tienda. Puedes reintentar.');
         });
+    }
+
+    catalogFailure(message) {
+      const self = this;
+      if (!this.products || !this.products.length) $('#qx_product_grid').empty();
+      $('#qx_catalog_status').remove();
+      const status = $('<div id="qx_catalog_status" role="status" style="padding:20px;margin:12px auto;max-width:1200px"></div>');
+      status.append($('<p></p>').text(message));
+      status.append($('<button type="button" class="qx-design-card-action"></button>').text('Reintentar catálogo').on('click', function() { self.loadCatalog(); }));
+      status.insertBefore('#qx_product_grid');
     }
 
     applyIndustryPreset(preset) {

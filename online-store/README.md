@@ -1,5 +1,21 @@
 # Quantix Storefront Luxury Showroom
 
+## Business-aware templates — 2026-09-09
+
+**Atelier, Editorial, Boutique and Cinema** now offer distinct compositions while sharing the existing catalogue, cart, layered detail, comparison and motion engines. Gallery stays compatible. Business profile and shop/inquire/book journey control actions independently from design. No store is automatically reclassified or switched to Atelier.
+
+The Director retains its six-section book, Evinux themes and permanent preview. Choose **Plantillas**, **Colores**, or **Negocio → Módulos → Tu tipo de negocio**. The new profile endpoint is session/admin/CSRF/tenant/revision protected and audited; ordinary controls preserve business identity. Compatible version-1 readers are required before new profile writes. Deploy adjacent CFDAdmin shared contracts with this release; no new database migration is required.
+
+Restored: visible configured carousel, bounded pointer tilt, shadowed readable detail, explicit format selection, 2–4 item factual comparison and the existing visual pair mode. Catalogue failures now offer retry while retaining loaded products. Missing sensory facts stay missing; unsupported refill/discount claims were removed from these surfaces.
+
+**Verification:** 16 named focused checks /1,008 assertions and 35 syntax checks; both live stores across desktop/phone; unchanged saved configurations and matching served assets. No whole suite, real order/booking or outbound message. Physical AR/gyro/120fps, production Apply roundtrips and owner acceptance remain pending.
+
+MISTIQ keeps saved Editorial. Its old featured IDs 1/2/3 no longer match products: curate valid items in **Portada → Elegir destacados**, then preview Atelier. TEST-SKU's property copy also needs deliberate catalogue review. BRACSA retains its real-estate experience.
+
+[Plan](../../cfdadmin/docs/plans/2026-09-09-quantix-business-aware-templates/INDEX.md) · [HTML evidence](../../cfdadmin/docs/reports/quantix-business-aware-templates/verification.html) · [Review and limits](../../cfdadmin/docs/reports/quantix-business-aware-templates/verification-matrix.md) · [Git release receipt](../../cfdadmin/docs/reports/quantix-business-aware-templates/release.json)
+
+The HTML is a local artifact with embedded images; public docs serving is restricted. Historical inventories below are not current feature/performance certification.
+
 ## Storefront appointments — 2026-09-08
 
 The agenda now uses two input steps: choose a date/time and provide **name, email and phone with country code**. It saves the selected date, retains catalog property context and returns the stored PENDING/CONFIRMED state. A private fragment link supports status, rescheduling, cancellation and UTC calendar download. No account or email lookup is used as proof of identity.

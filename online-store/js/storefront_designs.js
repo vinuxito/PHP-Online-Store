@@ -157,7 +157,7 @@
       ['qx_cart_btn','qx_dock_cart'].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!caps.shop;el.style.display=caps.shop?'':'none';}});
       var features={tasting_room:['qx_btn_nav_tasting','qx_dock_tasting'],layering_crucible:['qx_btn_nav_layering','qx_dock_layering'],aura_ai_sommelier:['qx_btn_sommelier_trigger','qx_dock_concierge'],decant_passport:['qx_btn_nav_passport','qx_dock_passport'],loyalty_refill_vault:['qx_btn_nav_vault','qx_dock_vault']};
       Object.keys(features).forEach(function(key){var flag=store.tenant.featureMatrix&&store.tenant.featureMatrix[key];var enabled=profile.industry==='perfumery'&&flag&&window.QuantixDesignContract.enabled(flag.enabled);features[key].forEach(function(id){var el=document.getElementById(id);if(el){el.hidden=!enabled;el.style.display=enabled?'':'none';}});});
-      var cta=document.querySelector('.qx-design-hero-actions .qx-design-primary');if(cta)cta.firstChild.textContent=profile.industry==='real_estate'?'Explorar propiedades ':profile.industry==='services'?'Explorar servicios ':'Explorar catálogo ';
+      var cta=document.querySelector('.qx-design-hero-actions .qx-design-primary');if(cta){cta.firstChild.textContent=caps.journey==='book'?'Agendar una cita ':profile.industry==='real_estate'?'Explorar propiedades ':profile.industry==='services'?'Explorar servicios ':'Explorar catálogo ';cta.onclick=function(e){if(caps.journey==='book'){e.preventDefault();store.openAgendaModal();}};}
       var h=document.querySelector('.qx-design-collection-heading h2');if(h)h.textContent=profile.industry==='real_estate'?'Encuentra tu próximo espacio.':profile.industry==='services'?'Encuentra el servicio que necesitas.':'Encuentra algo para ti.';
       if(store.products && store.products.length)store.renderGrid(false);
       if(store.heroFeatured)store.renderHero3DCarousel(store.heroFeatured);
@@ -174,7 +174,7 @@
       var compare=document.getElementById('qx_pmodal_btn_compare');if(compare)compare.hidden=false;
       var inquiry=document.getElementById('qx_detail_inquiry');
       if(!inquiry){inquiry=document.createElement('button');inquiry.type='button';inquiry.id='qx_detail_inquiry';inquiry.className='qx-design-card-action';document.querySelector('#qx_product_modal .qx-pmodal-info').appendChild(inquiry);}
-      inquiry.hidden=canShop;inquiry.textContent='Consultar disponibilidad';inquiry.onclick=function(){store.requestPropertyContact(product,window.QuantixDesignContract.capabilities(store.tenant).book);};
+      inquiry.hidden=canShop;inquiry.textContent='Consultar disponibilidad';inquiry.onclick=function(){store.requestPropertyContact(product,window.QuantixDesignContract.capabilities(store.tenant).journey==='book');};
 
       var price = Number(product.priceWithTax);
       if (!(price > 0)) {

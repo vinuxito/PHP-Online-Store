@@ -1,5 +1,11 @@
 # Quantix Stores — Showroom Storefront Engine
 
+## Current release — business-aware templates, 2026-09-09
+
+Four primary storefront designs, preserved Gallery, explicit business/action selection and shared shopping/detail/comparison. The Director book and permanent preview are preserved. Both saved store configurations remain unchanged. **1,008 focused checks passed; the whole suite waits for owner live acceptance.**
+
+See [current behavior and setup](online-store/README.md), [verification](../cfdadmin/docs/reports/quantix-business-aware-templates/verification-matrix.md) and [commit/push receipt](../cfdadmin/docs/reports/quantix-business-aware-templates/release.json). Older performance and integration claims below are historical, not this release's evidence.
+
 Real-time, ultra-luxury, and multi-archetype e-commerce storefront platform designed for CFDI-compliant Mexican businesses.
 
 ## Architecture & Integration
