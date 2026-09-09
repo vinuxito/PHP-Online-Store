@@ -132,3 +132,12 @@ body[data-design] #qx_product_modal .qx-step-btn{min-width:36px;min-height:44px;
  body[data-design] #qx_product_modal .qx-btn-bar-buy{grid-column:1/-1;}
  body[data-design] #qx_product_modal .qx-pmodal-bar-actions .compact{justify-self:end;}
 }
+
+/* The retained visual comparison is a dark stage with readable controls. */
+body[data-design] #qx_crucible_modal:not(.qx-facts-mode){--qd-paper:#121d2d;--qd-ink:#f0f4ed;--qd-soft:#25364b;}
+body[data-design] #qx_crucible_modal:not(.qx-facts-mode) .qx-crucible-title{color:var(--qd-ink);}
+body[data-design] #qx_crucible_modal .qx-btn-stage-choose{color:#fff!important;min-height:44px;}
+body[data-design] #qx_crucible_modal #qx_stage_price_a,body[data-design] #qx_crucible_modal #qx_stage_price_b{color:#dce8f4;}
+body[data-design] #qx_crucible_modal .qx-crucible-badge{display:none;}
+body[data-design] .qx-facts-help{font-size:13px;line-height:1.5;color:var(--qd-muted);margin:0 0 16px;}
+body[data-design]:has(#qx_crucible_modal.active) .qx-concierge-float-pill,body[data-design]:has(#qx_product_modal.active) .qx-concierge-float-pill{visibility:hidden;}

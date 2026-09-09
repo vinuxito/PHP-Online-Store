@@ -700,12 +700,12 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <div class="qx-format-grid">
             <button type="button" class="qx-format-card active" id="qx_format_full" data-format="full">
               <div class="qx-format-card-badge">Tamaño Original</div>
-              <div class="qx-format-card-title">🛍️ Frasco Completo (100ml)</div>
+              <div class="qx-format-card-title">🛍️ Frasco completo</div>
               <div class="qx-format-card-price" id="qx_format_price_full">$ 0.00</div>
             </button>
             <button type="button" class="qx-format-card" id="qx_format_decant" data-format="decant">
               <div class="qx-format-card-badge qx-badge-decant">🧪 Muestra de Cata</div>
-              <div class="qx-format-card-title">Decant Atomizador (5ml)</div>
+              <div class="qx-format-card-title">Muestra (decant)</div>
               <div class="qx-format-card-price" id="qx_format_price_decant">$ 180.00</div>
             </button>
           </div>
@@ -769,7 +769,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <div class="qx-radar-header-row">
             <div>
               <h3 class="qx-pmodal-sec-title">📊 Radar de Estela & Rendimiento Olfativo</h3>
-              <p class="qx-radar-subtitle">Física de proyección molecular y longevidad en piel</p>
+              <p class="qx-radar-subtitle">Datos sensoriales registrados por la tienda. La experiencia puede variar.</p>
             </div>
             <button type="button" class="qx-btn-radar-compare" id="btn_open_radar_compare">
               <span>⚔️ Comparar</span>
@@ -837,34 +837,6 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
               <p class="qx-weather-advice-text" id="qx_weather_advice_text">
                 🔥 <strong>Rendimiento Ideal Hoy:</strong> Las notas frescas proyectarán de forma óptima con la temperatura actual de tu ciudad.
               </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3 Universal Satin Metric Bars -->
-        <div class="qx-pmodal-section">
-          <h3 class="qx-pmodal-sec-title">Métricas de Rendimiento</h3>
-          <div class="qx-pmodal-metrics-box">
-            <div class="qx-metric-item">
-              <div class="qx-metric-header">
-                <span id="qx_metric_label_1">Intensidad / Potencia</span>
-                <span class="qx-metric-val" id="qx_metric_val_1">85%</span>
-              </div>
-              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_1"></div></div>
-            </div>
-            <div class="qx-metric-item">
-              <div class="qx-metric-header">
-                <span id="qx_metric_label_2">Duración / Longevidad</span>
-                <span class="qx-metric-val" id="qx_metric_val_2">90%</span>
-              </div>
-              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_2"></div></div>
-            </div>
-            <div class="qx-metric-item">
-              <div class="qx-metric-header">
-                <span id="qx_metric_label_3">Versatilidad & Calidad</span>
-                <span class="qx-metric-val" id="qx_metric_val_3">95%</span>
-              </div>
-              <div class="qx-metric-track"><div class="qx-metric-fill" id="qx_metric_bar_3"></div></div>
             </div>
           </div>
         </div>
@@ -2274,8 +2246,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       </div>
 
       <div class="qx-crucible-header-actions">
-        <button type="button" class="qx-crucible-share-btn" id="qx_crucible_btn_share" title="Compartir Comparativa en WhatsApp">
-          <span>💬</span> WhatsApp
+        <button type="button" class="qx-crucible-share-btn" id="qx_crucible_btn_share" title="Compartir los dos artículos de la vista visual en WhatsApp">
+          <span>💬</span> Compartir 2 artículos
         </button>
         <button type="button" class="qx-crucible-close-btn" id="qx_crucible_close" aria-label="Cerrar comparación">&times;</button>
       </div>
@@ -2325,7 +2297,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <div class="qx-stage-info-pill left">
             <div class="qx-stage-name" id="qx_stage_name_a">Producto A</div>
             <div class="qx-stage-price" id="qx_stage_price_a">$ 0.00 MXN</div>
-            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_a">🛒 Elegir Este</button>
+            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_a">Ver detalle</button>
           </div>
         </div>
 
@@ -2337,7 +2309,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <div class="qx-stage-info-pill right">
             <div class="qx-stage-name" id="qx_stage_name_b">Producto B</div>
             <div class="qx-stage-price" id="qx_stage_price_b">$ 0.00 MXN</div>
-            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_b">🛒 Elegir Este</button>
+            <button type="button" class="qx-btn-stage-choose" id="qx_btn_choose_b">Ver detalle</button>
           </div>
         </div>
 

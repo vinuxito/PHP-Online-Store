@@ -21,6 +21,7 @@ if (!$tenant->isStoreActive) {
     exit;
 }
 
+require_once '/lamp/www/cfdadmin/lib/QuantixProductFacts.php';
 $db = get_store_db();
 
 function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
@@ -76,18 +77,8 @@ function format_catalog_product($p, $mediaByProduct, $tenantOverride = null) {
     $auraColor = !empty($p['AuraColor']) ? $p['AuraColor'] : 'cyan';
     $auraParticles = !empty($p['AuraParticulas']) ? $p['AuraParticulas'] : 'breeze';
     $autoIsolate = $isPerfumery ? (($p['AutoIsolate'] ?? 'SI') !== 'NO') : false;
-    $family = $isPerfumery ? ($p['FamiliaOlfativa'] ?? '') : '';
-    $accords = $isPerfumery ? (json_decode($p['AcordesPrincipales'] ?? '[]', true) ?: []) : [];
-
-    $radar = $isPerfumery ? [
-        'proyeccion'     => (int)($p['RadarProyeccion'] ?: 7),
-        'longevidad'     => (float)($p['RadarLongevidad'] ?: 8.0),
-        'elogios'        => (int)($p['RadarElogios'] ?: 85),
-        'versatilidad'   => (int)($p['RadarVersatilidad'] ?: 75),
-        'dulzorFrescura' => (int)($p['RadarDulzorFrescura'] ?? 0),
-        'tempMin'        => (int)($p['RadarTempMin'] ?: 15),
-        'tempMax'        => (int)($p['RadarTempMax'] ?: 30)
-    ] : null;
+    $sensory=QuantixProductFacts::sensory($p,$isPerfumery);
+    $family=$sensory['family'];$accords=$sensory['accords'];$radar=$sensory['radar'];
 
     return [
         'id'           => $p['ProductoID'],

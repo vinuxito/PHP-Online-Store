@@ -14,7 +14,7 @@ $data = json_decode(file_get_contents('php://input'), true);
 if (!is_array($data) || empty($data['items']) || !is_array($data['items']) || count($data['items']) > 100) qxOrderError(400, 'Agrega entre 1 y 100 productos válidos.');
 $tenant = StorefrontTenant::resolve($data);
 if (!$tenant->isStoreActive || !$tenant->emisorId) qxOrderError(403, $tenant->resolutionError ?: 'La tienda no está activa.');
-if (StorefrontControlContract::isRealEstate($tenant->apexConfig, $tenant->description . ' ' . $tenant->headline)) qxOrderError(403, 'Las propiedades se atienden por consulta o visita; no se compran en este carrito.');
+if (!QuantixBusinessProfile::canShop($tenant->apexConfig)) qxOrderError(403, 'Esta tienda atiende por consulta o cita. Contacta al asesor para continuar.');
 $payments = $tenant->paymentSettings;
 if (($data['paymentMethod'] ?? '') !== 'SPEI') qxOrderError(422, 'Este método de pago todavía no está integrado.');
 if (empty($payments['spei_ready'])) qxOrderError(422, 'La tienda aún no tiene instrucciones SPEI válidas.');

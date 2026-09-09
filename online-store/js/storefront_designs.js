@@ -16,7 +16,8 @@
       try {
         var origin = new URL(event.origin);
         var own = new URL(window.location.href);
-        return event.origin === own.origin || (origin.protocol === 'https:' && /(^|\.)evinux\.net$/.test(origin.hostname));
+        var expected=document.referrer?new URL(document.referrer).origin:own.origin;
+        return event.origin===expected && (event.origin===own.origin || event.origin==='https://evinux.net');
       } catch (error) { return false; }
     },
     setInspectorMode: function(enabled, origin) {

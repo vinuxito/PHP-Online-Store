@@ -1443,10 +1443,11 @@
     }
     renderFacts() {
       const self=this,store=this.storefront;
-      const products=this.selected.length>1?this.selected:[this.prodA,this.prodB].filter(Boolean);
+      const products=this.comparisonProducts||[this.prodA,this.prodB].filter(Boolean);
       let box=$('#qx_comparison_facts');
       if(!box.length)box=$('<section id="qx_comparison_facts" aria-label="Comparación de artículos"></section>').insertAfter('#qx_crucible_modal .qx-crucible-header');
       box.empty();
+      $('<p class="qx-facts-help">Compara los datos de la tienda. Desplaza la tabla horizontalmente para ver todos los artículos.</p>').appendTo(box);
       const toggle=$('<label class="qx-facts-differences"><input type="checkbox"> Mostrar solo diferencias</label>').appendTo(box);
       const scroll=$('<div class="qx-facts-scroll" tabindex="0" role="region" aria-label="Tabla comparativa; desplaza horizontalmente para ver todos los artículos"></div>').appendTo(box);
       const table=$('<table><caption>Datos publicados por esta tienda</caption><thead><tr><th scope="col">Detalle</th></tr></thead><tbody></tbody></table>').appendTo(scroll);
@@ -1686,7 +1687,7 @@
     }
 
     selectProduct(slot, product) {
-      if (!product) return;
+      if (!product || String(product.id)===String((slot==='a'?this.prodB:this.prodA)?.id)) return;
 
       if (!this.storefront.products.some(p => p.id == product.id)) {
         this.storefront.products.push(product);
@@ -1710,6 +1711,10 @@
       this.renderSpecDiffTable();
       this.renderFusionState();
 
+      this.comparisonProducts=[this.prodA,this.prodB];
+      const wasVisual=!$('#qx_crucible_modal').hasClass('qx-facts-mode');
+      this.renderFacts();
+      if(wasVisual){$('#qx_crucible_modal').removeClass('qx-facts-mode');$('#qx_comparison_facts').hide();$('#qx_comparison_visual').text('Ver tabla completa');}
       this.playAudioResonance();
 
       const url = new URL(window.location);
@@ -1722,39 +1727,25 @@
       const all = this.storefront.products || [];
       if (!all || all.length === 0) return;
 
-      // Handle direct links or shared compares with products not in initial batch
-      if (prodAId && !all.some(p => p.id == prodAId)) {
-        try {
-          const resp = await $.getJSON(`api/catalog.php?action=get_product&id=${encodeURIComponent(prodAId)}`);
-          if (resp && resp.Product) {
-            all.push(resp.Product);
-          }
-        } catch (e) {}
+      const generation=this.openGeneration=(this.openGeneration||0)+1;
+      const tenantId=String(this.storefront.tenant?.emisorId||'');
+      for(const id of [prodAId,prodBId]) {
+        if(id===null)continue;
+        if(!/^[a-zA-Z0-9_-]{1,80}$/.test(String(id))){this.storefront.showToast('El enlace de comparación no es válido. Elige artículos del catálogo.');return;}
+        if(!all.some(p=>String(p.id)===String(id))){
+          try {
+            const resp=await $.getJSON('api/catalog.php?action=get_product&id='+encodeURIComponent(id)+'&emisor='+encodeURIComponent(tenantId));
+            if(generation!==this.openGeneration||String(this.storefront.tenant?.emisorId||'')!==tenantId)return;
+            if(!resp?.Product||String(resp.Product.id)!==String(id))throw new Error('Unavailable');
+            if(!all.some(p=>String(p.id)===String(id)))all.push(resp.Product);
+          } catch(error) {if(generation===this.openGeneration)this.storefront.showToast('No se pudo cargar ese artículo. Vuelve a elegirlo o reintenta desde el catálogo.');return;}
+        }
       }
-      if (prodBId && !all.some(p => p.id == prodBId)) {
-        try {
-          const resp = await $.getJSON(`api/catalog.php?action=get_product&id=${encodeURIComponent(prodBId)}`);
-          if (resp && resp.Product) {
-            all.push(resp.Product);
-          }
-        } catch (e) {}
-      }
-
-      if (prodAId) {
-        this.prodA = all.find(p => p.id == prodAId) || all[0];
-      } else if (this.selected.length > 0) {
-        this.prodA = this.selected[0];
-      } else {
-        this.prodA = all[0];
-      }
-
-      if (prodBId && prodBId != this.prodA.id) {
-        this.prodB = all.find(p => p.id == prodBId) || all[1] || all[0];
-      } else if (this.selected.length > 1 && this.selected[1].id != this.prodA.id) {
-        this.prodB = this.selected[1];
-      } else {
-        this.prodB = all.find(p => p.id != this.prodA.id) || all[0];
-      }
+      if(generation!==this.openGeneration)return;
+      this.prodA=prodAId!==null?all.find(p=>String(p.id)===String(prodAId)):(this.selected[0]||all[0]);
+      this.prodB=prodBId!==null?all.find(p=>String(p.id)===String(prodBId)):(this.selected.find(p=>String(p.id)!==String(this.prodA.id))||all.find(p=>String(p.id)!==String(this.prodA.id)));
+      if(!this.prodB||String(this.prodA.id)===String(this.prodB.id)){this.storefront.showToast('Elige dos artículos diferentes para comparar.');return;}
+      this.comparisonProducts=prodAId!==null||prodBId!==null?[this.prodA,this.prodB]:this.selected.length>1?this.selected.slice():[this.prodA,this.prodB];
 
       if (this.prodA) {
         const elA = $('#qx_search_prod_a')[0];
@@ -1790,6 +1781,7 @@
     }
 
     closeCrucible() {
+      this.openGeneration=(this.openGeneration||0)+1;
       this.closeDropdown('a');
       this.closeDropdown('b');
       $('#qx_crucible_backdrop').removeClass('active');
@@ -1836,10 +1828,10 @@
       $('#qx_stage_img_b').attr('src', photoB);
 
       self.storefront.flaconEngine.isolateSilhouette(photoA).then(transUrl => {
-        $('#qx_stage_img_a').attr('src', transUrl);
+        if(self.prodA===pA)$('#qx_stage_img_a').attr('src', transUrl);
       });
       self.storefront.flaconEngine.isolateSilhouette(photoB).then(transUrl => {
-        $('#qx_stage_img_b').attr('src', transUrl);
+        if(self.prodB===pB)$('#qx_stage_img_b').attr('src', transUrl);
       });
 
       $('#qx_stage_name_a').text(pA.name);
@@ -1859,207 +1851,31 @@
     }
 
     renderAiVerdict() {
-      const pA = this.prodA;
-      const pB = this.prodB;
-
-      const catA = (pA.category || '').toUpperCase();
-      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
-
-      let verdictText = '';
-      let badges = [];
-
-      if (isPerfume) {
-        verdictText = `Si buscas una firma olfativa de proyección imponente y estela magnética para veladas y eventos formales, elije <strong>${pA.name}</strong>. Si tu preferencia se inclina hacia versatilidad diurna, frescura y elegancia cotidiana, elije <strong>${pB.name}</strong>. Combinados en layering generan un acorde único de más de 14 horas de longevidad.`;
-        badges = [
-          `<span class="qx-verdict-pill">👑 ${pA.name}: Estela & Opulencia</span>`,
-          `<span class="qx-verdict-pill">⚡ ${pB.name}: Versatilidad Diurna</span>`,
-          `<span class="qx-verdict-pill">🔮 Sinergia: 14h Dry-Down Layering</span>`
-        ];
-      } else {
-        verdictText = `<strong>${pA.name}</strong> ofrece rendimiento de grado profesional y máxima robustez para uso intensivo. <strong>${pB.name}</strong> destaca por su balance insuperable de portabilidad, versatilidad y eficiencia de costo.`;
-        badges = [
-          `<span class="qx-verdict-pill">⚡ ${pA.name}: Máxima Potencia</span>`,
-          `<span class="qx-verdict-pill">💎 ${pB.name}: Mejor Inversión</span>`
-        ];
-      }
-
-      $('#qx_crucible_verdict_text').html(verdictText);
-      $('#qx_crucible_verdict_badges').html(badges.join(''));
+      $('#qx_crucible_verdict_text, #qx_crucible_verdict_badges').empty();
+      $('#qx_crucible_verdict_banner').hide();
     }
 
     renderDualRadar() {
-      const pA = this.prodA;
-      const pB = this.prodB;
-      const catA = (pA.category || '').toUpperCase();
-      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
-
-      const getMetrics = (p, defaultBias) => {
-        const name = (p.name || '').toLowerCase();
-        const cat = (p.category || '').toLowerCase();
-        let c = 75, w = 70, sp = 65, sw = 60, m = 50, l = 55;
-        if (name.includes('dive') || name.includes('aqua') || name.includes('blue') || cat.includes('fresco')) {
-          c = 92; m = 96; sp = 60; w = 65; sw = 70; l = 45;
-        } else if (name.includes('oud') || name.includes('black') || name.includes('amber') || name.includes('obsidian')) {
-          w = 95; l = 90; sp = 85; sw = 60; c = 50; m = 35;
-        } else {
-          c = 70 + defaultBias; w = 80 - defaultBias; sp = 75; sw = 70 + defaultBias; m = 60; l = 65;
-        }
-        return [c, w, sp, sw, m, l];
-      };
-
-      const valsA = getMetrics(pA, 10);
-      const valsB = getMetrics(pB, -10);
-
-      const radius = 90;
-      const totalAxes = 6;
-      let gridSvg = '';
-      let polyA = [];
-      let polyB = [];
-
-      const isLightAtmo = $('body').attr('data-atmosphere') === 'minimalist' || $('body').attr('data-atmosphere') === 'light';
-      const gridStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.08)';
-      const lineStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.16)' : 'rgba(255, 255, 255, 0.12)';
-      const textFill = isLightAtmo ? '#475569' : '#94a3b8';
-
-      [0.25, 0.5, 0.75, 1.0].forEach(rPct => {
-        let ringPoints = [];
-        for (let i = 0; i < totalAxes; i++) {
-          const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
-          const x = Math.cos(angle) * radius * rPct;
-          const y = Math.sin(angle) * radius * rPct;
-          ringPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-        }
-        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="${gridStroke}" stroke-width="1"/>`;
-      });
-
-      const labels = isPerfume 
-        ? ['Cítrico', 'Amaderado', 'Especiado', 'Dulce', 'Marino', 'Cuero']
-        : ['Rendimiento', 'Durabilidad', 'Eficiencia', 'Calidad', 'Demanda', 'Garantía'];
-
-      $('#qx_crucible_radar_card .qx-crucible-card-header > span:first-child').text(
-        isPerfume ? '📊 Radar Olfativo Superpuesto' : '📊 Radar de Rendimiento & Especificaciones'
-      );
-
-      for (let i = 0; i < totalAxes; i++) {
-        const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        gridSvg += `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${lineStroke}" stroke-width="1"/>`;
-        
-        const lx = Math.cos(angle) * (radius + 20);
-        const ly = Math.sin(angle) * (radius + 14);
-        gridSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" fill="${textFill}" font-size="9" font-weight="700" text-anchor="middle" dominant-baseline="central">${labels[i]}</text>`;
-
-        const valA = (valsA[i] / 100) * radius;
-        polyA.push(`${(Math.cos(angle) * valA).toFixed(1)},${(Math.sin(angle) * valA).toFixed(1)}`);
-
-        const valB = (valsB[i] / 100) * radius;
-        polyB.push(`${(Math.cos(angle) * valB).toFixed(1)},${(Math.sin(angle) * valB).toFixed(1)}`);
-      }
-
-      const svg = `
-        ${gridSvg}
-        <polygon points="${polyA.join(' ')}" fill="rgba(245, 158, 11, 0.25)" stroke="#f59e0b" stroke-width="2.5" />
-        <polygon points="${polyB.join(' ')}" fill="rgba(56, 189, 248, 0.25)" stroke="#38bdf8" stroke-width="2.5" />
-      `;
-
-      $('#qx_dual_radar_svg').html(svg);
+      // The old name-derived axes were not catalog facts. The table is authoritative.
+      $('#qx_dual_radar_svg').empty();$('#qx_crucible_radar_card').hide();
     }
 
     renderFusionState() {
-      const pA = this.prodA;
-      const pB = this.prodB;
-      const catA = (pA.category || '').toUpperCase();
-      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
-
-      const totalRaw = pA.priceWithTax + pB.priceWithTax;
-      const discount = totalRaw * 0.15;
-      const bundlePrice = totalRaw - discount;
-
-      $('#qx_fusion_title').text(isPerfume ? `Dúo Maestro: ${pA.name} + ${pB.name}` : `Dúo Estratégico: ${pA.name} + ${pB.name}`);
-      $('#qx_fusion_old_price').text(`$ ${this.storefront.formatMoney(totalRaw)}`);
-      $('#qx_fusion_new_price').text(`$ ${this.storefront.formatMoney(bundlePrice)} MXN`);
-
-      const radius = 55;
-      const totalAxes = 6;
-      let gridSvg = '';
-      let polyFusion = [];
-      const isLightAtmo = $('body').attr('data-atmosphere') === 'minimalist' || $('body').attr('data-atmosphere') === 'light';
-      const gridStroke = isLightAtmo ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.1)';
-
-      [0.5, 1.0].forEach(rPct => {
-        let ringPoints = [];
-        for (let i = 0; i < totalAxes; i++) {
-          const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
-          ringPoints.push(`${(Math.cos(angle) * radius * rPct).toFixed(1)},${(Math.sin(angle) * radius * rPct).toFixed(1)}`);
-        }
-        gridSvg += `<polygon points="${ringPoints.join(' ')}" fill="none" stroke="${gridStroke}" stroke-width="1"/>`;
-      });
-
-      for (let i = 0; i < totalAxes; i++) {
-        const angle = (Math.PI * 2 / totalAxes) * i - Math.PI / 2;
-        const hybridVal = Math.min(100, 75 + (i * 4)) / 100 * radius;
-        polyFusion.push(`${(Math.cos(angle) * hybridVal).toFixed(1)},${(Math.sin(angle) * hybridVal).toFixed(1)}`);
-      }
-
-      const svg = `
-        ${gridSvg}
-        <polygon points="${polyFusion.join(' ')}" fill="rgba(192, 132, 252, 0.35)" stroke="#c084fc" stroke-width="2" />
-      `;
-      $('#qx_fusion_radar_svg').html(svg);
+      $('#qx_tab_fusion, #qx_view_fusion').hide();
     }
 
     renderSpecDiffTable() {
-      const pA = this.prodA;
-      const pB = this.prodB;
-      const self = this;
-      const catA = (pA.category || '').toUpperCase();
-      const isPerfume = catA.includes('PERFUM') || this.storefront.tenant?.quantixStorePerfums === 'SI';
-
-      const rows = isPerfume ? [
-        { label: 'Categoría', a: pA.category || 'General', b: pB.category || 'General' },
-        { label: 'Precio Lista (IVA Incluido)', a: `$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`, b: `$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`, winner: pA.priceWithTax < pB.priceWithTax ? 'a' : 'b' },
-        { label: 'Longevidad Estimada', a: '12 - 14 Horas', b: '8 - 10 Horas', winner: 'a' },
-        { label: 'Estela / Proyección', a: 'Intensa (Room-Filler)', b: 'Moderada / Elegante', winner: 'a' },
-        { label: 'Ocasión Ideal', a: 'Gala / Noche / Clima Frío', b: 'Diario / Oficina / Calor', winner: 'both' },
-        { label: 'Garantía Blind-Buy Shield', a: '100% Bonificable', b: '100% Bonificable', winner: 'both' },
-        { label: 'Facturación CFDI 4.0', a: 'Disponible al Instante', b: 'Disponible al Instante', winner: 'both' },
-        { label: 'Código SAT', a: pA.satKey || pA.satCode || 'General', b: pB.satKey || pB.satCode || 'General' }
-      ] : [
-        { label: 'Categoría', a: pA.category || 'General', b: pB.category || 'General' },
-        { label: 'Precio Lista (IVA Incluido)', a: `$ ${self.storefront.formatMoney(pA.priceWithTax)} MXN`, b: `$ ${self.storefront.formatMoney(pB.priceWithTax)} MXN`, winner: pA.priceWithTax < pB.priceWithTax ? 'a' : 'b' },
-        { label: 'Disponibilidad / Entrega', a: 'En Stock / Envío Inmediato', b: 'En Stock / Envío Inmediato', winner: 'both' },
-        { label: 'Calidad & Robustez', a: 'Grado Profesional / Certificado', b: 'Grado Profesional / Certificado', winner: 'both' },
-        { label: 'Garantía de Satisfacción', a: 'Garantía Oficial Directa', b: 'Garantía Oficial Directa', winner: 'both' },
-        { label: 'Facturación Fiscal SAT', a: 'CFDI 4.0 Válido al Instante', b: 'CFDI 4.0 Válido al Instante', winner: 'both' },
-        { label: 'Código SAT / Clave', a: pA.satKey || pA.satCode || pA.code || 'General', b: pB.satKey || pB.satCode || pB.code || 'General' }
-      ];
-
-      let html = `
-        <thead>
-          <tr>
-            <th>Atributo</th>
-            <th>${self.storefront.esc(pA.name)}</th>
-            <th>${self.storefront.esc(pB.name)}</th>
-          </tr>
-        </thead>
-        <tbody>
-      `;
-
-      rows.forEach(r => {
-        const winA = r.winner === 'a' || r.winner === 'both';
-        const winB = r.winner === 'b' || r.winner === 'both';
-        html += `
-          <tr>
-            <td style="color:var(--qx-text-muted); font-weight:700;">${r.label}</td>
-            <td class="${winA ? 'winner-cell' : ''}">${r.a} ${r.winner === 'a' ? '★' : ''}</td>
-            <td class="${winB ? 'winner-cell' : ''}">${r.b} ${r.winner === 'b' ? '★' : ''}</td>
-          </tr>
-        `;
+      const a=this.prodA,b=this.prodB,store=this.storefront;
+      const table=$('#qx_diff_table').empty();
+      const head=$('<tr></tr>').append($('<th scope="col">Detalle</th>'));
+      [a,b].forEach(p=>head.append($('<th scope="col"></th>').text(p.name)));
+      table.append($('<thead></thead>').append(head));
+      const body=$('<tbody></tbody>').appendTo(table);
+      [['Precio',p=>Number(p.priceWithTax)>0?'$ '+store.formatMoney(p.priceWithTax)+' MXN':'Consultar precio'],['Categoría',p=>p.category],['Referencia',p=>p.sku||p.code],['Familia olfativa',p=>p.family]].forEach(([label,get])=>{
+        if(label==='Familia olfativa'&&store.tenant.industry!=='perfumery')return;
+        const row=$('<tr></tr>').append($('<th scope="row"></th>').text(label));
+        [a,b].forEach(p=>row.append($('<td></td>').text(get(p)||'No especificado')));body.append(row);
       });
-
-      html += '</tbody>';
-      $('#qx_diff_table').html(html);
     }
 
     shareWhatsApp() {
@@ -2070,7 +1886,7 @@
 1️⃣ *${pA.name}* ($${this.storefront.formatMoney(pA.priceWithTax)} MXN)
 2️⃣ *${pB.name}* ($${this.storefront.formatMoney(pB.priceWithTax)} MXN)
 
-Explora la comparativa interactiva y el veredicto en vivo aquí:
+Consulta las fotos y los datos publicados por la tienda aquí:
 ${shareUrl}`;
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     }
@@ -2098,12 +1914,12 @@ ${shareUrl}`;
       self.initAutocomplete();
 
       $('#qx_btn_choose_a').on('click', () => {
-        self.storefront.addToCart(self.prodA, 1);
         self.closeCrucible();
+        self.storefront.openProductModal(self.prodA);
       });
       $('#qx_btn_choose_b').on('click', () => {
-        self.storefront.addToCart(self.prodB, 1);
         self.closeCrucible();
+        self.storefront.openProductModal(self.prodB);
       });
 
       $('#qx_btn_fusion_add_pack').on('click', () => {
@@ -3745,9 +3561,9 @@ ${shareUrl}`;
         const decPrice = Number(product.decantPrice) || 0;
         $('#qx_format_price_decant').text(`$ ${self.formatMoney(decPrice)}`);
 
-        if (isPerfums && product.hasDecant === true && Number(product.decantPrice)>0 && self.tenant?.featureMatrix?.decant_passport?.enabled !== false) {
+        if (isPerfums && product.hasDecant === true && Number(product.decantPrice)>0 && window.QuantixDesignContract.enabled(self.tenant?.featureMatrix?.decant_passport?.enabled)) {
           $('#qx_format_selector').show();
-          $('#qx_shield_guarantee_card').show();
+          $('#qx_shield_guarantee_card').hide();
         } else {
           $('#qx_format_selector').hide();
           $('#qx_shield_guarantee_card').hide();
@@ -3764,17 +3580,14 @@ ${shareUrl}`;
         $('#qx_refill_freq_row').hide();
         $('.qx-freq-pill').removeClass('active').eq(0).addClass('active');
 
-        if (isPerfums && self.tenant?.featureMatrix?.loyalty_refill_vault?.enabled !== false) {
-          $('#qx_refill_subscription_card').show();
-        } else {
-          $('#qx_refill_subscription_card').hide();
-        }
+        // Current order contract rejects subscription pricing; do not promise a discount.
+        $('#qx_refill_subscription_card').hide();
 
         $('#qx_pmodal_btn_add span').text('🛍️ Agregar al Carrito');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
 
         // Layering Button
-        if (isPerfums && self.tenant?.featureMatrix?.layering_crucible?.enabled !== false) {
+        if (isPerfums && window.QuantixDesignContract.enabled(self.tenant?.featureMatrix?.layering_crucible?.enabled)) {
           $('#qx_pmodal_btn_layering').show();
         } else {
           $('#qx_pmodal_btn_layering').hide();
@@ -3786,7 +3599,7 @@ ${shareUrl}`;
         this.renderAdaptiveSpecs(product);
 
         // Render Scent Trail Radar & Live Weather (Feature 3)
-        if (isPerfums && self.tenant?.featureMatrix?.scent_radar?.enabled !== false) {
+        if (isPerfums && window.QuantixDesignContract.enabled(self.tenant?.featureMatrix?.scent_radar?.enabled) && product.radar) {
           $('#qx_pmodal_radar_section').show();
           this.renderProductRadarSection(product);
         } else {
@@ -3863,7 +3676,7 @@ ${shareUrl}`;
         $('#qx_pmodal_price, #qx_pmodal_bar_price').text(`$ ${this.formatMoney(product.priceWithTax)}`);
         $('#qx_pmodal_btn_add span').text(this.loyalty?.selectedPurchaseMode === 'subscription' ? `🔄 Suscribirse (Cada ${this.loyalty?.selectedFrequencyMonths || 3} Meses - 12% OFF)` : '🛍️ Agregar al Carrito');
         $('#qx_pmodal_btn_buy span').text('⚡ Comprar Ahora');
-        $('#qx_refill_subscription_card').slideDown(200);
+        $('#qx_refill_subscription_card').hide();
         if (navigator.vibrate) navigator.vibrate([15]);
       }
     }
@@ -4479,32 +4292,8 @@ ${shareUrl}`;
         }
       }
 
-      // Contextual Metric Labels
-      if (isPerfums) {
-        $('#qx_metric_label_1').text('Intensidad / Potencia');
-        $('#qx_metric_label_2').text('Duración / Longevidad');
-        $('#qx_metric_label_3').text('Versatilidad & Calidad');
-      } else {
-        $('#qx_metric_label_1').text('Disponibilidad Inmediata');
-        $('#qx_metric_label_2').text('Garantía & Autenticidad');
-        $('#qx_metric_label_3').text('Satisfacción de Clientes');
-      }
-
-      // Metric Bars Animation
-      const hash = String(product.id || product.name).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      const intensity = 80 + (hash % 19); // 80% - 98%
-      const longevity = 85 + ((hash * 3) % 14); // 85% - 98%
-      const quality = 90 + ((hash * 7) % 9); // 90% - 98%
-
-      $('#qx_metric_val_1').text(`${intensity}%`);
-      $('#qx_metric_val_2').text(`${longevity}%`);
-      $('#qx_metric_val_3').text(`${quality}%`);
-
-      setTimeout(() => {
-        $('#qx_metric_bar_1').css('width', `${intensity}%`);
-        $('#qx_metric_bar_2').css('width', `${longevity}%`);
-        $('#qx_metric_bar_3').css('width', `${quality}%`);
-      }, 50);
+      // ID hashes are not measurements. Preserve descriptive specs, omit fabricated bars.
+      $('#qx_pmodal_metrics_box').hide();
     }
 
     renderRealEstateDossier(product) {
@@ -4705,23 +4494,14 @@ ${shareUrl}`;
     // FEATURE 3: RADAR OLFATIVO & LIVE WEATHER PROFILER METHODS
     // =========================================================================
     renderProductRadarSection(product) {
-      if (!product) return;
-      const radar = product.radar || {
-        proyeccion: 8,
-        longevidad: 8.5,
-        elogios: 94,
-        versatilidad: 90,
-        dulzorFrescura: -70,
-        tempMin: 18,
-        tempMax: 38
-      };
-
+      if (!product || !product.radar) {$('#qx_pmodal_radar_section').hide();return;}
+      const radar=product.radar;
       // 1. Generate & Insert SVG markup
       const svgMarkup = this.radarEngine.generateSvgMarkup(radar, null, product.auraColor || 'cyan');
       $('#qx_pmodal_radar_svg').html(svgMarkup);
 
       // 2. Populate 6 Tactical Metric Chips
-      $('#qx_chip_proyeccion').text(`${radar.proyeccion || 7}/10`);
+      $('#qx_chip_proyeccion').text(`${radar.proyeccion ?? 7}/10`);
       
       const df = (radar.dulzorFrescura !== undefined) ? radar.dulzorFrescura : 0;
       let dfText = 'Balanceado';
@@ -4731,13 +4511,14 @@ ${shareUrl}`;
       else if (df > 0) dfText = 'Cálido';
       $('#qx_chip_espectro').text(dfText);
 
-      $('#qx_chip_elogios').text(`${radar.elogios || 85}%`);
-      $('#qx_chip_longevidad').text(`${radar.longevidad || 8.0}h`);
-      $('#qx_chip_versatilidad').text(`${radar.versatilidad || 75}%`);
-      $('#qx_chip_temperatura').text(`${radar.tempMin || 15}-${radar.tempMax || 30}°C`);
+      $('#qx_chip_elogios').text(`${radar.elogios ?? 85}%`);
+      $('#qx_chip_longevidad').text(`${radar.longevidad ?? 8.0}h`);
+      $('#qx_chip_versatilidad').text(`${radar.versatilidad ?? 75}%`);
+      $('#qx_chip_temperatura').text(`${radar.tempMin ?? 15}-${radar.tempMax ?? 30}°C`);
 
       // 3. Update Weather Match Card
-      this.updateWeatherMatchDisplay(product);
+      // Weather defaults cannot substantiate a personal climate efficacy percentage.
+      $('#qx_pmodal_radar_section .qx-weather-match-card').hide();
 
       // 4. Attach Node Hover Tooltips
       const tooltip = $('#qx_radar_tooltip');
