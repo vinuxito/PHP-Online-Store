@@ -6,6 +6,72 @@
   'use strict';
 
   // =========================================================================
+  // QUANTIX TOAST ARCHITECTURE (Step 2: Unified Error Handling & Toasts)
+  // =========================================================================
+  class QuantixToastEngine {
+    constructor() {
+      this.container = null;
+    }
+    ensureContainer() {
+      if (!this.container || !document.body.contains(this.container)) {
+        let el = document.getElementById("qx_toast_container");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "qx_toast_container";
+          document.body.appendChild(el);
+        }
+        this.container = el;
+      }
+      return this.container;
+    }
+    show(message, type = "info", duration = 4000) {
+      if (!document.body) return null;
+      const container = this.ensureContainer();
+      const toast = document.createElement("div");
+      const safeType = ["success", "warning", "error", "info"].includes(type) ? type : "info";
+      toast.className = `qx-toast-item qx-toast-${safeType}`;
+      toast.setAttribute("role", "alert");
+      
+      const icons = {
+        success: "✓",
+        warning: "⚠",
+        error: "✕",
+        info: "ℹ"
+      };
+      const icon = icons[safeType] || "✦";
+      
+      toast.innerHTML = `
+        <span class="qx-toast-icon">${icon}</span>
+        <span class="qx-toast-msg"></span>
+        <button type="button" class="qx-toast-close" aria-label="Cerrar notificación">✕</button>
+      `;
+      toast.querySelector(".qx-toast-msg").textContent = String(message || "");
+      
+      const dismiss = () => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(12px) scale(0.96)";
+        setTimeout(() => toast.remove(), 260);
+      };
+      
+      const closeBtn = toast.querySelector(".qx-toast-close");
+      if (closeBtn) closeBtn.addEventListener("click", dismiss);
+      
+      container.appendChild(toast);
+      
+      if (duration > 0) {
+        setTimeout(dismiss, duration);
+      }
+      return toast;
+    }
+    success(msg, duration = 4000) { return this.show(msg, "success", duration); }
+    warning(msg, duration = 4000) { return this.show(msg, "warning", duration); }
+    error(msg, duration = 4500) { return this.show(msg, "error", duration); }
+    info(msg, duration = 4000) { return this.show(msg, "info", duration); }
+  }
+
+  window.QuantixToast = new QuantixToastEngine();
+
+  // =========================================================================
   // REAL-TIME FLOATING FLACON & ALPHA MATTING ENGINE (60 FPS / <6ms)
   // =========================================================================
   class FloatingFlaconEngine {
@@ -2146,20 +2212,24 @@ ${shareUrl}`;
     
     // [Iter 3] Unified Error Handling & Toast Architecture
     setupGlobalErrorHandling() {
-      window.addEventListener('unhandledrejection', (event) => {
-        console.warn('Quantix Guard caught promise rejection:', event.reason);
-        this.showToast('Error de red o conexión inestable. Por favor, intente de nuevo.', 'error');
+      const self = this;
+      window.addEventListener("unhandledrejection", (event) => {
+        console.warn("Quantix Guard caught promise rejection:", event.reason);
+        if (window.QuantixToast) {
+          window.QuantixToast.error("La conexión se interrumpió o hubo un problema al procesar la solicitud.");
+        } else {
+          self.showToast("La conexión se interrumpió o hubo un problema al procesar la solicitud.", "error");
+        }
       });
-      
-      // Upgrade showToast to handle types
-      const originalShowToast = this.showToast.bind(this);
-      this.showToast = (message, type = 'success') => {
-        // We will prepend an icon based on type if not already there
-        let prefix = '';
-        if (type === 'error' && !message.includes('❌')) prefix = '❌ ';
-        if (type === 'warning' && !message.includes('⚠')) prefix = '⚠ ';
-        originalShowToast(prefix + message);
-      };
+      if (window.jQuery) {
+        $(document).ajaxError((event, jqXHR, ajaxSettings) => {
+          if (jqXHR.status === 0 || jqXHR.readyState === 0) {
+            window.QuantixToast ? window.QuantixToast.error("No hay conexión a internet. Verifique su red.") : self.showToast("No hay conexión a internet.", "error");
+          } else if (jqXHR.status >= 500) {
+            window.QuantixToast ? window.QuantixToast.error("El servidor experimenta una sobrecarga temporal. Por favor, reintente.") : self.showToast("Sobrecarga temporal del servidor.", "error");
+          }
+        });
+      }
     }
 
     bindGlobalEvents() {
@@ -2621,7 +2691,17 @@ ${shareUrl}`;
       const urlParams = new URLSearchParams(window.location.search);
       const apiUrl = 'api/catalog.php?' + urlParams.toString();
 
-      if (!this.products || !this.products.length) $('#qx_product_grid').html('<div style="grid-column:1/-1; text-align:center; padding:60px 0; color:var(--qx-text-muted)">Cargando catálogo exclusivo...</div>');
+      if (!this.products || !this.products.length) {
+        const skeletons = Array(8).fill(`
+          <div class="qx-card qx-skeleton-card" aria-hidden="true">
+            <div class="qx-skeleton-media"></div>
+            <div class="qx-skeleton-line" style="width: 75%; height: 18px; margin: 4px auto 0;"></div>
+            <div class="qx-skeleton-line" style="width: 45%; height: 14px; margin: 0 auto;"></div>
+            <div class="qx-skeleton-line" style="width: 35%; height: 20px; margin: 8px auto 0;"></div>
+          </div>
+        `).join("");
+        $('#qx_product_grid').html(skeletons);
+      }
 
       $.getJSON(apiUrl)
         .done(function(resp) {
@@ -2857,7 +2937,22 @@ ${shareUrl}`;
             </div>
           `);
         } else {
-          grid.html('<div style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--qx-text-muted)">No se encontraron productos coincidentes con los filtros seleccionados.</div>');
+          grid.html(`
+            <div class="qx-catalog-empty qx-filter-empty" style="grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--qx-text-muted);">
+              <div style="font-size:40px; margin-bottom:12px;">🔍</div>
+              <h3 style="color:#ffffff; font-size:18px; font-weight:700; margin-bottom:8px;">No se encontraron artículos</h3>
+              <p style="font-size:13px; max-width:440px; margin:0 auto 20px; line-height:1.5;">No hay piezas que coincidan con los filtros o término de búsqueda seleccionado.</p>
+              <button type="button" class="qx-btn-clear-filters" id="qx_btn_clear_filters" style="display:inline-flex; align-items:center; gap:8px; padding:9px 20px; border-radius:999px; background:rgba(255,255,255,0.08); border:1px solid var(--qx-border); color:#fff; font-size:12.5px; font-weight:700; cursor:pointer;">
+                <span>✕ Restablecer Filtros</span>
+              </button>
+            </div>
+          `);
+          $('#qx_btn_clear_filters').on('click', () => {
+            self.activeCategory = null;
+            $('.qx-filter-pill').removeClass('active');
+            $('.qx-filter-pill[data-category="all"]').addClass('active');
+            self.applyFilters();
+          });
         }
         $('#qx_infinite_sentinel').remove();
         return;
@@ -3826,7 +3921,7 @@ ${shareUrl}`;
         <div style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:39999; display:flex; align-items:center; justify-content:center; padding:20px;">
           <div style="background:var(--qx-surface); border:1px solid var(--qx-border); border-radius:var(--qx-radius-lg); max-width:500px; width:100%; padding:32px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.7);">
             <div style="font-size:48px; margin-bottom:12px">🎉</div>
-            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">Solicitud registrada</h2>
+            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">¡Pedido Confirmado! (Solicitud registrada)</h2>
             <p style="font-size:14px; color:var(--qx-text-muted); margin-bottom:20px">Folio de Orden: <strong style="color:var(--qx-accent)">#${this.esc(orderResp.OrderFolio || '')}</strong></p>
             <div style="background:rgba(255,255,255,0.04); border:1px solid var(--qx-border); border-radius:var(--qx-radius-md); padding:16px; text-align:left; font-size:13px; margin-bottom:24px;">
               <div><strong>Cliente:</strong> ${this.esc(orderResp.CustomerName || '')}</div>
@@ -3991,8 +4086,13 @@ ${shareUrl}`;
         e.stopPropagation();
         const prodId = $(this).data('id');
         const product = self.products.find(p => String(p.id) === String(prodId));
-        // Details let the customer choose a format before anything enters the cart.
-        if (product) self.openProductModal(product);
+        if (product) {
+          if (self.isRealEstateBusiness()) {
+            self.openProductModal(product);
+          } else {
+            self.addToCart(product, 1);
+          }
+        }
       });
 
       // Touch / Mouse Swipe
@@ -4088,10 +4188,34 @@ ${shareUrl}`;
       }
     }
 
-    showToast(msg) {
+    showToast(msg, explicitType = null, duration = 4000) {
+      let type = explicitType;
+      if (!type) {
+        const text = String(msg || "");
+        if (text.includes("❌") || text.toLowerCase().includes("error") || text.toLowerCase().includes("falló") || text.toLowerCase().includes("inválido")) {
+          type = "error";
+        } else if (text.includes("⚠️") || text.toLowerCase().includes("advertencia")) {
+          type = "warning";
+        } else if (text.includes("✓") || text.includes("✔") || text.includes("🎉") || text.toLowerCase().includes("agregado") || text.toLowerCase().includes("aplicado") || text.toLowerCase().includes("éxito")) {
+          type = "success";
+        } else {
+          type = "info";
+        }
+      }
+      if (window.QuantixToast) {
+        window.QuantixToast.show(msg, type, duration);
+      }
       const toast = $('#qx_toast');
-      toast.text(msg).addClass('active');
-      setTimeout(() => toast.removeClass('active'), 2600);
+      if (toast.length) {
+        toast.text(msg).addClass('active');
+        setTimeout(() => toast.removeClass('active'), duration || 2600);
+      }
+    }
+
+    formatClabe(clabe) {
+      if (!clabe) return "";
+      const clean = String(clabe).replace(/[^0-9]/g, "");
+      return clean.replace(/(\d{4})(?=\d)/g, "$1 ");
     }
 
     formatMoney(amount) {
@@ -4187,6 +4311,21 @@ ${shareUrl}`;
       }
     }
 
+        highlightMatch(text, query) {
+      if (!query || !text) return this.esc(text || "");
+      const cleanQ = String(query).trim();
+      if (!cleanQ) return this.esc(text || "");
+      const escapedQuery = cleanQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`(${escapedQuery})`, "gi");
+      const parts = String(text).split(regex);
+      return parts.map(part => {
+        if (part.toLowerCase() === cleanQ.toLowerCase()) {
+          return `<mark class="qx-search-highlight">${this.esc(part)}</mark>`;
+        }
+        return this.esc(part);
+      }).join("");
+    }
+
     renderSpotlightResults(query) {
       const self = this;
       const container = $('#qx_spotlight_results').empty();
@@ -4229,7 +4368,7 @@ ${shareUrl}`;
           <div class="qx-spotlight-item ${idx === self.spotlightActiveIdx ? 'active' : ''}" data-idx="${idx}">
             <img class="qx-spotlight-thumb" src="${self.esc(p.cover)}" alt="">
             <div class="qx-spotlight-info">
-              <div class="qx-spotlight-name">${self.esc(p.name)}</div>
+              <div class="qx-spotlight-name">${self.highlightMatch(p.name, q)}</div>
               <div class="qx-spotlight-meta">
                 <span>${self.esc(p.category || 'General')}</span>
                 ${p.sku ? `<span>· SKU: ${self.esc(p.sku)}</span>` : ''}
@@ -5051,11 +5190,19 @@ ${shareUrl}`;
         }
       });
 
+      // Auto-format SPEI CLABE in blocks of 4 digits for readability (Step 4)
+      const rawClabe = $('#qx_spei_clabe_val').val();
+      if (rawClabe) {
+        $('#qx_spei_clabe_val').val(self.formatClabe(rawClabe));
+      }
+
       // Copy CLABE button
       $('#qx_btn_copy_clabe').on('click', function() {
-        const clabe = $('#qx_spei_clabe_val').val();
+        const clabe = $('#qx_spei_clabe_val').val() || '';
+        const cleanClabe = clabe.replace(/[^0-9]/g, '');
+        const textToCopy = cleanClabe || clabe;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(clabe).catch(() => {
+          navigator.clipboard.writeText(textToCopy).catch(() => {
             const input = document.getElementById('qx_spei_clabe_val');
             if (input) {
               input.select();

@@ -45,6 +45,17 @@
   --qx-sys-focus-ring: 0 0 0 2px rgba(197, 168, 128, 0.4);
   --qx-sys-radius: var(--qx-radius-md);
   --qx-sys-transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Spatial Standards & Typography Variables (Step 5) */
+  --qx-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --qx-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --qx-text-main: var(--qx-text);
+  --qx-spacing-xs: 4px;
+  --qx-spacing-sm: 8px;
+  --qx-spacing-md: 16px;
+  --qx-spacing-lg: 24px;
+  --qx-spacing-xl: 32px;
+  --qx-control-height: 44px;
+  --qx-control-height-sm: 36px;
 }
 
 /* Universal Keyboard Focus Ring (WCAG AAA) */
@@ -14669,4 +14680,124 @@ body[data-industry="real_estate"] .qx-re-section-content {
 
 .qx-re-broker-wa-btn:hover {
   opacity: 0.9;
+}
+
+/* ==========================================================================
+   Quantix Coherence Architecture: Toasts, Skeletons & Highlight Styles
+   ========================================================================== */
+
+/* 1. Universal Toast Notification Architecture (Step 2) */
+#qx_toast_container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+.qx-toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 440px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  font-family: var(--qx-font-sans);
+  font-size: 13.5px;
+  line-height: 1.4;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  animation: qxToastSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.qx-toast-item.qx-toast-success {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15);
+}
+.qx-toast-item.qx-toast-warning {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.15);
+}
+.qx-toast-item.qx-toast-error {
+  border-color: rgba(244, 63, 94, 0.5);
+  box-shadow: 0 12px 32px rgba(244, 63, 94, 0.15);
+}
+.qx-toast-item.qx-toast-info {
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.15);
+}
+.qx-toast-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.qx-toast-msg {
+  flex: 1;
+}
+.qx-toast-close {
+  background: none;
+  border: none;
+  color: var(--qx-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.qx-toast-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+@keyframes qxToastSlideIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 2. Universal Animated Loading Skeletons (Step 1) */
+@keyframes qxSkeletonPulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 0.28; }
+  100% { opacity: 0.7; }
+}
+.qx-skeleton-card {
+  animation: qxSkeletonPulse 1.6s ease-in-out infinite;
+  background: var(--qx-card);
+  border: 1px solid var(--qx-border);
+  border-radius: var(--qx-radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qx-skeleton-media {
+  height: 240px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--qx-radius-md);
+}
+.qx-skeleton-line {
+  height: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--qx-radius-sm);
+}
+
+/* 3. Search Substring Highlighting (Step 3) */
+mark.qx-search-highlight {
+  background: rgba(212, 175, 55, 0.35);
+  color: #fff;
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+/* 4. Root Non-Scroll Clipping & Parity (Step 6) */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw;
 }

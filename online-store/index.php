@@ -617,6 +617,13 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <button type="submit" class="qx-btn-place-order" id="qx_btn_place_order" <?php echo empty($tenant->paymentSettings['spei_ready']) ? 'disabled' : ''; ?>>
         <span>Enviar solicitud de pedido</span>
       </button>
+
+      <!-- Trust Signals (Step 4: Cart & Checkout Friction Removal) -->
+      <div class="qx-checkout-trust-badges" style="margin-top: 14px; text-align: center; font-size: 11.5px; color: var(--qx-text-muted); display: flex; justify-content: center; align-items: center; gap: 14px;">
+        <span>🔒 Conexión Cifrada SSL/TLS</span>
+        <span>🛡️ Operación Segura</span>
+        <span>🏦 SPEI Autorizado</span>
+      </div>
     </form>
   </aside>
 
@@ -1700,6 +1707,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
     <button type="button" class="qx-dock-item active" id="qx_dock_home" aria-label="Inicio">
       <span class="qx-dock-icon">🏠</span>
       <span class="qx-dock-label">Inicio</span>
+    </button>
+    <button type="button" class="qx-dock-item" id="qx_dock_search" aria-label="Buscar (⌘K)">
+      <span class="qx-dock-icon">🔍</span>
+      <span class="qx-dock-label">Buscar</span>
     </button>
     <button type="button" class="qx-dock-item" id="qx_dock_agenda" aria-label="Agenda VIP" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
       <span class="qx-dock-icon">🗓️</span>
