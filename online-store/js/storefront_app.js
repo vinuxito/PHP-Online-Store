@@ -3178,6 +3178,7 @@ ${shareUrl}`;
       }
 
       this.saveCart();
+      if(window.QuantixIntentPulse) window.QuantixIntentPulse.cart(this.tenant.emisorId,product.id);
       this.showToast(`✔ ${itemName} agregado a la bolsa`);
       if (originEl && originEl.length) {
         this.animateFlyToCart(originEl, product.cover);
@@ -3465,6 +3466,7 @@ ${shareUrl}`;
 
     openProductModal(product) {
       if (!product) return;
+      if(window.QuantixIntentPulse) window.QuantixIntentPulse.view(this.tenant.emisorId,product.id);
       this.activeProductModal = product;
       this.currentModalProduct = product;
       this.pmodalQty = 1;

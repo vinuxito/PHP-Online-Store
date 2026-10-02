@@ -2421,6 +2421,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     ?>;
   </script>
+  <script src="/cfdadmin/js2/quantix_intent_pulse.js?v=<?php echo filemtime(__DIR__ . '/../../cfdadmin/js2/quantix_intent_pulse.js'); ?>"></script>
   <script src="js/filemon_cockpit.js?v=<?php echo filemtime(__DIR__ . '/js/filemon_cockpit.js'); ?>"></script>
 </body>
 </html>
