@@ -1228,7 +1228,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <div class="qx-story-progress-bar" id="qx_story_progress"></div>
       <div class="qx-story-header">
         <div class="qx-story-author">
-          <img id="qx_story_avatar" src="<?php echo htmlspecialchars($tenant->logo ?: 'images/logo.png'); ?>" alt="Brand">
+          <img id="qx_story_avatar" src="<?php echo htmlspecialchars($tenant->logo ?: '/cfdadmin/qrs/dummy.png'); ?>" alt="Brand">
           <span id="qx_story_title">Boutique Reel</span>
         </div>
         <button type="button" class="qx-story-close" id="qx_story_close">&times;</button>
