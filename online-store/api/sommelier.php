@@ -13,6 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
 error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE & ~E_DEPRECATED);
 
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
+require_once dirname(__DIR__) . '/includes/recommendation_contract.php';
 if (file_exists('/lamp/www/cfdadmin/lib/media_cdn.php')) {
     require_once '/lamp/www/cfdadmin/lib/media_cdn.php';
 }
@@ -21,7 +22,9 @@ $tenant = StorefrontTenant::resolve();
 
 $db = get_store_db();
 
+if (!is_string($_GET['q'] ?? $_POST['q'] ?? '')) { http_response_code(400); echo json_encode(['status'=>'error','message'=>'Describe tu búsqueda con texto.']); exit; }
 $rawQuery = trim((string)($_GET['q'] ?? $_POST['q'] ?? ''));
+if (strlen($rawQuery)>1200) { http_response_code(400); echo json_encode(['status'=>'error','message'=>'La búsqueda es demasiado larga.']); exit; }
 $limit = max(1, min(20, intval($_GET['limit'] ?? $_POST['limit'] ?? 6)));
 
 function normalizeText(string $str): string {
@@ -125,7 +128,7 @@ try {
                pa.RutaRelativa as CoverRuta
         FROM productos p
         LEFT JOIN productos_sensorial s ON (s.ProductoID = p.ProductoID AND s.EmisorID = p.EmisorID)
-        LEFT JOIN productos_archivos pa ON (pa.ProductoID = p.ProductoID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1)
+        LEFT JOIN productos_archivos pa ON (pa.ProductoID = p.ProductoID AND pa.EmisorID = p.EmisorID AND pa.EsPrincipal = 'SI' AND pa.Activo = 1)
         WHERE p.EmisorID = ?
           AND (p.EnTiendaOnline = 'SI' OR p.EnTiendaOnline IS NULL)
           AND (p.TiendaInicio IS NULL OR p.TiendaInicio <= NOW())
@@ -141,100 +144,25 @@ try {
     $scored = [];
 
     foreach ($rows as $r) {
-        $score = 65.0; // Baseline
-        $pDescNorm = normalizeText((string)$r['descripcion']);
-        $acordes = json_decode($r['AcordesPrincipales'] ?? '[]', true) ?: [];
-        $acordesNorm = array_map('normalizeText', $acordes);
-
-        // 1. Text direct match bonus
-        if (!empty($rawQuery)) {
-            $tokens = array_filter(explode(' ', $qNorm), fn($t) => strlen($t) > 2);
-            foreach ($tokens as $tok) {
-                if (strpos($pDescNorm, $tok) !== false) $score += 8.0;
-                foreach ($acordesNorm as $acc) {
-                    if (strpos($acc, $tok) !== false) $score += 10.0;
-                }
-            }
+        $projection = QuantixRecommendationContract::project($r, $rawQuery, $tenant->isPerfumery() ? $detected : []);
+        if (!$tenant->isPerfumery()) {
+            $projection['family']=''; $projection['accords']=[];
+            $projection['notes']=['top'=>[],'heart'=>[],'base'=>[]];
+            $projection['sillage']=null; $projection['longevity']=null;
         }
-
-        // 2. Occasion matching
-        if (in_array('playa', $detected['occasions'])) $score += ($r['OcasionPlaya'] ?? 5) * 2.8;
-        if (in_array('cita', $detected['occasions'])) $score += ($r['OcasionCita'] ?? 5) * 2.8;
-        if (in_array('formal', $detected['occasions'])) $score += ($r['OcasionFormal'] ?? 5) * 2.8;
-        if (in_array('fiesta', $detected['occasions'])) $score += ($r['OcasionFiesta'] ?? 5) * 2.8;
-        if (in_array('diario', $detected['occasions'])) $score += ($r['OcasionDiario'] ?? 5) * 2.8;
-
-        // 3. Season matching
-        if (in_array('verano', $detected['seasons'])) $score += ($r['TemporadaVerano'] ?? 5) * 2.2;
-        if (in_array('invierno', $detected['seasons'])) $score += ($r['TemporadaInvierno'] ?? 5) * 2.2;
-
-        // 4. Accord matching
-        if (in_array('citrico', $detected['accords']) && (in_array('citrico', $acordesNorm) || strpos($pDescNorm, 'citric') !== false)) $score += 16.0;
-        if (in_array('acuatico', $detected['accords']) && (in_array('acuatico marino', $acordesNorm) || strpos($pDescNorm, 'dive') !== false || strpos($pDescNorm, 'hawas') !== false)) $score += 20.0;
-        if (in_array('dulce', $detected['accords']) && (in_array('vainilla gourmand', $acordesNorm) || strpos($pDescNorm, 'vainilla') !== false || strpos($pDescNorm, 'khamrah') !== false)) $score += 20.0;
-        if (in_array('amaderado', $detected['accords']) && (in_array('amaderado', $acordesNorm) || strpos($pDescNorm, 'cedro') !== false || strpos($pDescNorm, 'iconic') !== false)) $score += 15.0;
-        if (in_array('especiado', $detected['accords']) && (in_array('calido especiado', $acordesNorm) || strpos($pDescNorm, 'elixir') !== false)) $score += 16.0;
-        if (in_array('cuero', $detected['accords']) && (in_array('cuero & humo', $acordesNorm) || strpos($pDescNorm, 'supremacy') !== false)) $score += 18.0;
-
-        // 5. Intensity / Longevity
-        if ($detected['intensity'] === 'bestia' && (($r['Estela'] ?? 2) >= 3 || ($r['LongevidadHoras'] ?? 8.0) >= 9.0)) {
-            $score += 12.0;
-        }
-
-        // 6. Gender match
-        if ($detected['gender'] && (($r['GeneroTarget'] ?? 'UNISEX') === $detected['gender'] || ($r['GeneroTarget'] ?? 'UNISEX') === 'UNISEX')) {
-            $score += 8.0;
-        }
-
-        // Calculate final psychological affinity (clamped 78% to 99%)
-        $affinity = min(99, max(78, intval(round($score / 1.5))));
-
-        $price = floatval($r['valorUnitario'] ?? 0);
-        $vat = floatval($r['IVAtasa'] ?? 16);
-        $finalPrice = $price * (1 + $vat / 100);
-
-        $topAccordsStr = !empty($acordes) ? implode(', ', array_slice($acordes, 0, 2)) : 'acordes selectos';
-        $customNote = !empty($r['NotaSommelier']) ? $r['NotaSommelier'] : "Creación de perfil exclusivo con notas de $topAccordsStr, ideal para proyectar distinción absoluta.";
-
-        if (in_array('playa', $detected['occasions']) || in_array('verano', $detected['seasons'])) {
-            $customNote = "Recomendado por su estela fresca y chispeante de $topAccordsStr que proyecta vitalidad impecable bajo el calor y clima soleado.";
-        } elseif (in_array('cita', $detected['occasions']) || in_array('dulce', $detected['accords'])) {
-            $customNote = "Elección estelar: su cuerpo envolvente con matices de $topAccordsStr crea una presencia magnética y seductora para momentos íntimos.";
-        } elseif (in_array('formal', $detected['occasions'])) {
-            $customNote = "Perfección ejecutiva: su estructura noble de $topAccordsStr proyecta distinción sobria y respetable en cualquier evento formal o de gala.";
-        }
-
-        $scored[] = [
-            'id' => $r['ProductoID'],
-            'code' => $r['noIdentificacion'] ?? '',
-            'sku' => $r['SKU'] ?? '',
-            'name' => $r['descripcion'],
-            'price' => $price,
-            'finalPrice' => round($finalPrice, 2),
-            'image' => $resolveCdn($r['CoverRuta'] ?? ''),
-            'affinity' => $affinity,
-            'family' => $r['FamiliaOlfativa'] ?: 'Amaderada Cítrica',
-            'accords' => $acordes,
-            'notes' => [
-                'top' => json_decode($r['NotasSalida'] ?? '[]', true) ?: ['Bergamota'],
-                'heart' => json_decode($r['NotasCorazon'] ?? '[]', true) ?: ['Lavanda'],
-                'base' => json_decode($r['NotasFondo'] ?? '[]', true) ?: ['Cedro']
-            ],
-            'sillage' => intval($r['Estela'] ?? 2),
-            'longevity' => floatval($r['LongevidadHoras'] ?? 8.0),
-            'sommelierNote' => $customNote
-        ];
+        $projection['image']=$resolveCdn($r['CoverRuta'] ?? '');
+        $scored[]=$projection;
     }
-
-    // Sort by affinity descending
-    usort($scored, fn($a, $b) => $b['affinity'] <=> $a['affinity']);
+    usort($scored, function($a,$b) { return ($b['match_score'] <=> $a['match_score']) ?: strcmp($a['id'],$b['id']); });
 
     $topMatches = array_slice($scored, 0, $limit);
 
     echo json_encode([
         'status' => 'OK',
         'query' => $rawQuery,
-        'detected' => $detected,
+        'detected' => $tenant->isPerfumery() ? $detected : [],
+        'ranking' => 'published_catalog_keywords',
+        'probability' => null,
         'count' => count($topMatches),
         'matches' => $topMatches
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
@@ -243,6 +171,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => 'No se pudo consultar el catálogo. Conserva tu búsqueda e intenta de nuevo.'
     ], JSON_UNESCAPED_UNICODE);
 }

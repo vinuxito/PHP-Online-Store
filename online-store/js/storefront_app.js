@@ -1443,6 +1443,7 @@
 
       this.renderDock();
       this.updateCardToggleButtons();
+      if (this.storefront.shopperWorkspace) this.storefront.shopperWorkspace.captureShortlist(this.selected.map(p => p.id));
     }
 
     renderDock() {
@@ -1496,6 +1497,7 @@
       this.selected = [];
       this.renderDock();
       this.updateCardToggleButtons();
+      if (this.storefront.shopperWorkspace) this.storefront.shopperWorkspace.captureShortlist([]);
       this.storefront.showToast('⚖️ Comparativa vaciada');
     }
 
@@ -2194,18 +2196,29 @@ ${shareUrl}`;
 
     loadCart() {
       try {
-        const stored = localStorage.getItem('qx_store_cart');
-        return stored ? JSON.parse(stored) : { items: [] };
+        // The old global cart has no trustworthy tenant owner; never adopt it in another store.
+        localStorage.removeItem('qx_last_order');
+        const key = this.cartStorageKey();
+        const stored = key && localStorage.getItem(key);
+        const cart = stored && stored.length < 200000 ? JSON.parse(stored) : null;
+        return cart && Array.isArray(cart.items) ? { items: cart.items.filter(i => i && typeof i.id === 'string' && Number(i.qty) > 0).slice(0,100) } : { items: [] };
       } catch (e) {
         return { items: [] };
       }
     }
 
-    saveCart() {
+    cartStorageKey() {
+      const tenant = this.tenant && this.tenant.emisorId || window.QX_TENANT && window.QX_TENANT.emisorId;
+      return tenant ? 'qx_store_cart:' + String(tenant) : null;
+    }
+
+    saveCart(options = {}) {
       try {
-        localStorage.setItem('qx_store_cart', JSON.stringify(this.cart));
+        const key = this.cartStorageKey();
+        if (key) localStorage.setItem(key, JSON.stringify(this.cart));
       } catch (e) {}
       this.renderCartUI();
+      if (this.shopperWorkspace && !options.fromWorkspace) this.shopperWorkspace.captureCart();
     }
 
     
@@ -2737,6 +2750,13 @@ ${shareUrl}`;
             self.applyFilters();
             self.initStories();
             if (window.QuantixStoreDesigns) { if(self.tenant.businessProfile)window.QuantixStoreDesigns.business(self,self.tenant.businessProfile);else window.QuantixStoreDesigns.refresh(self, resp.Featured || []); window.QuantixStoreDesigns.ready(); }
+            if (window.QuantixShopperWorkspace && document.getElementById('qx_workspace_launch')) {
+              if (!self.shopperWorkspace) self.shopperWorkspace = new window.QuantixShopperWorkspace(self);
+              else self.shopperWorkspace.render();
+              $('#qx_pmodal_workspace_save').off('click.qxworkspace').on('click.qxworkspace', () => {
+                if (self.activeProductModal) { self.shopperWorkspace.addSelection(self.activeProductModal.id); self.showToast('Opción en tu selección. Consulta su estado de guardado en Tu selección.'); }
+              });
+            }
           } else {
             self.catalogFailure('No se pudo cargar el catálogo. Reintenta en un momento.');
           }
@@ -3242,8 +3262,12 @@ ${shareUrl}`;
       list.empty();
       let subtotal = 0;
       let totalIva = 0;
+      let displayedTotal = 0;
+      let unknownPrice = false;
 
       this.cart.items.forEach(item => {
+        if (item.priceWithTax == null || item.unitPrice == null || item.unavailable) unknownPrice = true;
+        else displayedTotal += Number(item.priceWithTax) * item.qty;
         const itemSubtotal = item.unitPrice * item.qty;
         const itemIva = itemSubtotal * (item.vatRate / 100);
         subtotal += itemSubtotal;
@@ -3260,7 +3284,7 @@ ${shareUrl}`;
             <img class="qx-cart-item-img" src="${self.esc(item.thumb)}" alt="">
             <div class="qx-cart-item-info">
               <div class="qx-cart-item-name">${self.esc(item.name)} ${decantBadge} ${duoBadge} ${subBadge} ${giftBadge} ${finishBadge}</div>
-              <div class="qx-cart-item-price">$ ${self.formatMoney(item.priceWithTax)} c/u</div>
+              <div class="qx-cart-item-price">${item.priceWithTax == null || item.unavailable ? 'Precio pendiente de consulta' : '$ ' + self.formatMoney(item.priceWithTax) + ' c/u'}</div>
             </div>
             <div class="qx-cart-stepper">
               <button type="button" class="qx-step-btn btn-dec" aria-label="Disminuir cantidad">-</button>
@@ -3323,11 +3347,15 @@ ${shareUrl}`;
         $('#qx_btn_apply_voucher').show();
       }
 
-      const grandTotal = Math.max(0, subtotal + totalIva - discountAmount);
-      $('#qx_cart_subtotal').text(`$ ${self.formatMoney(subtotal)}`);
-      $('#qx_cart_iva').text(`$ ${self.formatMoney(totalIva)}`);
-      $('#qx_cart_total').text(`$ ${self.formatMoney(grandTotal)}`);
-      $('#qx_btn_proceed_checkout').prop('disabled', false).css('opacity', '1');
+      const workspace = this.shopperWorkspace;
+      const quote = workspace && !workspace.dirty && !workspace.conflict && workspace.lastQuote;
+      if (quote) { subtotal = Number(quote.subtotal); totalIva = Number(quote.iva); displayedTotal = Number(quote.total); }
+      // Display published inclusive prices, which already contain any IEPS.
+      const grandTotal = Math.max(0, displayedTotal - discountAmount);
+      $('#qx_cart_subtotal').text(unknownPrice ? 'Pendiente' : `$ ${self.formatMoney(subtotal)}`);
+      $('#qx_cart_iva').text(unknownPrice ? 'Pendiente' : `$ ${self.formatMoney(totalIva)}`);
+      $('#qx_cart_total').text(unknownPrice ? 'Precio pendiente de consulta' : `$ ${self.formatMoney(grandTotal)}`);
+      $('#qx_btn_proceed_checkout').prop('disabled', unknownPrice).css('opacity', unknownPrice ? '0.5' : '1');
     }
 
     async applyVoucher(code) {
@@ -3809,14 +3837,31 @@ ${shareUrl}`;
     }
 
     renderCheckoutSummary() {
-      const subtotal = this.cart.items.reduce((s, i) => s + (i.unitPrice * i.qty), 0);
-      const iva = this.cart.items.reduce((s, i) => s + (i.unitPrice * i.qty * (i.vatRate / 100)), 0);
-      const total = subtotal + iva;
+      const workspace = this.shopperWorkspace;
+      const quote = workspace && !workspace.dirty && !workspace.conflict && workspace.lastQuote;
+      const unknownPrice = this.cart.items.some(i => i.priceWithTax == null || i.unavailable) || quote && quote.pricing_complete === false;
+      const total = unknownPrice ? null : quote && quote.total != null ? Number(quote.total) : this.cart.items.reduce((s, i) => s + (Number(i.priceWithTax) * i.qty), 0);
+      const pending = workspace && (workspace.dirty || workspace.conflict || !quote || quote.status !== 'CURRENT');
+      const registration = workspace && workspace.registeredSelectionReceipt(this.cart);
+      const approvedRepeat = workspace && workspace.repeatOrderApproved(registration, this.cart);
+      const pendingReplay = registration && this._pendingOrderAttempt && this._pendingOrderAttempt.cartIdentity === JSON.stringify(workspace.orderCartIdentity(this.cart));
 
       $('#qx_checkout_summary').html(`
         <div style="font-size:13px; color:var(--qx-text-muted); margin-bottom:6px">${this.cart.items.length} producto(s) en tu orden</div>
-        <div style="font-size:20px; font-weight:800; color:#fff">$ ${this.formatMoney(total)} MXN</div>
+        <div style="font-size:20px; font-weight:800; color:var(--qx-text)">${Number.isFinite(total) ? '$ ' + this.formatMoney(total) + ' MXN' : 'Precio pendiente de consulta'}</div>
+        ${pending ? '<p style="font-size:12px;line-height:1.6;">Consulta las condiciones en Tu selección antes de registrar la solicitud.</p><button type="button" id="qx_checkout_review_selection" class="qx-design-card-action">Revisar mi selección</button>' : ''}
+        ${registration ? '<div id="qx_checkout_registered_receipt" role="status"><p><strong>' + (Array.isArray(registration.cart_identity) ? 'Esta selección ya tiene una solicitud: ' : 'Hay una solicitud registrada en esta selección: ') + this.esc(registration.OrderFolio) + '.</strong> Revisa su recibo antes de registrar otra.</p><p>Constancia original de registro · total ' + (registration.Total == null ? 'no especificado' : '$ ' + this.formatMoney(registration.Total) + ' MXN') + '. Al registrarse: pago sin verificar y factura sin emitir. Consulta el estado actual con la tienda.</p>' + (approvedRepeat ? '<p>Elegiste registrar otra solicitud con esta selección. Revisa los datos y confirma abajo.</p>' : '<button type="button" id="qx_checkout_repeat_order" class="qx-design-card-action">Registrar otra solicitud</button>') + '</div>' : ''}
       `);
+      $('#qx_checkout_summary').toggleClass('qx-checkout-registered', Boolean(registration));
+      $('#qx_checkout_review_selection').on('click', () => { this.closeCheckout(); workspace.open(); workspace.quote(); });
+      $('#qx_checkout_repeat_order').on('click', () => {
+        this._repeatOrderApproval = { folio: registration.OrderFolio, identity: JSON.stringify(workspace.orderCartIdentity(this.cart)) };
+        // This explicit new request supersedes an uncertain attempt that already has a registration receipt.
+        this._pendingOrderAttempt = null;
+        this.renderCheckoutSummary();
+      });
+      if (registration) $('#qx_btn_place_order').prop('disabled', !approvedRepeat && !pendingReplay).text(pendingReplay ? 'Consultar el mismo intento' : approvedRepeat ? 'Registrar otra solicitud' : 'Revisa la solicitud registrada');
+      else $('#qx_btn_place_order').prop('disabled', !this.tenant || !this.tenant.paymentSettings || !this.tenant.paymentSettings.spei_ready || this.isRealEstateBusiness()).text(this._pendingOrderAttempt ? 'Reintentar solicitud' : 'Registrar solicitud');
     }
 
     showCheckoutAlert(msg, type = 'error') {
@@ -3849,8 +3894,7 @@ ${shareUrl}`;
         this.showCheckoutAlert('Tu carrito está vacío. Agrega al menos un producto para continuar.', 'error');
         return;
       }
-
-      submitBtn.prop('disabled', true).text('Registrando solicitud...');
+      const workspace = this.shopperWorkspace;
 
       const orderData = {
         emisorId: this.tenant.emisorId,
@@ -3865,10 +3909,32 @@ ${shareUrl}`;
         cp: $('#qx_cfdi_cp').val(),
         regimen: $('#qx_cfdi_regimen').val(),
         usoCfdi: $('#qx_cfdi_uso').val(),
-        items: this.cart.items
+        items: this.cart.items.map(item => { const posted = Object.assign({}, item); delete posted.unavailable; return posted; })
       };
+      if (workspace && workspace.workspace) {
+        orderData.workspace_id = workspace.workspace.id;
+        orderData.workspace_revision = workspace.workspace.revision;
+      }
 
-      const signature = JSON.stringify(orderData);
+      // Request identity follows customer/format/quantity, independent of changing display prices and workspace versions.
+      const identityData = Object.assign({}, orderData);
+      delete identityData.workspace_revision;
+      identityData.items = this.cart.items.map(item => ({ id: item.id, qty: item.qty, decant: Boolean(item.isDecant), subscription: Boolean(item.isSubscription), bundle: Boolean(item.isDuoPack), gift: Boolean(item.isGift), finish: Boolean(item.customFinish) }));
+      const signature = JSON.stringify(identityData);
+      const retryingAttempt = this._pendingOrderAttempt && this._pendingOrderAttempt.signature === signature;
+      const registration = workspace && workspace.registeredSelectionReceipt(this.cart);
+      const approvedRepeat = workspace && workspace.repeatOrderApproved(registration, this.cart);
+      if (registration && !approvedRepeat && !retryingAttempt) {
+        this.showCheckoutAlert('Esta selección ya tiene una solicitud: ' + registration.OrderFolio + '. Revisa su recibo antes de registrar otra.', 'error');
+        this.renderCheckoutSummary();
+        return;
+      }
+      if (!retryingAttempt && workspace && (workspace.dirty || workspace.conflict || !workspace.workspace || !workspace.lastQuote || workspace.lastQuote.status !== 'CURRENT')) {
+        this.showCheckoutAlert('Consulta las condiciones actuales en Tu selección antes de registrar la solicitud. Tu carrito sigue aquí.', 'error');
+        this.renderCheckoutSummary();
+        return;
+      }
+      submitBtn.prop('disabled', true).text(retryingAttempt ? 'Consultando el mismo intento...' : 'Registrando solicitud...');
       if (!this._pendingOrderAttempt || this._pendingOrderAttempt.signature !== signature) {
         if (!window.crypto || !window.crypto.getRandomValues) {
           this.showCheckoutAlert('Tu navegador no permite crear un intento seguro. Actualízalo para continuar.', 'error');
@@ -3877,16 +3943,19 @@ ${shareUrl}`;
         }
         const bytes = new Uint8Array(16);
         window.crypto.getRandomValues(bytes);
-        this._pendingOrderAttempt = { signature: signature, token: Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('') };
+        this._pendingOrderAttempt = { signature: signature, token: Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''), workspaceRevision: orderData.workspace_revision, cartIdentity: workspace ? JSON.stringify(workspace.orderCartIdentity(this.cart)) : null, repeatOrderFolio: approvedRepeat ? registration.OrderFolio : null };
       }
       orderData.idempotencyKey = this._pendingOrderAttempt.token;
+      if (workspace && workspace.workspace) orderData.workspace_revision = this._pendingOrderAttempt.workspaceRevision;
+      if (this._pendingOrderAttempt.repeatOrderFolio) orderData.repeat_order_folio = this._pendingOrderAttempt.repeatOrderFolio;
 
       $.ajax({
         url: 'api/order.php?emisor=' + encodeURIComponent(this.tenant.emisorId),
         method: 'POST',
         data: JSON.stringify(orderData),
         contentType: 'application/json',
-        dataType: 'json'
+        dataType: 'json',
+        headers: workspace && workspace.csrf ? { 'X-QX-CSRF': workspace.csrf } : {}
       })
       .done(function(resp) {
         if (resp.Status === 'OK') {
@@ -3895,17 +3964,7 @@ ${shareUrl}`;
           self.cart.items = [];
           self.saveCart();
           self.closeCheckout();
-          try {
-            localStorage.setItem('qx_last_order', JSON.stringify({
-              folio: resp.OrderFolio,
-              folioQFS: resp.folioQFS,
-              total: resp.Total,
-              customerName: resp.CustomerName,
-              paymentMethod: resp.PaymentMethod,
-              receiptUrl: resp.receiptUrl,
-              date: new Date().toISOString()
-            }));
-          } catch(e) {}
+          if (workspace) workspace.recordOrder(resp);
           self.showOrderSuccessModal(resp);
         } else {
           self.showCheckoutAlert(resp.Error || 'Error al procesar pedido. Revisa tus datos e intenta nuevamente.', 'error');
@@ -3913,8 +3972,13 @@ ${shareUrl}`;
         }
       })
       .fail(function(xhr) {
+        if ([400, 409, 422].includes(xhr.status)) self._pendingOrderAttempt = null;
         self.showCheckoutAlert((xhr.responseJSON && xhr.responseJSON.Error) || 'No se confirmó el registro. Reintenta para consultar el mismo intento sin duplicarlo.', 'error');
+        if (workspace && [409, 422].includes(xhr.status)) {
+          $('<button type="button" class="qx-design-card-action" style="margin-top:12px;min-height:48px">Revisar mi selección</button>').appendTo('#qx_checkout_alert').on('click', () => { self.closeCheckout(); workspace.open(); workspace.quote(); });
+        }
         submitBtn.prop('disabled', false).text('Reintentar solicitud');
+        if (workspace && xhr.status === 409) workspace.refresh().then(() => self.renderCheckoutSummary());
       });
     }
 
@@ -3923,7 +3987,7 @@ ${shareUrl}`;
         <div style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:39999; display:flex; align-items:center; justify-content:center; padding:20px;">
           <div style="background:var(--qx-surface); border:1px solid var(--qx-border); border-radius:var(--qx-radius-lg); max-width:500px; width:100%; padding:32px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.7);">
             <div style="font-size:48px; margin-bottom:12px">🎉</div>
-            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">¡Pedido Confirmado! (Solicitud registrada)</h2>
+            <h2 style="font-size:22px; font-weight:800; color:#fff; margin-bottom:8px">Solicitud registrada</h2>
             <p style="font-size:14px; color:var(--qx-text-muted); margin-bottom:20px">Folio de Orden: <strong style="color:var(--qx-accent)">#${this.esc(orderResp.OrderFolio || '')}</strong></p>
             <div style="background:rgba(255,255,255,0.04); border:1px solid var(--qx-border); border-radius:var(--qx-radius-md); padding:16px; text-align:left; font-size:13px; margin-bottom:24px;">
               <div><strong>Cliente:</strong> ${this.esc(orderResp.CustomerName || '')}</div>
@@ -5426,7 +5490,8 @@ ${shareUrl}`;
       const self = this;
 
       const scored = this.products.map(p => {
-        let score = 55;
+        let score = 0;
+        const reasons = [];
         const text = (p.name + ' ' + p.category + ' ' + (p.notes || '')).toLowerCase();
 
         if (self.quizAnswers.occasion === 'noche' && /nuit|intense|elixir|oud|amber|negro/i.test(text)) score += 20;
@@ -5437,8 +5502,10 @@ ${shareUrl}`;
         if (self.quizAnswers.style === 'intenso' && /elixir|intense|oud|black|supremacy/i.test(text)) score += 20;
         if (self.quizAnswers.budget === 'lujo' && p.priceWithTax > 320) score += 15;
         if (self.quizAnswers.budget === 'accesible' && p.priceWithTax <= 320) score += 15;
-
-        return { product: p, score: Math.min(99, score) };
+        if (score > 15) reasons.push('Coincidencia de palabras en la ficha publicada');
+        if (self.quizAnswers.budget === 'accesible' && Number(p.priceWithTax) > 0 && Number(p.priceWithTax) <= 320) reasons.push('Precio publicado de hasta $320 MXN');
+        if (self.quizAnswers.budget === 'lujo' && Number(p.priceWithTax) > 320) reasons.push('Precio publicado mayor de $320 MXN');
+        return { product: p, score: score, reasons: reasons };
       });
 
       scored.sort((a, b) => b.score - a.score);
@@ -5447,12 +5514,11 @@ ${shareUrl}`;
       const grid = $('#qx_quiz_matches').empty();
       top3.forEach((item, idx) => {
         const p = item.product;
-        const badges = ['⭐ 98% Match con tus gustos', '✨ 92% Match Recomendado', '💎 88% Match Especial'];
         const card = $(`
           <div class="qx-quiz-match-card" style="cursor:pointer;">
             <img class="qx-quiz-match-thumb" src="${self.esc(p.cover)}" alt="">
             <div class="qx-quiz-match-info">
-              <div class="qx-quiz-match-badge">${badges[idx] || '⭐ ' + item.score + '% Match'}</div>
+              <div class="qx-quiz-match-badge">${self.esc(item.reasons.join(' · ') || 'Opción del catálogo · preferencias sin coincidencia publicada')}</div>
               <div class="qx-quiz-match-title">${self.esc(p.name)}</div>
               <div class="qx-quiz-match-price">$ ${self.formatMoney(p.priceWithTax)} MXN</div>
             </div>
@@ -5469,6 +5535,10 @@ ${shareUrl}`;
       });
 
       $('#qx_quiz_results').fadeIn(200);
+      if (this.shopperWorkspace) {
+        const query = [this.quizAnswers.occasion, this.quizAnswers.style].filter(Boolean).join(' ');
+        this.shopperWorkspace.edit({ intent: { query: query, budget: this.quizAnswers.budget === 'accesible' ? 320 : null }, shortlist: top3.map(item => String(item.product.id)) });
+      }
       this.playAudioSynth('cart');
     }
 
@@ -5620,17 +5690,18 @@ ${shareUrl}`;
           <div style="text-align:center; padding:32px 16px; color:var(--qx-text-muted);">
             <div style="font-size:36px; margin-bottom:10px;">✨</div>
             <div style="font-size:15px; font-weight:700; color:#fff;">Escribe o selecciona una ocasión</div>
-            <div style="margin-top:4px; font-size:13px;">Tu Sommelier personal analizará la pirámide olfativa y estela de cada pieza.</div>
+            <div style="margin-top:4px; font-size:13px;">Busca coincidencias en la información publicada por la tienda.</div>
           </div>
         `);
         return;
       }
+      if (this.shopperWorkspace) this.shopperWorkspace.edit({ intent: Object.assign({}, this.shopperWorkspace.state.intent, { query: queryStr.trim() }) });
 
       resultsContainer.html(`
         <div style="text-align:center; padding:40px 16px; color:var(--qx-text-muted);">
           <div class="qx-spinner" style="width:32px; height:32px; margin:0 auto 12px; border:3px solid rgba(236,72,153,0.2); border-top-color:#ec4899; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
           <div style="font-size:14px; font-weight:700; color:#fff;">El Sommelier está analizando el catálogo...</div>
-          <div style="font-size:12px; margin-top:4px; color:#a78bfa;">Cruzando notas de salida, corazón, fondo y ocasión</div>
+          <div style="font-size:12px; margin-top:4px; color:#a78bfa;">Buscando coincidencias en los datos publicados</div>
         </div>
       `);
 
@@ -5670,9 +5741,6 @@ ${shareUrl}`;
 
       matches.forEach((m) => {
         const prod = self.products.find(p => p.id === m.id);
-        const radar = prod ? prod.radar : null;
-        const thermal = radar ? self.weatherEngine.calculateThermalMatch(radar) : null;
-        const weatherBadge = thermal ? `<span style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:700;">${thermal.city.icon} ${thermal.matchScore}% Clima ${thermal.city.name}</span>` : '';
         const accordsBadges = (m.accords || []).slice(0, 3).map(a => `<span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:999px; font-size:11px; color:#cbd5e1;">${self.esc(a)}</span>`).join(' ');
 
         const card = $(`
@@ -5682,9 +5750,8 @@ ${shareUrl}`;
             </div>
             <div class="qx-somm-card-main">
               <div class="qx-somm-card-top" style="flex-wrap:wrap; gap:6px;">
-                <span class="qx-somm-card-family">💎 ${self.esc(m.family)}</span>
-                ${weatherBadge}
-                <span class="qx-somm-affinity-badge">✨ ${m.affinity}% Afinidad</span>
+                <span class="qx-somm-card-family">${self.esc(m.family || 'Familia no especificada')}</span>
+                <span class="qx-somm-affinity-badge">${self.esc((m.matchReasons || []).join(' · ') || 'Opción del catálogo')}</span>
               </div>
               <h3 class="qx-somm-card-title">${self.esc(m.name)}</h3>
               <div style="display:flex; flex-wrap:wrap; gap:4px; margin:2px 0;">${accordsBadges}</div>
@@ -5692,10 +5759,11 @@ ${shareUrl}`;
                 <strong>Nota del Sommelier:</strong> "${self.esc(m.sommelierNote)}"
               </div>
               <div class="qx-somm-card-actions">
-                <div class="qx-somm-card-price">$ ${self.formatMoney(m.finalPrice)} MXN</div>
+                <div class="qx-somm-card-price">${Number(m.finalPrice) > 0 ? '$ ' + self.formatMoney(m.finalPrice) + ' MXN' : 'Consultar precio'}</div>
                 <div class="qx-somm-btn-group">
                   <button type="button" class="qx-somm-btn-view" data-id="${self.esc(m.id)}">Ver Ficha</button>
-                  <button type="button" class="qx-somm-btn-buy" data-id="${self.esc(m.id)}">⚡ Comprar Ahora</button>
+                  ${self.shopperWorkspace ? '<button type="button" class="qx-somm-btn-save" data-id="' + self.esc(m.id) + '">Guardar opción</button>' : ''}
+                  ${Number(m.finalPrice) > 0 ? '<button type="button" class="qx-somm-btn-buy" data-id="' + self.esc(m.id) + '">Agregar al carrito</button>' : ''}
                 </div>
               </div>
             </div>
@@ -5713,6 +5781,7 @@ ${shareUrl}`;
           const prod = self.products.find(p => p.id === m.id);
           if (prod) self.openProductModal(prod);
         });
+        card.find('.qx-somm-btn-save').on('click', function(e) { e.stopPropagation(); self.shopperWorkspace.addSelection(m.id); self.showToast('Opción en tu selección. Consulta su estado de guardado en Tu selección.'); });
 
         // 1-Click Buy button
         card.find('.qx-somm-btn-buy').on('click', function(e) {

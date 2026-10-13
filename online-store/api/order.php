@@ -1,8 +1,10 @@
 <?php
 /** Records an idempotent request awaiting manual SPEI verification. No sale or stock mutation. */
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, private');
 require_once dirname(__DIR__) . '/includes/tenant_resolver.php';
 require_once dirname(__DIR__) . '/includes/pending_order_contract.php';
+require_once dirname(__DIR__) . '/includes/shopper_workspace.php';
 
 function qxOrderError($code, $message) {
     http_response_code($code);
@@ -10,7 +12,12 @@ function qxOrderError($code, $message) {
     exit;
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') qxOrderError(405, 'Usa POST para registrar una solicitud.');
-$data = json_decode(file_get_contents('php://input'), true);
+try { $authorization = QuantixShopperWorkspace::authorization(); }
+catch (QuantixShopperError $e) { qxOrderError($e->statusCode, $e->getMessage()); }
+if ($authorization !== '') qxOrderError(403, 'El acceso del agente permite preparar la selección. El comprador debe registrar la solicitud.');
+$input = file_get_contents('php://input', false, null, 0, 65537);
+if (strlen($input) > 65536) qxOrderError(413, 'La solicitud supera el tamaño permitido.');
+$data = json_decode($input, true);
 if (!is_array($data) || empty($data['items']) || !is_array($data['items']) || count($data['items']) > 100) qxOrderError(400, 'Agrega entre 1 y 100 productos válidos.');
 $tenant = StorefrontTenant::resolve($data);
 if (!$tenant->isStoreActive || !$tenant->emisorId) qxOrderError(403, $tenant->resolutionError ?: 'La tienda no está activa.');
@@ -35,13 +42,43 @@ foreach ($data['items'] as $item) {
 }
 $requestHash = hash('sha256', json_encode([$customer, $invoice, $requestItems], JSON_UNESCAPED_UNICODE));
 $db = get_store_db();
+$shopper = null;
+$workspaceId = $data['workspace_id'] ?? null;
 try {
-    $lookup = $db->prepare('SELECT RequestHash, ResponseJSON FROM quantix_pending_orders WHERE EmisorID = ? AND IdempotencyKey = ? LIMIT 1');
+    if ($workspaceId !== null) {
+        QuantixShopperWorkspace::startSession();
+        $shopper = new QuantixShopperWorkspace($db, $tenant);
+        $ownedWorkspace = $shopper->ownedWorkspace($workspaceId);
+        $csrf = $_SERVER['HTTP_X_QX_CSRF'] ?? '';
+        if (!is_string($csrf) || !hash_equals($shopper->csrf(), $csrf)) qxOrderError(403, 'Abre de nuevo tu selección antes de registrar la solicitud.');
+    }
+    $lookup = $db->prepare('SELECT OrderID, RequestHash, ResponseJSON FROM quantix_pending_orders WHERE EmisorID = ? AND IdempotencyKey = ? LIMIT 1');
     $lookup->execute([$tenant->emisorId, $key]);
     if ($existing = $lookup->fetch(PDO::FETCH_ASSOC)) {
         if (!hash_equals($existing['RequestHash'], $requestHash)) qxOrderError(409, 'Este intento ya corresponde a otros datos. Inicia una solicitud nueva.');
+        if ($shopper) $shopper->recordOrder($workspaceId, $existing['OrderID']);
         echo $existing['ResponseJSON'];
         exit;
+    }
+    if ($shopper) {
+        // Bind a human's new request to the selection they reviewed. Replays above retain their immutable receipt.
+        $db->beginTransaction();
+        $lock = $db->prepare('SELECT Revision,StateJSON FROM quantix_shopper_workspaces WHERE EmisorID=? AND WorkspaceID=? FOR UPDATE');
+        $lock->execute([$tenant->emisorId, $workspaceId]);
+        $current = $lock->fetch(PDO::FETCH_ASSOC);
+        if (!$current || !is_int($data['workspace_revision'] ?? null) || $data['workspace_revision'] !== (int)$current['Revision']) qxOrderError(409, 'Tu selección cambió. Revisa la versión actual antes de registrar la solicitud.');
+        $state = json_decode($current['StateJSON'], true);
+        $submitted = QuantixShopperContract::state(QuantixShopperContract::initial(), ['cart' => ['items' => $data['items']]]);
+        $identity = function($items) {
+            return array_map(function($item) { return [$item['id'], $item['qty'], !empty($item['isDecant']), !empty($item['isSubscription']), !empty($item['isDuoPack']), !empty($item['isGift']), $item['customFinish'] ?: '']; }, $items);
+        };
+        if ($identity($state['cart']['items']) !== $identity($submitted['cart']['items'])) qxOrderError(409, 'El carrito cambió. Guarda y revisa tu selección antes de continuar.');
+        $registration = $shopper->latestRegistration($workspaceId);
+        if ($registration && ($registration['cart_identity'] === null || QuantixShopperContract::cartIdentity($submitted['cart']['items']) === $registration['cart_identity']) && ($data['repeat_order_folio'] ?? null) !== $registration['OrderFolio']) {
+            qxOrderError(409, 'Esta selección ya tiene una solicitud registrada: ' . $registration['OrderFolio'] . '. Revisa su recibo antes de registrar otra solicitud.');
+        }
+        $quote = $shopper->quote($state);
+        if ($quote['status'] !== 'CURRENT' || $quote['within_budget'] === false) qxOrderError(422, 'Revisa el precio, presupuesto y disponibilidad actuales de tu selección antes de continuar.');
     }
     $lines = [];
     $quantities = [];
@@ -80,11 +117,19 @@ try {
         $existing = $lookup->fetch(PDO::FETCH_ASSOC);
         if (!$existing || !hash_equals($existing['RequestHash'], $requestHash)) qxOrderError(409, 'El intento ya fue utilizado con otros datos.');
         $responseJson = $existing['ResponseJSON'];
+        $id = $existing['OrderID'];
     }
+    if ($shopper) $shopper->recordOrder($workspaceId, $id);
+    if ($db->inTransaction()) $db->commit();
     echo $responseJson;
+} catch (QuantixShopperError $e) {
+    if ($db->inTransaction()) $db->rollBack();
+    qxOrderError($e->statusCode, $e->getMessage());
 } catch (InvalidArgumentException $e) {
+    if ($db->inTransaction()) $db->rollBack();
     qxOrderError(422, $e->getMessage());
 } catch (Exception $e) {
+    if ($db->inTransaction()) $db->rollBack();
     // No database detail or customer payload is exposed in public responses/logs.
     qxOrderError(503, 'No se pudo registrar la solicitud. La tienda debe revisar la disponibilidad del registro de pedidos; puedes reintentar sin duplicarla.');
 }

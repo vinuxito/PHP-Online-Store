@@ -41,12 +41,14 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="js/quantix_shopper_workspace.js?v=<?php echo filemtime(__DIR__ . '/js/quantix_shopper_workspace.js'); ?>"></script>
   <title><?php echo htmlspecialchars($tenant->brandName); ?> — <?php echo $isRealEstate ? 'Portafolio Inmobiliario' : ($isIndustrial ? 'Catálogo Industrial' : 'Boutique Oficial'); ?></title>
   <meta name="description" content="<?php echo htmlspecialchars($tenant->description); ?>">
   <link rel="stylesheet" href="css/storefront_luxury.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_luxury.css'); ?>">
   <link rel="stylesheet" href="css/filemon_cockpit.css?v=<?php echo filemtime(__DIR__ . '/css/filemon_cockpit.css'); ?>">
   <link rel="stylesheet" href="css/storefront_booking.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_booking.css'); ?>">
   <link rel="stylesheet" href="css/storefront_designs.css?v=<?php echo filemtime(__DIR__ . '/css/storefront_designs.css'); ?>">
+  <link rel="stylesheet" href="css/quantix_shopper_workspace.css?v=<?php echo filemtime(__DIR__ . '/css/quantix_shopper_workspace.css'); ?>">
   <?php foreach (['shared','atelier','editorial','boutique','cinema','commerce','commerce-compositions'] as $sheet): ?>
   <link rel="stylesheet" href="css/templates/<?php echo $sheet; ?>.css?v=<?php echo filemtime(__DIR__.'/css/templates/'.$sheet.'.css'); ?>">
   <?php endforeach; ?>
@@ -107,6 +109,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       </div>
 
       <nav class="qx-nav-actions" aria-label="Acciones de la tienda">
+        <?php if (empty($_GET['preview_mode'])): ?><button type="button" id="qx_workspace_launch" class="qx-workspace-launch" aria-label="Tu selección"><span aria-hidden="true">◇</span><span class="qx-workspace-launch-label">Tu selección</span><span data-workspace-count></span></button><?php endif; ?>
         <button type="button" id="qx_design_mobile_search" class="qx-design-mobile-search" aria-label="Buscar en el catálogo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>
         <button type="button" class="qx-agenda-nav-btn <?php echo $isRealEstate ? 'qx-realestate-nav-btn' : ''; ?>" id="qx_btn_nav_agenda" title="<?php echo $isRealEstate ? 'Agendar Cita Privada / Visita' : 'Agenda VIP & Concierge Privado'; ?>" style="<?php echo $isAgendaActive ? '' : 'display:none;'; ?>">
           <span class="qx-agenda-sparkle"><?php echo $isRealEstate ? '✦' : '🗓️'; ?></span>
@@ -883,6 +886,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <button type="button" class="qx-btn-pmodal-compare" id="qx_pmodal_btn_compare">
             <span>⚖️ Comparar en Arena 1-vs-1 (Quantum Studio)</span>
           </button>
+          <?php if (empty($_GET['preview_mode'])): ?><button type="button" id="qx_pmodal_workspace_save">Guardar en mi selección</button><?php endif; ?>
 
           <!-- VIP WhatsApp inquiry button -->
           <a href="#" target="_blank" class="qx-btn-pmodal-wa" id="qx_pmodal_btn_wa" style="display:none;">
