@@ -67,7 +67,7 @@
               <img src="${this.avatarUrl}" alt="Filemón" class="filemon-header-avatar">
               <div>
                 <h3 id="filemon_title" class="filemon-name">Filemón Prime</h3>
-                <p class="filemon-subtitle">Concierge Fiscal & Espacial • <span class="filemon-lat-badge">0.01 ms</span></p>
+                <p class="filemon-subtitle">Ayuda para elegir y continuar</p>
               </div>
             </div>
             <div class="filemon-controls">
@@ -387,7 +387,7 @@
         } else {
           subText = 'Concierge de Tienda';
         }
-        subtitleEl.innerHTML = `${subText} • <span class="filemon-lat-badge">0.01 ms</span>`;
+        subtitleEl.textContent = subText;
       }
 
       if (chapterTag) {

@@ -52,6 +52,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <?php foreach (['shared','atelier','editorial','boutique','cinema','commerce','commerce-compositions'] as $sheet): ?>
   <link rel="stylesheet" href="css/templates/<?php echo $sheet; ?>.css?v=<?php echo filemtime(__DIR__.'/css/templates/'.$sheet.'.css'); ?>">
   <?php endforeach; ?>
+  <link rel="stylesheet" href="css/quantix_visual_worlds.css?v=<?php echo filemtime(__DIR__.'/css/quantix_visual_worlds.css'); ?>">
   <style>
     :root {
       --qx-accent: <?php echo htmlspecialchars($tenant->primaryColor); ?>;
@@ -59,7 +60,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   </style>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
-<body data-journey="<?php echo htmlspecialchars($tenant->getBusinessProfile()['primary_journey']); ?>" data-design="<?php echo htmlspecialchars($designKey); ?>" data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
+<body data-visual-world="<?php echo htmlspecialchars($tenant->visualWorld); ?>" data-journey="<?php echo htmlspecialchars($tenant->getBusinessProfile()['primary_journey']); ?>" data-design="<?php echo htmlspecialchars($designKey); ?>" data-atmosphere="<?php echo htmlspecialchars(strtolower($tenant->theme ?? 'obsidian')); ?>" data-archetype="<?php echo htmlspecialchars(strtolower($tenant->archetype ?? 'maison')); ?>" data-perfumery="<?php echo $isPerfumsTenant ? '1' : '0'; ?>" data-industry="<?php echo htmlspecialchars($resolvedIndustry); ?>" style="--qx-density: <?php echo htmlspecialchars((string)($tenant->density ?? 0.5)); ?>;">
 
 <?php if (!$tenant->isStoreActive): ?>
   <div style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; text-align:center; background:radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.08), transparent 70%);">
@@ -625,7 +626,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <div class="qx-checkout-trust-badges" style="margin-top: 14px; text-align: center; font-size: 11.5px; color: var(--qx-text-muted); display: flex; justify-content: center; align-items: center; gap: 14px;">
         <span>🔒 Conexión Cifrada SSL/TLS</span>
         <span>🛡️ Operación Segura</span>
-        <span>🏦 SPEI Autorizado</span>
+        <span>🏦 Transferencia SPEI</span>
       </div>
     </form>
   </aside>
@@ -1757,6 +1758,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
   <script src="js/quantix_spatial_studio.js?v=<?php echo file_exists(__DIR__ . '/js/quantix_spatial_studio.js') ? filemtime(__DIR__ . '/js/quantix_spatial_studio.js') : '1'; ?>"></script>
   <script src="https://evinux.net/cfdadmin/js2/quantix_design_contract.js?v=<?php echo @filemtime(__DIR__ . '/../../cfdadmin/js2/quantix_design_contract.js') ?: '1'; ?>"></script>
   <script src="js/storefront_designs.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_designs.js'); ?>"></script>
+  <script src="/cfdadmin/js2/quantix_visual_worlds.js?v=<?php echo filemtime(__DIR__.'/../../cfdadmin/js2/quantix_visual_worlds.js'); ?>"></script>
+  <script src="js/quantix_visual_worlds.js?v=<?php echo filemtime(__DIR__.'/js/quantix_visual_worlds.js'); ?>"></script>
   <script src="js/storefront_booking.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_booking.js'); ?>"></script>
   <script src="js/storefront_app.js?v=<?php echo filemtime(__DIR__ . '/js/storefront_app.js'); ?>"></script>
   <script>
@@ -2417,6 +2420,7 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         'isPerfumery' => $tenant->isPerfumery(),
         'featureMatrix' => $featMatrix,
         'archetype' => (string)($tenant->archetype ?: 'maison'),
+        'visualWorld' => $tenant->visualWorld,
         'industry' => $resolvedIndustry,
         'businessProfile' => $tenant->getBusinessProfile(),
         'showWhatsapp' => (bool)$tenant->showWhatsapp,

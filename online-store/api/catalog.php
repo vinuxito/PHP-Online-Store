@@ -393,6 +393,7 @@ try {
             'featuredSelectionState' => !$explicitFeatured ? 'automatic' : (empty($records) ? 'empty' : (empty($featuredProducts) ? 'stale' : 'curated')),
             'initialProductCount' => !empty($tenant->apexConfig['speed_tuning']['initial_product_count']) ? (int)$tenant->apexConfig['speed_tuning']['initial_product_count'] : 13,
             'archetype'   => $tenant->archetype ?? 'maison',
+            'visualWorld'=> $tenant->visualWorld,
             'density'     => $tenant->density ?? 0.5,
             'showStock'   => $tenant->showStock ?? true,
             'lowStockThreshold' => $tenant->lowStockThreshold ?? 5,

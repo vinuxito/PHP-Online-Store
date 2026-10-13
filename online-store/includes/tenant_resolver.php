@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__.'/../../../cfdadmin/lib/QuantixBusinessProfile.php';
 require_once __DIR__.'/../../../cfdadmin/lib/QuantixStoreText.php';
+require_once __DIR__.'/../../../cfdadmin/lib/QuantixVisualWorldContract.php';
 /**
  * includes/tenant_resolver.php — Dynamic Multi-Tenant Subdomain & Emisor Context Resolver
  */
@@ -22,6 +23,7 @@ class StorefrontTenant {
     public $logo = 'images/mistiq_logo.png';
     public $theme = 'obsidian'; // 'obsidian' (dark luxury), 'light' (clean), 'gold'
     public $primaryColor = '#3b82f6';
+    public $visualWorld = 'original';
     public $email = '';
     public $phone = '';
     public $address = '';
@@ -332,6 +334,10 @@ class StorefrontTenant {
             }
         }
 
+        $tenant->visualWorld = QuantixVisualWorldContract::normalize($tenant->apexConfig['visual_world'] ?? $deMap['STORE_VISUAL_WORLD'] ?? 'original');
+        // Preview links only affect this rendering; publication uses the authenticated Director.
+        if (($_GET['preview_mode'] ?? '')==='1' && isset($_GET['world'])) $tenant->visualWorld=QuantixVisualWorldContract::normalize($_GET['world']);
+
         // Only absent fields receive neutral defaults; intentionally empty copy stays empty.
         $tenant->cartTitle = $tenant->isPerfumery() ? 'Bolsa de Compras' : 'Carrito de Compras';
         if (!isset($explicitHero['headline']) && $tenant->headline === '') $tenant->headline = $tenant->brandName;
@@ -428,4 +434,3 @@ if (!function_exists('qxResolveCircadianState')) {
         ];
     }
 }
-

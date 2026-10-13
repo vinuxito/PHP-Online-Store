@@ -2753,6 +2753,7 @@ ${shareUrl}`;
             if (window.QuantixShopperWorkspace && document.getElementById('qx_workspace_launch')) {
               if (!self.shopperWorkspace) self.shopperWorkspace = new window.QuantixShopperWorkspace(self);
               else self.shopperWorkspace.render();
+              if (window.QuantixVisualSurface) window.QuantixVisualSurface.refresh(self);
               $('#qx_pmodal_workspace_save').off('click.qxworkspace').on('click.qxworkspace', () => {
                 if (self.activeProductModal) { self.shopperWorkspace.addSelection(self.activeProductModal.id); self.showToast('Opción en tu selección. Consulta su estado de guardado en Tu selección.'); }
               });

@@ -139,6 +139,8 @@
       if (image && selected) {
         var photo = selected.photos && selected.photos[0];
         var url = photo && (photo.url || photo.thumb) || selected.cover;
+        image.dataset.sourceUrl = url || '';
+        image.dataset.worldIsolation = selected.autoIsolate && store.tenant && store.tenant.isPerfumery ? 'yes' : 'no';
         image.onerror = function() { image.hidden = true; media.classList.add('qx-image-unavailable'); };
         if (url) { if (image.getAttribute('src') !== url) image.src = url; image.alt = selected.name || ''; image.hidden = false; media.classList.remove('qx-image-unavailable'); }
         else { image.hidden = true; media.classList.add('qx-image-unavailable'); }
@@ -173,6 +175,7 @@
       var extras=document.getElementById('qx_nav_extras');if(extras){extras.hidden=!Array.from(extras.querySelectorAll('button')).some(function(b){return !b.hidden&&b.style.display!=='none';});var dockExtras=document.getElementById('qx_dock_experiences');if(dockExtras)dockExtras.hidden=extras.hidden;}
       Surface.modules(store);
       Surface.commerceLayout(store);
+      if (window.QuantixVisualSurface) window.QuantixVisualSurface.refresh(store);
     },
     modules: function(store) {
       var carousel = document.getElementById('qx_hero_carousel_wrapper');
