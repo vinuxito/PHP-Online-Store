@@ -3356,6 +3356,15 @@ ${shareUrl}`;
       $('#qx_cart_subtotal').text(unknownPrice ? 'Pendiente' : `$ ${self.formatMoney(subtotal)}`);
       $('#qx_cart_iva').text(unknownPrice ? 'Pendiente' : `$ ${self.formatMoney(totalIva)}`);
       $('#qx_cart_total').text(unknownPrice ? 'Precio pendiente de consulta' : `$ ${self.formatMoney(grandTotal)}`);
+      // Prices are published tax-inclusive. Without a line for what is neither subtotal nor IVA (IEPS on wine/spirits), the
+      // drawer's rows did not add up to its total.
+      const otherTaxes = Math.round((displayedTotal - subtotal - totalIva) * 100) / 100;
+      if (!unknownPrice && otherTaxes >= 0.01) {
+        $('#qx_cart_ieps').text(`$ ${self.formatMoney(otherTaxes)}`);
+        $('#qx_cart_ieps_row').show();
+      } else {
+        $('#qx_cart_ieps_row').hide();
+      }
       $('#qx_btn_proceed_checkout').prop('disabled', unknownPrice).css('opacity', unknownPrice ? '0.5' : '1');
     }
 
@@ -5538,7 +5547,11 @@ ${shareUrl}`;
       $('#qx_quiz_results').fadeIn(200);
       if (this.shopperWorkspace) {
         const query = [this.quizAnswers.occasion, this.quizAnswers.style].filter(Boolean).join(' ');
-        this.shopperWorkspace.edit({ intent: { query: query, budget: this.quizAnswers.budget === 'accesible' ? 320 : null }, shortlist: top3.map(item => String(item.product.id)) });
+        // edit() replaces `intent` as a whole. The quiz used to invent a 320 MXN budget for "accesible" and to wipe the budget the
+        // shopper had already saved; it now keeps whatever budget is on file and never fabricates one.
+        const savedIntent = (this.shopperWorkspace.state && this.shopperWorkspace.state.intent) || {};
+        const savedBudget = (savedIntent.budget === undefined) ? null : savedIntent.budget;
+        this.shopperWorkspace.edit({ intent: { query: query, budget: savedBudget }, shortlist: top3.map(item => String(item.product.id)) });
       }
       this.playAudioSynth('cart');
     }

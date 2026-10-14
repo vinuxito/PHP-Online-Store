@@ -487,6 +487,10 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
         <span>IVA Trasladado (16%)</span>
         <span id="qx_cart_iva">$ 0.00</span>
       </div>
+      <div class="qx-summary-row" id="qx_cart_ieps_row" style="display:none;">
+        <span>IEPS y otros impuestos incluidos</span>
+        <span id="qx_cart_ieps">$ 0.00</span>
+      </div>
       <div class="qx-summary-row total">
         <span>Total a Pagar</span>
         <span id="qx_cart_total">$ 0.00</span>
