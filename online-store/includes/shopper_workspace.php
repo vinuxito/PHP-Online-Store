@@ -300,6 +300,8 @@ class QuantixShopperWorkspace {
             $grants=$this->query('SELECT GrantID,ScopeJSON,Kind,ExpiresAt,BudgetCeiling FROM quantix_shopper_grants WHERE EmisorID=? AND WorkspaceID=? AND RevokedAt IS NULL AND ConsumedAt IS NULL AND ExpiresAt>? ORDER BY CreatedAt DESC',[$this->tenant->emisorId,$id,time()])->fetchAll();
             $response['workspace']['grants']=array_map(function($g){return ['grant_id'=>$g['GrantID'],'id'=>$g['GrantID'],'scopes'=>json_decode($g['ScopeJSON'],true),'kind'=>$g['Kind'],'expires_at'=>gmdate('c',(int)$g['ExpiresAt']),'budget_ceiling'=>$g['BudgetCeiling']===null?null:(float)$g['BudgetCeiling']];},$grants);
             $response['workspace']['active_grants']=$response['workspace']['grants'];
+            $otherOwners=(int)$this->query('SELECT COUNT(*) FROM quantix_shopper_owners WHERE EmisorID=? AND WorkspaceID=? AND OwnerHash<>? AND ExpiresAt>?',[$this->tenant->emisorId,$id,$this->ownerHash(),time()])->fetchColumn();
+            $response['workspace']['other_owners_count']=$otherOwners;
             $response['csrf']=$this->csrf(); $response['csrf_token']=$this->csrf(); }
         $receipt=$this->query('SELECT ResponseJSON FROM quantix_shopper_receipts WHERE EmisorID=? AND WorkspaceID=? ORDER BY ReceiptRevision DESC,CreatedAt DESC LIMIT 1',[$this->tenant->emisorId,$id])->fetch();
         if ($receipt) $response['receipt']=json_decode($receipt['ResponseJSON'],true)['receipt']??null;
@@ -389,9 +391,15 @@ class QuantixShopperWorkspace {
                 $this->query('UPDATE quantix_shopper_workspaces SET Revision=Revision+1,UpdatedAt=NOW() WHERE EmisorID=? AND WorkspaceID=?',[$this->tenant->emisorId,$id]);
             } elseif ($action==='revoke') {
                 $grantId=$data['grant_id']??'';
-                if(!is_string($grantId)||!preg_match('/^[a-f0-9]{32}$/D',$grantId)) throw new QuantixShopperError(422,'INVALID_GRANT','El acceso no es válido.','correct_input');
-                $affected=$this->query('UPDATE quantix_shopper_grants SET RevokedAt=? WHERE EmisorID=? AND WorkspaceID=? AND GrantID=?',[time(),$this->tenant->emisorId,$id,$grantId])->rowCount();
-                if(!$affected) throw new QuantixShopperError(404,'GRANT_NOT_FOUND','El acceso no pertenece a esta selección.','read_current_state');
+                if($grantId==='all') {
+                    $affected=$this->query('UPDATE quantix_shopper_grants SET RevokedAt=? WHERE EmisorID=? AND WorkspaceID=? AND RevokedAt IS NULL',[time(),$this->tenant->emisorId,$id])->rowCount();
+                    $affected+=$this->query('DELETE FROM quantix_shopper_owners WHERE EmisorID=? AND WorkspaceID=? AND OwnerHash<>?',[$this->tenant->emisorId,$id,$this->ownerHash()])->rowCount();
+                } else {
+                    if(!is_string($grantId)||!preg_match('/^[a-f0-9]{32}$/D',$grantId)) throw new QuantixShopperError(422,'INVALID_GRANT','El acceso no es válido.','correct_input');
+                    $affected=$this->query('UPDATE quantix_shopper_grants SET RevokedAt=? WHERE EmisorID=? AND WorkspaceID=? AND GrantID=?',[time(),$this->tenant->emisorId,$id,$grantId])->rowCount();
+                    $this->query('DELETE FROM quantix_shopper_owners WHERE EmisorID=? AND WorkspaceID=? AND OwnerHash<>?',[$this->tenant->emisorId,$id,$this->ownerHash()]);
+                    if(!$affected) throw new QuantixShopperError(404,'GRANT_NOT_FOUND','El acceso no pertenece a esta selección.','read_current_state');
+                }
                 $this->query('UPDATE quantix_shopper_workspaces SET Revision=Revision+1,UpdatedAt=NOW() WHERE EmisorID=? AND WorkspaceID=?',[$this->tenant->emisorId,$id]);
             } else throw new QuantixShopperError(400,'UNKNOWN_ACTION','Esta acción no está disponible.','discover_capabilities');
             $receipt=$this->receipt($id,$revision+1,$operation,$action); $saved=array_merge(['receipt'=>$receipt],$extra);

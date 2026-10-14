@@ -163,7 +163,8 @@
       this.lastQuote = result.quote || this.workspace.quote || null;
       this.lastReceipt = result.receipt || this.workspace.receipt || this.lastReceipt;
       this.activeGrants = (this.workspace.grants || []).filter(g => (g.scopes || []).length);
-      this.$('revoke').hidden = !this.activeGrants.length;
+      this.otherOwnersCount = Number(this.workspace.other_owners_count || 0);
+      this.$('revoke').hidden = !this.activeGrants.length && !this.otherOwnersCount;
       try { localStorage.setItem('qx_workspace:' + this.tenant, String(this.workspace.id)); } catch (e) {}
       return true;
     }
@@ -418,10 +419,12 @@
           this.$('secret_help').textContent = 'Este acceso permite leer y editar tu selección hasta las ' + expiry + '. Tu agente debe consultar la versión antes de editar. No permite solicitudes, pagos ni facturas.';
           this.$('revoke').hidden = false;
         } else {
+          this.latestGrant = result.grant_id;
           const link = new URL(location.href); link.hash = new URLSearchParams({ qx_handoff: result.token }).toString();
           this.$('secret').value = link.href;
           this.$('secret_label').textContent = 'Enlace para tu otro dispositivo';
           this.$('secret_help').textContent = 'Abre este enlace una sola vez antes de las ' + expiry + '. Quien lo abra tendrá acceso a tu selección de esta tienda.';
+          this.$('revoke').hidden = false;
         }
         this.$('secret_box').hidden = false;
         this.$('access_status').textContent = 'Acceso temporal creado. Cópialo para continuar.';
@@ -430,15 +433,16 @@
     }
 
     async revoke() {
-      if ((!this.activeGrants || !this.activeGrants.length) && !this.pendingRevoke || !this.workspace) return;
+      if (((!this.activeGrants || !this.activeGrants.length) && !this.otherOwnersCount && !this.pendingRevoke) || !this.workspace) return;
       this.$('revoke').disabled = true;
       try {
         do {
-          if (!this.pendingRevoke) this.pendingRevoke = { workspace_id: this.workspace.id, expected_revision: this.workspace.revision, operation_id: freshId(), grant_id: this.activeGrants[0].grant_id };
+          const nextGrantId = (this.activeGrants && this.activeGrants.length) ? this.activeGrants[0].grant_id : 'all';
+          if (!this.pendingRevoke) this.pendingRevoke = { workspace_id: this.workspace.id, expected_revision: this.workspace.revision, operation_id: freshId(), grant_id: nextGrantId };
           const result = await this.request('revoke', this.pendingRevoke);
           this.pendingRevoke = null;
           if (result.workspace) this.accept(result);
-        } while (this.activeGrants.length);
+        } while (this.activeGrants.length || this.otherOwnersCount > 0);
         this.latestGrant = null; this.hideSecret(); this.$('revoke').hidden = true; this.$('access_status').textContent = 'Accesos retirados. Los agentes y enlaces anteriores ya no pueden abrir esta selección.';
       } catch (e) { this.$('access_status').textContent = 'No se confirmó que retiramos el acceso. Reintenta antes de compartir más información.'; }
       finally { this.$('revoke').disabled = false; }

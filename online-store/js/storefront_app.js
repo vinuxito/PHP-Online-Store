@@ -6040,7 +6040,7 @@ ${shareUrl}`;
                     <img class="qx-comp-thumb" src="${self.esc(p.cover)}" alt="${self.esc(p.name)}">
                   </div>
                   <div class="qx-comp-name">${self.esc(p.name)}</div>
-                  <div class="qx-comp-score">✨ ${comp.affinityScore}% Sinergia</div>
+                  <div class="qx-comp-score">✨ Afinidad sugerida · ${comp.affinityScore}/99</div>
                 </div>
               `);
 
@@ -6176,7 +6176,7 @@ ${shareUrl}`;
       const base = data.base;
       const accent = data.accent;
 
-      $('#qx_layering_score_val').text(`${syn.affinityScore}%`);
+      $('#qx_layering_score_val').text(`${syn.affinityScore}/99`);
       $('#qx_layering_synergy_type').text(syn.synergyType);
       $('#qx_layering_synergy_desc').text(syn.blendName);
 

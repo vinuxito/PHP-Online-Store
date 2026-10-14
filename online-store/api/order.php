@@ -45,13 +45,14 @@ $db = get_store_db();
 $shopper = null;
 $workspaceId = $data['workspace_id'] ?? null;
 try {
-    if ($workspaceId !== null) {
-        QuantixShopperWorkspace::startSession();
-        $shopper = new QuantixShopperWorkspace($db, $tenant);
-        $ownedWorkspace = $shopper->ownedWorkspace($workspaceId);
-        $csrf = $_SERVER['HTTP_X_QX_CSRF'] ?? '';
-        if (!is_string($csrf) || !hash_equals($shopper->csrf(), $csrf)) qxOrderError(403, 'Abre de nuevo tu selección antes de registrar la solicitud.');
+    QuantixShopperWorkspace::startSession();
+    $shopper = new QuantixShopperWorkspace($db, $tenant);
+    if ($workspaceId === null || $workspaceId === '') {
+        $workspaceId = $_SESSION['qx_shopper_active'][$tenant->emisorId] ?? '';
     }
+    $ownedWorkspace = $shopper->ownedWorkspace($workspaceId);
+    $csrf = $_SERVER['HTTP_X_QX_CSRF'] ?? '';
+    if (!is_string($csrf) || !hash_equals($shopper->csrf(), $csrf)) qxOrderError(403, 'Abre de nuevo tu selección antes de registrar la solicitud.');
     $lookup = $db->prepare('SELECT OrderID, RequestHash, ResponseJSON FROM quantix_pending_orders WHERE EmisorID = ? AND IdempotencyKey = ? LIMIT 1');
     $lookup->execute([$tenant->emisorId, $key]);
     if ($existing = $lookup->fetch(PDO::FETCH_ASSOC)) {

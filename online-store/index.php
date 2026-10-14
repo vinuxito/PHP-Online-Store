@@ -1034,8 +1034,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
       <div class="qx-layering-synergy-panel" id="qx_layering_synergy_panel">
         <div class="qx-synergy-top-row">
           <div class="qx-synergy-score-wrap">
-            <div class="qx-synergy-score-val" id="qx_layering_score_val">96%</div>
-            <div class="qx-synergy-score-lbl">Sinergia Alquímica</div>
+            <div class="qx-synergy-score-val" id="qx_layering_score_val">96/99</div>
+            <div class="qx-synergy-score-lbl">Afinidad Sugerida (Heurística)</div>
           </div>
           <div class="qx-synergy-meta">
             <h3 class="qx-synergy-type" id="qx_layering_synergy_type">Contraste Magisterial</h3>
