@@ -1111,9 +1111,8 @@ $isSommelierActive = $isPerfumsTenant && !empty($featMatrix['aura_ai_sommelier']
           <button type="button" class="qx-seg-btn active" id="qx_btn_store_all_specs">Todas las Specs</button>
           <button type="button" class="qx-seg-btn" id="qx_btn_store_diffs_specs">Sólo Diferencias</button>
         </div>
-        <a id="qx_btn_open_full_arena" href="/cfdadmin/comparador_arena.php" target="_blank" class="qx-btn-fullscreen-arena" title="Abrir en Pantalla Completa">
-          <span>↗ Pantalla Completa</span>
-        </a>
+        <?php /* 2026-10-21: «Pantalla Completa» linked shoppers to the ADMIN arena (/cfdadmin/comparador_arena.php), which showed one fixed
+                 tenant's catalog to every store's shoppers and now requires an Evinux login. Removed; the comparison lives in this modal. */ ?>
         <button type="button" class="qx-btn-compare-close" id="qx_compare_close">✕</button>
       </div>
     </div>
